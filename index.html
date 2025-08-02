@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI對話式圖片優化網站</title>
+    <title>AI圖片優化助手</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -34,11 +34,11 @@
 
     <!-- 主要內容區域 -->
     <main class="main-content">
-        <!-- 左側面板 - 上傳和對話 -->
+        <!-- 左側面板 - 圖片上傳和管理 -->
         <div class="left-panel">
             <!-- 圖片上傳區域 -->
             <div class="upload-section">
-                <h2>圖片上傳</h2>
+                <h2>圖片管理</h2>
                 <div class="upload-area" id="uploadArea">
                     <div class="upload-content">
                         <i class="fas fa-cloud-upload-alt"></i>
@@ -55,43 +55,6 @@
                 <div class="uploaded-images" id="uploadedImages">
                     <h3>已上傳圖片</h3>
                     <div class="image-list" id="imageList"></div>
-                </div>
-            </div>
-
-            <!-- AI對話區域 -->
-            <div class="ai-chat-section">
-                <h2>AI對話控制</h2>
-                <div class="chat-controls">
-                    <!-- 語音輸入 -->
-                    <div class="voice-control">
-                        <button class="btn btn-voice" id="voiceBtn">
-                            <i class="fas fa-microphone"></i>
-                        </button>
-                        <span class="voice-status" id="voiceStatus">點擊開始語音輸入</span>
-                    </div>
-                    
-                    <!-- 文本輸入 -->
-                    <div class="text-input">
-                        <textarea id="textInput" placeholder="輸入處理指令，例如：'將圖片亮度提高20%，添加黑白濾鏡'"></textarea>
-                        <button class="btn btn-primary" id="sendBtn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                    
-                    <!-- 文件導入指令 -->
-                    <div class="file-command">
-                        <input type="file" id="commandFile" accept=".txt,.json" style="display: none;">
-                        <button class="btn btn-secondary" onclick="document.getElementById('commandFile').click()">
-                            <i class="fas fa-file-import"></i>
-                            導入指令文件
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- 對話歷史 -->
-                <div class="chat-history" id="chatHistory">
-                    <h3>對話歷史</h3>
-                    <div class="chat-messages" id="chatMessages"></div>
                 </div>
             </div>
         </div>
@@ -372,19 +335,18 @@
                 <h3>快速開始</h3>
                 <ol>
                     <li>上傳圖片：拖拽或點擊上傳按鈕選擇圖片</li>
-                    <li>語音控制：點擊麥克風按鈕，說出處理指令</li>
-                    <li>文本指令：在文本框中輸入處理要求</li>
-                    <li>工具處理：使用右側工具面板進行精細調整</li>
+                    <li>選擇工具：使用中間面板的工具進行圖片處理</li>
+                    <li>預覽效果：在預覽區域查看處理結果</li>
                     <li>下載保存：處理完成後下載到本地</li>
                 </ol>
                 
-                <h3>語音指令示例</h3>
+                <h3>功能特色</h3>
                 <ul>
-                    <li>"將圖片亮度提高20%"</li>
-                    <li>"添加黑白濾鏡"</li>
-                    <li>"裁剪為16:9比例"</li>
-                    <li>"轉換為PNG格式"</li>
-                    <li>"添加水印文字"</li>
+                    <li>智能優化：自動優化圖片質量</li>
+                    <li>多種濾鏡：豐富的藝術濾鏡效果</li>
+                    <li>精確調整：亮度、對比度等參數調節</li>
+                    <li>批量處理：支持多張圖片同時處理</li>
+                    <li>格式轉換：支持多種圖片格式轉換</li>
                 </ul>
             </div>
         </div>
@@ -396,7 +358,6 @@
     <!-- JavaScript文件 -->
     <script src="js/utils.js"></script>
     <script src="js/imageProcessor.js"></script>
-    <script src="js/voiceControl.js"></script>
     <script src="js/uiController.js"></script>
     <script src="js/main.js"></script>
 </body>

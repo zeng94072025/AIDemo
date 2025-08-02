@@ -5,8 +5,6 @@
 
 class AIImageOptimizer {
     constructor() {
-        this.imageProcessor = null;
-        this.voiceControl = null;
         this.uiController = null;
         this.isInitialized = false;
         
@@ -48,9 +46,7 @@ class AIImageOptimizer {
             canvas: !!document.createElement('canvas').getContext,
             fileAPI: !!window.File && !!window.FileReader,
             dragAndDrop: 'draggable' in document.createElement('div'),
-            webWorkers: !!window.Worker,
-            speechRecognition: 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window,
-            speechSynthesis: 'speechSynthesis' in window
+            webWorkers: !!window.Worker
         };
 
         const unsupported = Object.entries(requirements)
@@ -65,18 +61,9 @@ class AIImageOptimizer {
 
     // 初始化模組
     async initModules() {
-        // 初始化語音控制
-        this.voiceControl = new VoiceControl();
-        window.voiceControl = this.voiceControl;
-        
         // 初始化UI控制器
         this.uiController = new UIController();
         window.uiController = this.uiController;
-        
-        // 設置語音控制回調
-        this.voiceControl.setCommandCallback((actions, transcript) => {
-            this.handleVoiceCommands(actions, transcript);
-        });
         
         console.log('所有模組初始化完成');
     }
@@ -122,33 +109,7 @@ class AIImageOptimizer {
         });
     }
 
-    // 處理語音指令
-    async handleVoiceCommands(actions, transcript) {
-        try {
-            if (this.uiController.images.length === 0) {
-                this.voiceControl.speakError('no-image');
-                return;
-            }
 
-            if (this.uiController.isProcessing) {
-                this.voiceControl.speakError('processing');
-                return;
-            }
-
-            // 語音確認
-            this.voiceControl.speakConfirmation(actions[0].type);
-
-            // 執行指令
-            await this.uiController.executeActions(actions, transcript);
-
-            // 語音完成
-            this.voiceControl.speakCompletion(actions[0].type);
-
-        } catch (error) {
-            console.error('語音指令執行失敗:', error);
-            this.voiceControl.speakError('failed');
-        }
-    }
 
     // 頁面加載完成
     onPageLoad() {
@@ -156,9 +117,6 @@ class AIImageOptimizer {
         
         // 更新狀態
         Utils.updateProgress(100, '就緒');
-        
-        // 檢查麥克風權限
-        this.checkMicrophonePermission();
         
         // 顯示使用提示
         this.showUsageTips();
@@ -201,12 +159,6 @@ class AIImageOptimizer {
             this.redo();
         }
         
-        // 空格鍵: 開始/停止語音識別
-        if (e.key === ' ' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
-            e.preventDefault();
-            this.voiceControl.startListening();
-        }
-        
         // 方向鍵: 切換圖片
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
@@ -216,11 +168,6 @@ class AIImageOptimizer {
         if (e.key === 'ArrowRight') {
             e.preventDefault();
             this.uiController.showNextImage();
-        }
-        
-        // Escape: 停止語音識別
-        if (e.key === 'Escape') {
-            this.voiceControl.stopListening();
         }
     }
 
@@ -251,26 +198,15 @@ class AIImageOptimizer {
         Utils.showNotification('操作失敗，請重試', 'error');
     }
 
-    // 檢查麥克風權限
-    async checkMicrophonePermission() {
-        try {
-            const hasPermission = await this.voiceControl.checkMicrophonePermission();
-            if (!hasPermission) {
-                console.log('麥克風權限未獲得');
-            }
-        } catch (error) {
-            console.error('檢查麥克風權限失敗:', error);
-        }
-    }
+
 
     // 顯示使用提示
     showUsageTips() {
         const tips = [
             '💡 提示：您可以拖拽圖片到上傳區域',
-            '💡 提示：使用語音指令可以更快速地處理圖片',
             '💡 提示：按 Ctrl+O 快速打開文件',
             '💡 提示：按 Ctrl+S 快速下載圖片',
-            '💡 提示：按空格鍵開始語音識別'
+            '💡 提示：使用方向鍵切換圖片'
         ];
         
         let tipIndex = 0;
@@ -294,15 +230,13 @@ class AIImageOptimizer {
             主要功能：
             • 支持多種圖片格式上傳
             • 智能圖片優化和處理
-            • 語音控制操作
             • 豐富的濾鏡和特效
             • 批量處理和下載
             
             開始使用：
             1. 上傳您的圖片
-            2. 使用語音或文本指令
-            3. 選擇處理工具
-            4. 下載處理結果
+            2. 選擇處理工具
+            3. 下載處理結果
         `;
         
         console.log(welcomeMessage);

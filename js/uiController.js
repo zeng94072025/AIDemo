@@ -19,12 +19,6 @@ class UIController {
         // 文件上傳
         this.initFileUpload();
         
-        // 語音控制
-        this.initVoiceControl();
-        
-        // 文本輸入
-        this.initTextInput();
-        
         // 工具按鈕
         this.initToolButtons();
         
@@ -62,39 +56,7 @@ class UIController {
         }
     }
 
-    // 初始化語音控制
-    initVoiceControl() {
-        const voiceBtn = document.getElementById('voiceBtn');
-        
-        if (voiceBtn) {
-            voiceBtn.addEventListener('click', () => {
-                if (window.voiceControl) {
-                    window.voiceControl.startListening();
-                }
-            });
-        }
-    }
 
-    // 初始化文本輸入
-    initTextInput() {
-        const textInput = document.getElementById('textInput');
-        const sendBtn = document.getElementById('sendBtn');
-        
-        if (textInput) {
-            textInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.handleTextCommand();
-                }
-            });
-        }
-        
-        if (sendBtn) {
-            sendBtn.addEventListener('click', () => {
-                this.handleTextCommand();
-            });
-        }
-    }
 
     // 初始化工具按鈕
     initToolButtons() {
@@ -398,39 +360,7 @@ class UIController {
         }
     }
 
-    // 處理文本指令
-    handleTextCommand() {
-        const textInput = document.getElementById('textInput');
-        const command = textInput.value.trim();
-        
-        if (!command) {
-            Utils.showNotification('請輸入處理指令', 'warning');
-            return;
-        }
-        
-        if (this.images.length === 0) {
-            Utils.showNotification('請先上傳圖片', 'warning');
-            return;
-        }
-        
-        // 解析指令
-        const actions = Utils.parseVoiceCommand(command);
-        
-        if (actions.length === 0) {
-            Utils.showNotification('無法識別指令，請重試', 'warning');
-            return;
-        }
-        
-        // 執行指令
-        this.executeActions(actions, command);
-        
-        // 清空輸入框
-        textInput.value = '';
-        
-        // 添加到對話歷史
-        this.addChatMessage('user', command);
-        this.addChatMessage('ai', `正在執行 ${actions.length} 個操作...`);
-    }
+
 
     // 處理工具動作
     async handleToolAction(action) {
@@ -579,75 +509,7 @@ class UIController {
         this.updatePreview();
     }
 
-    // 執行動作
-    async executeActions(actions, originalCommand) {
-        if (this.images.length === 0) {
-            Utils.showNotification('請先上傳圖片', 'warning');
-            return;
-        }
-        
-        this.isProcessing = true;
-        
-        try {
-            const currentImage = this.images[this.currentImageIndex];
-            const processor = currentImage.processor;
-            
-            for (let i = 0; i < actions.length; i++) {
-                const action = actions[i];
-                const progress = (i / actions.length) * 100;
-                Utils.updateProgress(progress, `執行操作 ${i + 1}/${actions.length}`);
-                
-                await this.executeSingleAction(processor, action);
-            }
-            
-            this.updatePreview();
-            this.addToHistory(`執行指令: ${originalCommand}`);
-            Utils.updateProgress(100, '處理完成');
-            Utils.showNotification('所有操作執行完成', 'success');
-            
-        } catch (error) {
-            console.error('執行操作失敗:', error);
-            Utils.showNotification('執行操作失敗', 'error');
-        } finally {
-            this.isProcessing = false;
-        }
-    }
 
-    // 執行單個動作
-    async executeSingleAction(processor, action) {
-        switch (action.type) {
-            case 'brightness':
-                processor.adjustBrightness(action.value);
-                break;
-            case 'contrast':
-                processor.adjustContrast(action.value);
-                break;
-            case 'saturation':
-                processor.adjustSaturation(action.value);
-                break;
-            case 'filter':
-                processor.applyFilter(action.value);
-                break;
-            case 'crop':
-                await processor.smartCrop(action.value);
-                break;
-            case 'format':
-                // 格式轉換在保存時處理
-                break;
-            case 'watermark':
-                processor.addWatermark(action.value);
-                break;
-            case 'auto-optimize':
-                await processor.autoOptimize();
-                break;
-            case 'remove-reflection':
-                processor.removeReflection();
-                break;
-            case 'brighten':
-                processor.adjustBrightness(20);
-                break;
-        }
-    }
 
     // 顯示上一張圖片
     showPreviousImage() {
@@ -891,18 +753,7 @@ class UIController {
         historyList.scrollTop = historyList.scrollHeight;
     }
 
-    // 添加對話消息
-    addChatMessage(type, message) {
-        const chatMessages = document.getElementById('chatMessages');
-        if (!chatMessages) return;
-        
-        const messageElement = document.createElement('div');
-        messageElement.className = `chat-message ${type}`;
-        messageElement.textContent = message;
-        
-        chatMessages.appendChild(messageElement);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
+
 }
 
 // 導出UI控制器

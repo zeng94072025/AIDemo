@@ -77,25 +77,7 @@ body {
     border-color: #AEAEB2;
 }
 
-.btn-voice {
-    background-color: var(--error-color);
-    color: white;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    padding: 0;
-    font-size: 20px;
-}
 
-.btn-voice:hover:not(:disabled) {
-    background-color: #D70015;
-    transform: scale(1.05);
-}
-
-.btn-voice.recording {
-    background-color: var(--success-color);
-    animation: pulse 1.5s infinite;
-}
 
 @keyframes pulse {
     0% { transform: scale(1); }
@@ -146,7 +128,7 @@ body {
     margin: 0 auto;
     padding: 24px;
     display: grid;
-    grid-template-columns: 320px 1fr 300px;
+    grid-template-columns: 280px 1fr 320px;
     gap: 24px;
     min-height: calc(100vh - 140px);
 }
@@ -158,14 +140,14 @@ body {
     gap: 24px;
 }
 
-.upload-section, .ai-chat-section {
+.upload-section {
     background-color: var(--surface-color);
     border-radius: var(--border-radius);
     padding: 24px;
     box-shadow: var(--shadow-light);
 }
 
-.upload-section h2, .ai-chat-section h2 {
+.upload-section h2 {
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 16px;
@@ -269,83 +251,7 @@ body {
 }
 
 /* AI對話控制 */
-.chat-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
 
-.voice-control {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.voice-status {
-    font-size: 14px;
-    color: var(--text-secondary);
-}
-
-.text-input {
-    display: flex;
-    gap: 8px;
-}
-
-.text-input textarea {
-    flex: 1;
-    min-height: 80px;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-small);
-    font-family: inherit;
-    font-size: 14px;
-    resize: vertical;
-    transition: var(--transition);
-}
-
-.text-input textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-}
-
-.file-command {
-    text-align: center;
-}
-
-/* 對話歷史 */
-.chat-history h3 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 12px;
-}
-
-.chat-messages {
-    max-height: 200px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.chat-message {
-    padding: 8px 12px;
-    background-color: var(--background-color);
-    border-radius: var(--border-radius-small);
-    font-size: 14px;
-}
-
-.chat-message.user {
-    background-color: var(--primary-color);
-    color: white;
-    align-self: flex-end;
-}
-
-.chat-message.ai {
-    background-color: var(--background-color);
-    color: var(--text-primary);
-    align-self: flex-start;
-}
 
 /* 中間面板 */
 .center-panel {
@@ -895,7 +801,7 @@ body {
         font-size: 20px;
     }
     
-    .upload-section, .ai-chat-section, .preview-section, .tools-section,
+    .upload-section, .preview-section, .tools-section,
     .history-section, .download-section, .settings-section {
         padding: 16px;
     }
