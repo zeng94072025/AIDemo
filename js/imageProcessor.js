@@ -6,19 +6,39 @@
 class ImageProcessor {
     constructor() {
         this.canvas = document.getElementById('hiddenCanvas');
+        if (!this.canvas) {
+            console.error('找不到 hiddenCanvas 元素');
+            throw new Error('Canvas 元素未找到');
+        }
+        
         this.ctx = this.canvas.getContext('2d');
+        if (!this.ctx) {
+            console.error('無法獲取 Canvas 2D 上下文');
+            throw new Error('Canvas 2D 上下文獲取失敗');
+        }
+        
         this.currentImage = null;
         this.originalImage = null;
         this.history = [];
         this.historyIndex = -1;
         this.maxHistorySize = 20;
+        
+        console.log('ImageProcessor 初始化成功');
     }
 
     // 初始化圖片
     async loadImage(file) {
         try {
+            console.log('ImageProcessor.loadImage 開始:', file.name);
+            
             const base64 = await Utils.fileToBase64(file);
+            console.log('文件轉換為 Base64 成功');
+            
             const img = await Utils.createImageElement(base64);
+            console.log('創建圖片元素成功:', {
+                imgWidth: img.width,
+                imgHeight: img.height
+            });
             
             this.originalImage = {
                 file: file,
@@ -33,6 +53,8 @@ class ImageProcessor {
             this.drawImage(img);
             
             this.addToHistory('載入圖片', this.currentImage);
+            
+            console.log('ImageProcessor.loadImage 完成');
             return this.currentImage;
         } catch (error) {
             console.error('載入圖片失敗:', error);
@@ -42,12 +64,20 @@ class ImageProcessor {
 
     // 設置Canvas尺寸
     setupCanvas(width, height) {
+        console.log('設置 Canvas 尺寸:', { width, height });
         this.canvas.width = width;
         this.canvas.height = height;
     }
 
     // 繪製圖片到Canvas
     drawImage(img) {
+        console.log('繪製圖片到 Canvas:', {
+            imgWidth: img.width,
+            imgHeight: img.height,
+            canvasWidth: this.canvas.width,
+            canvasHeight: this.canvas.height
+        });
+        
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.drawImage(img, 0, 0);
     }
@@ -71,7 +101,19 @@ class ImageProcessor {
 
     // 轉換為Base64
     toBase64(type = 'image/jpeg', quality = 0.9) {
-        return this.canvas.toDataURL(type, quality);
+        try {
+            const base64 = this.canvas.toDataURL(type, quality);
+            console.log('toBase64 成功:', {
+                type: type,
+                quality: quality,
+                base64Length: base64.length,
+                base64Prefix: base64.substring(0, 50)
+            });
+            return base64;
+        } catch (error) {
+            console.error('toBase64 失敗:', error);
+            return '';
+        }
     }
 
     // 添加到歷史記錄
@@ -709,6 +751,8 @@ class ImageProcessor {
     // 更新當前圖片
     updateCurrentImage() {
         this.currentImage.base64 = this.toBase64();
+        this.currentImage.width = this.canvas.width;
+        this.currentImage.height = this.canvas.height;
     }
 
     // 重置到原圖
@@ -722,9 +766,17 @@ class ImageProcessor {
 
     // 獲取處理後的圖片
     getProcessedImage() {
+        const base64 = this.toBase64();
+        console.log('getProcessedImage:', {
+            hasCanvas: !!this.canvas,
+            canvasWidth: this.canvas?.width,
+            canvasHeight: this.canvas?.height,
+            hasBase64: !!base64,
+            base64Length: base64?.length
+        });
+        
         return {
-            base64: this.toBase64(),
-            blob: this.toBlob(),
+            base64: base64,
             width: this.canvas.width,
             height: this.canvas.height
         };

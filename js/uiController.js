@@ -368,25 +368,28 @@ class UIController {
 
     // 載入單張圖片
     async loadImage(file) {
-        if (!window.imageProcessor) {
-            console.error('圖片處理器未初始化');
-            return;
-        }
-
         try {
-            const imageData = await window.imageProcessor.loadImage(file);
+            console.log('開始載入圖片:', file.name);
+            
+            const processor = new ImageProcessor();
+            const imageData = await processor.loadImage(file);
+            
+            console.log('圖片載入成功:', {
+                fileName: file.name,
+                imageData: imageData
+            });
             
             this.images.push({
                 file: file,
                 data: imageData,
-                processor: new ImageProcessor()
+                processor: processor
             });
             
-            // 初始化處理器
-            await this.images[this.images.length - 1].processor.loadImage(file);
+            console.log('圖片已添加到列表，總數:', this.images.length);
             
             this.updateImageList();
             this.updatePreview();
+            this.updateImageCounter();
             this.updateDownloadButtons();
             
         } catch (error) {
@@ -775,7 +778,12 @@ class UIController {
     // 更新圖片列表
     updateImageList() {
         const imageList = document.getElementById('imageList');
-        if (!imageList) return;
+        if (!imageList) {
+            console.error('找不到 imageList 元素');
+            return;
+        }
+        
+        console.log('更新圖片列表，圖片數量:', this.images.length);
         
         imageList.innerHTML = '';
         
@@ -786,8 +794,14 @@ class UIController {
                 imageItem.classList.add('active');
             }
             
+            console.log('創建圖片項目:', {
+                index: index,
+                fileName: image.file.name,
+                hasBase64: !!image.data.base64
+            });
+            
             imageItem.innerHTML = `
-                <img src="${image.data.base64}" alt="${image.file.name}">
+                <img src="${image.data.base64}" alt="${image.file.name}" style="max-width: 100%; max-height: 100%; object-fit: cover;">
                 <div class="image-info">
                     <div class="image-name">${image.file.name}</div>
                     <div class="image-size">${Utils.formatFileSize(image.file.size)}</div>
@@ -819,7 +833,13 @@ class UIController {
         const processor = currentImage.processor;
         const processedImage = processor.getProcessedImage();
         
-        previewContainer.innerHTML = `<img src="${processedImage.base64}" alt="預覽圖片">`;
+        console.log('更新預覽:', {
+            currentImageIndex: this.currentImageIndex,
+            imagesLength: this.images.length,
+            processedImage: processedImage
+        });
+        
+        previewContainer.innerHTML = `<img src="${processedImage.base64}" alt="預覽圖片" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
     }
 
     // 更新圖片計數器

@@ -65,10 +65,6 @@ class AIImageOptimizer {
 
     // 初始化模組
     async initModules() {
-        // 初始化圖片處理器
-        this.imageProcessor = new ImageProcessor();
-        window.imageProcessor = this.imageProcessor;
-        
         // 初始化語音控制
         this.voiceControl = new VoiceControl();
         window.voiceControl = this.voiceControl;

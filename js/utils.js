@@ -88,9 +88,17 @@ function isValidFileSize(file, maxSizeMB = 10) {
 // 創建圖片元素
 function createImageElement(src, alt = '') {
     return new Promise((resolve, reject) => {
+        console.log('createImageElement 開始:', { srcLength: src.length, alt });
+        
         const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
+        img.onload = () => {
+            console.log('圖片加載成功:', { width: img.width, height: img.height });
+            resolve(img);
+        };
+        img.onerror = (error) => {
+            console.error('圖片加載失敗:', error);
+            reject(error);
+        };
         img.src = src;
         img.alt = alt;
     });
@@ -99,9 +107,17 @@ function createImageElement(src, alt = '') {
 // 將文件轉換為Base64
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
+        console.log('fileToBase64 開始:', { fileName: file.name, fileSize: file.size });
+        
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
+        reader.onload = () => {
+            console.log('文件讀取成功，Base64 長度:', reader.result.length);
+            resolve(reader.result);
+        };
+        reader.onerror = (error) => {
+            console.error('文件讀取失敗:', error);
+            reject(error);
+        };
         reader.readAsDataURL(file);
     });
 }
