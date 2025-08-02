@@ -42,15 +42,40 @@ class UIController {
     initFileUpload() {
         const fileInput = document.getElementById('fileInput');
         const uploadArea = document.getElementById('uploadArea');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        
+        console.log('初始化文件上傳:', {
+            fileInput: !!fileInput,
+            uploadArea: !!uploadArea,
+            selectFileBtn: !!selectFileBtn
+        });
         
         if (fileInput) {
             fileInput.addEventListener('change', (e) => {
+                console.log('文件輸入change事件觸發，文件數量:', e.target.files.length);
                 this.handleFileSelect(e.target.files);
             });
         }
         
+        // 選擇文件按鈕事件
+        if (selectFileBtn) {
+            selectFileBtn.addEventListener('click', (e) => {
+                console.log('選擇文件按鈕被點擊');
+                e.stopPropagation(); // 防止事件冒泡
+                e.preventDefault(); // 防止默認行為
+                fileInput.click();
+            });
+        }
+        
+        // 上傳區域點擊事件（排除按鈕區域）
         if (uploadArea) {
-            uploadArea.addEventListener('click', () => {
+            uploadArea.addEventListener('click', (e) => {
+                console.log('上傳區域被點擊');
+                // 如果點擊的是按鈕，不觸發文件選擇
+                if (e.target.closest('#selectFileBtn')) {
+                    console.log('點擊的是按鈕，不觸發文件選擇');
+                    return;
+                }
                 fileInput.click();
             });
         }
