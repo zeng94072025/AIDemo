@@ -718,15 +718,49 @@ class UIController {
         
         const currentImage = this.images[this.currentImageIndex];
         const processor = currentImage.processor;
-        const processedImage = processor.getProcessedImage();
         
         console.log('更新預覽:', {
             currentImageIndex: this.currentImageIndex,
             imagesLength: this.images.length,
-            processedImage: processedImage
+            currentImage: currentImage
         });
         
-        previewContainer.innerHTML = `<img src="${processedImage.base64}" alt="預覽圖片" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+        // 使用當前圖片的 base64 數據，如果沒有則從 processor 獲取
+        let imageSrc = currentImage.data.base64;
+        
+        if (!imageSrc) {
+            try {
+                const processedImage = processor.getProcessedImage();
+                imageSrc = processedImage.base64;
+                console.log('從 processor 獲取圖片數據:', {
+                    hasProcessedImage: !!processedImage,
+                    hasBase64: !!imageSrc,
+                    base64Length: imageSrc?.length
+                });
+            } catch (error) {
+                console.error('獲取處理後圖片失敗:', error);
+                imageSrc = currentImage.data.base64; // 回退到原始數據
+            }
+        }
+        
+        if (!imageSrc) {
+            console.error('無法獲取圖片數據');
+            previewContainer.innerHTML = `
+                <div class="preview-placeholder">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>圖片載入失敗</p>
+                </div>
+            `;
+            return;
+        }
+        
+        console.log('設置預覽圖片:', {
+            hasImageSrc: !!imageSrc,
+            srcLength: imageSrc.length,
+            srcPrefix: imageSrc.substring(0, 50)
+        });
+        
+        previewContainer.innerHTML = `<img src="${imageSrc}" alt="預覽圖片" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
     }
 
     // 更新圖片計數器

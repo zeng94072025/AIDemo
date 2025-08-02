@@ -52,6 +52,15 @@ class ImageProcessor {
             this.setupCanvas(img.width, img.height);
             this.drawImage(img);
             
+            // 確保 Canvas 有內容
+            const canvasData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            console.log('Canvas 數據檢查:', {
+                canvasWidth: this.canvas.width,
+                canvasHeight: this.canvas.height,
+                dataLength: canvasData.data.length,
+                hasData: canvasData.data.some(pixel => pixel !== 0)
+            });
+            
             this.addToHistory('載入圖片', this.currentImage);
             
             console.log('ImageProcessor.loadImage 完成');
@@ -78,8 +87,27 @@ class ImageProcessor {
             canvasHeight: this.canvas.height
         });
         
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.drawImage(img, 0, 0);
+        try {
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(img, 0, 0);
+            
+            // 驗證繪製是否成功
+            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            const hasContent = imageData.data.some(pixel => pixel !== 0);
+            
+            console.log('繪製結果驗證:', {
+                hasContent: hasContent,
+                dataLength: imageData.data.length,
+                nonZeroPixels: imageData.data.filter(pixel => pixel !== 0).length
+            });
+            
+            if (!hasContent) {
+                console.error('Canvas 繪製失敗，沒有內容');
+            }
+        } catch (error) {
+            console.error('繪製圖片到 Canvas 失敗:', error);
+            throw error;
+        }
     }
 
     // 獲取當前圖片數據
@@ -102,12 +130,32 @@ class ImageProcessor {
     // 轉換為Base64
     toBase64(type = 'image/jpeg', quality = 0.9) {
         try {
+            if (!this.canvas) {
+                console.error('Canvas 未初始化');
+                return '';
+            }
+            
+            if (this.canvas.width === 0 || this.canvas.height === 0) {
+                console.error('Canvas 尺寸為 0');
+                return '';
+            }
+            
+            // 檢查 Canvas 是否有內容
+            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            const hasContent = imageData.data.some(pixel => pixel !== 0);
+            
+            if (!hasContent) {
+                console.error('Canvas 沒有內容，無法生成 Base64');
+                return '';
+            }
+            
             const base64 = this.canvas.toDataURL(type, quality);
             console.log('toBase64 成功:', {
                 type: type,
                 quality: quality,
                 base64Length: base64.length,
-                base64Prefix: base64.substring(0, 50)
+                base64Prefix: base64.substring(0, 50),
+                hasContent: hasContent
             });
             return base64;
         } catch (error) {
@@ -766,20 +814,41 @@ class ImageProcessor {
 
     // 獲取處理後的圖片
     getProcessedImage() {
-        const base64 = this.toBase64();
-        console.log('getProcessedImage:', {
-            hasCanvas: !!this.canvas,
-            canvasWidth: this.canvas?.width,
-            canvasHeight: this.canvas?.height,
-            hasBase64: !!base64,
-            base64Length: base64?.length
-        });
-        
-        return {
-            base64: base64,
-            width: this.canvas.width,
-            height: this.canvas.height
-        };
+        try {
+            if (!this.canvas) {
+                console.error('Canvas 未初始化');
+                return this.currentImage || { base64: '', width: 0, height: 0 };
+            }
+            
+            if (this.canvas.width === 0 || this.canvas.height === 0) {
+                console.error('Canvas 尺寸為 0');
+                return this.currentImage || { base64: '', width: 0, height: 0 };
+            }
+            
+            const base64 = this.toBase64();
+            console.log('getProcessedImage:', {
+                hasCanvas: !!this.canvas,
+                canvasWidth: this.canvas?.width,
+                canvasHeight: this.canvas?.height,
+                hasBase64: !!base64,
+                base64Length: base64?.length,
+                base64Prefix: base64?.substring(0, 50)
+            });
+            
+            if (!base64) {
+                console.error('無法生成 Base64 數據');
+                return this.currentImage || { base64: '', width: 0, height: 0 };
+            }
+            
+            return {
+                base64: base64,
+                width: this.canvas.width,
+                height: this.canvas.height
+            };
+        } catch (error) {
+            console.error('getProcessedImage 失敗:', error);
+            return this.currentImage || { base64: '', width: 0, height: 0 };
+        }
     }
 }
 
