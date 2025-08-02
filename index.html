@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI對話式圖片優化網站</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- 頂部導航欄 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32">
+                    <circle cx="16" cy="16" r="14" fill="none" stroke="#007AFF" stroke-width="2"/>
+                    <path d="M8 16 L14 22 L24 10" stroke="#007AFF" stroke-width="2" fill="none"/>
+                    <circle cx="16" cy="16" r="6" fill="#007AFF" opacity="0.2"/>
+                </svg>
+                <h1>AI圖片優化助手</h1>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" id="helpBtn">
+                    <i class="fas fa-question-circle"></i>
+                    幫助
+                </button>
+                <button class="btn btn-primary" id="settingsBtn">
+                    <i class="fas fa-cog"></i>
+                    設置
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容區域 -->
+    <main class="main-content">
+        <!-- 左側面板 - 上傳和對話 -->
+        <div class="left-panel">
+            <!-- 圖片上傳區域 -->
+            <div class="upload-section">
+                <h2>圖片上傳</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>拖拽圖片到這裡或點擊上傳</p>
+                        <p class="upload-hint">支持 JPG、PNG、GIF、WEBP、BMP 格式</p>
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            選擇文件
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 已上傳圖片列表 -->
+                <div class="uploaded-images" id="uploadedImages">
+                    <h3>已上傳圖片</h3>
+                    <div class="image-list" id="imageList"></div>
+                </div>
+            </div>
+
+            <!-- AI對話區域 -->
+            <div class="ai-chat-section">
+                <h2>AI對話控制</h2>
+                <div class="chat-controls">
+                    <!-- 語音輸入 -->
+                    <div class="voice-control">
+                        <button class="btn btn-voice" id="voiceBtn">
+                            <i class="fas fa-microphone"></i>
+                        </button>
+                        <span class="voice-status" id="voiceStatus">點擊開始語音輸入</span>
+                    </div>
+                    
+                    <!-- 文本輸入 -->
+                    <div class="text-input">
+                        <textarea id="textInput" placeholder="輸入處理指令，例如：'將圖片亮度提高20%，添加黑白濾鏡'"></textarea>
+                        <button class="btn btn-primary" id="sendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- 文件導入指令 -->
+                    <div class="file-command">
+                        <input type="file" id="commandFile" accept=".txt,.json" style="display: none;">
+                        <button class="btn btn-secondary" onclick="document.getElementById('commandFile').click()">
+                            <i class="fas fa-file-import"></i>
+                            導入指令文件
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 對話歷史 -->
+                <div class="chat-history" id="chatHistory">
+                    <h3>對話歷史</h3>
+                    <div class="chat-messages" id="chatMessages"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中間面板 - 圖片預覽和處理 -->
+        <div class="center-panel">
+            <!-- 圖片預覽區域 -->
+            <div class="preview-section">
+                <h2>圖片預覽</h2>
+                <div class="preview-container" id="previewContainer">
+                    <div class="preview-placeholder">
+                        <i class="fas fa-image"></i>
+                        <p>請先上傳圖片</p>
+                    </div>
+                </div>
+                
+                <!-- 預覽控制 -->
+                <div class="preview-controls">
+                    <button class="btn btn-secondary" id="prevBtn" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span id="imageCounter">0 / 0</span>
+                    <button class="btn btn-secondary" id="nextBtn" disabled>
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 處理工具面板 -->
+            <div class="tools-section">
+                <h2>處理工具</h2>
+                <div class="tools-tabs">
+                    <button class="tab-btn active" data-tab="basic">基礎處理</button>
+                    <button class="tab-btn" data-tab="advanced">高級處理</button>
+                    <button class="tab-btn" data-tab="effects">特效濾鏡</button>
+                    <button class="tab-btn" data-tab="drawing">塗鴉標註</button>
+                </div>
+                
+                <!-- 基礎處理工具 -->
+                <div class="tab-content active" id="basic">
+                    <div class="tool-group">
+                        <h3>智能優化</h3>
+                        <div class="tool-buttons">
+                            <button class="tool-btn" data-action="auto-optimize">自動優化</button>
+                            <button class="tool-btn" data-action="remove-reflection">反光消除</button>
+                            <button class="tool-btn" data-action="brighten">提亮</button>
+                            <button class="tool-btn" data-action="mosaic">馬賽克</button>
+                            <button class="tool-btn" data-action="remove-shadow">去陰影</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>裁剪調整</h3>
+                        <div class="crop-controls">
+                            <label>寬度: <input type="number" id="cropWidth" placeholder="自動"></label>
+                            <label>高度: <input type="number" id="cropHeight" placeholder="自動"></label>
+                            <select id="cropRatio">
+                                <option value="free">自由比例</option>
+                                <option value="1:1">1:1 正方形</option>
+                                <option value="4:3">4:3 橫版</option>
+                                <option value="16:9">16:9 寬屏</option>
+                                <option value="3:4">3:4 豎版</option>
+                            </select>
+                            <button class="btn btn-primary" id="applyCrop">應用裁剪</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>格式轉換</h3>
+                        <div class="format-controls">
+                            <select id="outputFormat">
+                                <option value="jpeg">JPEG</option>
+                                <option value="png">PNG</option>
+                                <option value="webp">WebP</option>
+                                <option value="gif">GIF</option>
+                            </select>
+                            <input type="number" id="quality" min="1" max="100" value="90" placeholder="質量">
+                            <button class="btn btn-primary" id="convertFormat">轉換格式</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 高級處理工具 -->
+                <div class="tab-content" id="advanced">
+                    <div class="tool-group">
+                        <h3>參數調節</h3>
+                        <div class="parameter-controls">
+                            <label>亮度: <input type="range" id="brightness" min="-100" max="100" value="0"></label>
+                            <label>對比度: <input type="range" id="contrast" min="-100" max="100" value="0"></label>
+                            <label>飽和度: <input type="range" id="saturation" min="-100" max="100" value="0"></label>
+                            <label>銳度: <input type="range" id="sharpness" min="0" max="100" value="0"></label>
+                            <label>暗部: <input type="range" id="shadows" min="-100" max="100" value="0"></label>
+                            <label>色溫: <input type="range" id="temperature" min="-100" max="100" value="0"></label>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>美顏效果</h3>
+                        <div class="tool-buttons">
+                            <button class="tool-btn" data-action="smooth-skin">磨皮</button>
+                            <button class="tool-btn" data-action="whiten-teeth">美白牙齒</button>
+                            <button class="tool-btn" data-action="enlarge-eyes">放大眼睛</button>
+                            <button class="tool-btn" data-action="slim-face">瘦臉</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>水印生成</h3>
+                        <div class="watermark-controls">
+                            <input type="text" id="watermarkText" placeholder="水印文字">
+                            <select id="watermarkPosition">
+                                <option value="top-left">左上角</option>
+                                <option value="top-right">右上角</option>
+                                <option value="bottom-left">左下角</option>
+                                <option value="bottom-right">右下角</option>
+                                <option value="center">居中</option>
+                            </select>
+                            <input type="color" id="watermarkColor" value="#ffffff">
+                            <button class="btn btn-primary" id="addWatermark">添加水印</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 特效濾鏡工具 -->
+                <div class="tab-content" id="effects">
+                    <div class="tool-group">
+                        <h3>藝術濾鏡</h3>
+                        <div class="filter-grid">
+                            <button class="filter-btn" data-filter="grayscale">黑白</button>
+                            <button class="filter-btn" data-filter="sepia">復古</button>
+                            <button class="filter-btn" data-filter="vintage">懷舊</button>
+                            <button class="filter-btn" data-filter="cool">冷色調</button>
+                            <button class="filter-btn" data-filter="warm">暖色調</button>
+                            <button class="filter-btn" data-filter="dramatic">戲劇化</button>
+                            <button class="filter-btn" data-filter="cinematic">電影感</button>
+                            <button class="filter-btn" data-filter="portrait">人像</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>相框效果</h3>
+                        <div class="frame-grid">
+                            <button class="frame-btn" data-frame="classic">經典相框</button>
+                            <button class="frame-btn" data-frame="modern">現代相框</button>
+                            <button class="frame-btn" data-frame="vintage">復古相框</button>
+                            <button class="frame-btn" data-frame="elegant">優雅相框</button>
+                            <button class="frame-btn" data-frame="minimal">極簡相框</button>
+                            <button class="frame-btn" data-frame="artistic">藝術相框</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 塗鴉標註工具 -->
+                <div class="tab-content" id="drawing">
+                    <div class="tool-group">
+                        <h3>繪製工具</h3>
+                        <div class="drawing-tools">
+                            <button class="drawing-btn active" data-tool="brush">畫筆</button>
+                            <button class="drawing-btn" data-tool="eraser">橡皮擦</button>
+                            <button class="drawing-btn" data-tool="line">直線</button>
+                            <button class="drawing-btn" data-tool="rectangle">矩形</button>
+                            <button class="drawing-btn" data-tool="circle">圓形</button>
+                            <button class="drawing-btn" data-tool="text">文字</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>標註工具</h3>
+                        <div class="annotation-tools">
+                            <button class="annotation-btn" data-annotation="arrow">箭頭</button>
+                            <button class="annotation-btn" data-annotation="highlight">高亮</button>
+                            <button class="annotation-btn" data-annotation="stamp">印章</button>
+                            <button class="annotation-btn" data-annotation="measure">測量</button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>顏色設置</h3>
+                        <div class="color-controls">
+                            <input type="color" id="drawingColor" value="#ff0000">
+                            <input type="range" id="brushSize" min="1" max="50" value="5">
+                            <span id="brushSizeValue">5px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側面板 - 處理歷史和下載 -->
+        <div class="right-panel">
+            <!-- 處理歷史 -->
+            <div class="history-section">
+                <h2>處理歷史</h2>
+                <div class="history-list" id="historyList">
+                    <div class="history-item">
+                        <span class="history-time">尚未處理</span>
+                        <span class="history-action">等待操作</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 下載區域 -->
+            <div class="download-section">
+                <h2>下載管理</h2>
+                <div class="download-controls">
+                    <button class="btn btn-primary" id="downloadCurrent" disabled>
+                        <i class="fas fa-download"></i>
+                        下載當前圖片
+                    </button>
+                    <button class="btn btn-secondary" id="downloadAll" disabled>
+                        <i class="fas fa-download"></i>
+                        下載所有圖片
+                    </button>
+                    <button class="btn btn-secondary" id="clearHistory">
+                        <i class="fas fa-trash"></i>
+                        清空歷史
+                    </button>
+                </div>
+                
+                <div class="download-options">
+                    <h3>下載選項</h3>
+                    <label>
+                        <input type="checkbox" id="keepOriginal" checked>
+                        保留原圖
+                    </label>
+                    <label>
+                        <input type="checkbox" id="createZip">
+                        打包下載
+                    </label>
+                    <label>
+                        文件名前綴: <input type="text" id="filenamePrefix" value="processed_">
+                    </label>
+                </div>
+            </div>
+
+            <!-- 設置面板 -->
+            <div class="settings-section">
+                <h2>設置</h2>
+                <div class="settings-content">
+                    <label>
+                        最大文件大小: <input type="number" id="maxFileSize" value="10" min="1" max="50"> MB
+                    </label>
+                    <label>
+                        並行處理數量: <input type="number" id="maxWorkers" value="4" min="1" max="8">
+                    </label>
+                    <label>
+                        <input type="checkbox" id="autoSave" checked>
+                        自動保存處理結果
+                    </label>
+                    <label>
+                        <input type="checkbox" id="highQuality">
+                        高質量處理模式
+                    </label>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部狀態欄 -->
+    <footer class="footer">
+        <div class="status-bar">
+            <span id="statusText">就緒</span>
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span id="progressText">0%</span>
+        </div>
+    </footer>
+
+    <!-- 模態框 -->
+    <div class="modal" id="helpModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>使用幫助</h2>
+                <button class="modal-close" id="closeHelpModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h3>快速開始</h3>
+                <ol>
+                    <li>上傳圖片：拖拽或點擊上傳按鈕選擇圖片</li>
+                    <li>語音控制：點擊麥克風按鈕，說出處理指令</li>
+                    <li>文本指令：在文本框中輸入處理要求</li>
+                    <li>工具處理：使用右側工具面板進行精細調整</li>
+                    <li>下載保存：處理完成後下載到本地</li>
+                </ol>
+                
+                <h3>語音指令示例</h3>
+                <ul>
+                    <li>"將圖片亮度提高20%"</li>
+                    <li>"添加黑白濾鏡"</li>
+                    <li>"裁剪為16:9比例"</li>
+                    <li>"轉換為PNG格式"</li>
+                    <li>"添加水印文字"</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的Canvas元素 -->
+    <canvas id="hiddenCanvas" style="display: none;"></canvas>
+    
+    <!-- JavaScript文件 -->
+    <script src="js/utils.js"></script>
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/voiceControl.js"></script>
+    <script src="js/uiController.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 
