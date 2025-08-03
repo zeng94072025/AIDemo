@@ -216,9 +216,18 @@ class ReliableImageProcessor {
     // 確保 Canvas 有正確的內容
     ensureCanvasContent() {
         if (this.originalImage) {
-            // 重新繪製原始圖片
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.drawImage(this.originalImage, 0, 0);
+            // 檢查 Canvas 是否有內容
+            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+            const hasData = imageData.data.some(pixel => pixel !== 0);
+            
+            // 只有在 Canvas 沒有內容時才重新繪製原始圖片
+            if (!hasData) {
+                console.log('Canvas 沒有內容，重新繪製原始圖片');
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(this.originalImage, 0, 0);
+            } else {
+                console.log('Canvas 已有內容，保持當前狀態');
+            }
         }
     }
 
@@ -711,7 +720,7 @@ class ReliableImageProcessor {
         if (!this.isLoaded) return null;
         
         return {
-            base64: this.toBase64(),
+            base64: this.toBase64('image/jpeg', 0.9),
             width: this.canvas.width,
             height: this.canvas.height
         };

@@ -420,6 +420,69 @@
     <!-- 塗鴉標註Canvas -->
     <canvas id="drawingCanvas" style="display: none; position: absolute; top: 0; left: 0; z-index: 1000;"></canvas>
     
+    <!-- 調試腳本 -->
+    <script>
+        // 全局錯誤處理
+        window.addEventListener('error', function(event) {
+            console.error('JavaScript錯誤:', event.error);
+            console.error('錯誤位置:', event.filename, '行:', event.lineno, '列:', event.colno);
+        });
+        
+        // 未處理的Promise拒絕
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('未處理的Promise拒絕:', event.reason);
+        });
+        
+        // 檢查必要的類和函數
+        window.addEventListener('load', function() {
+            console.log('頁面加載完成，檢查必要組件...');
+            
+            // 檢查必要的類
+            if (typeof ReliableImageProcessor === 'undefined') {
+                console.error('❌ ReliableImageProcessor 類未載入');
+            } else {
+                console.log('✅ ReliableImageProcessor 類已載入');
+            }
+            
+            if (typeof UIController === 'undefined') {
+                console.error('❌ UIController 類未載入');
+            } else {
+                console.log('✅ UIController 類已載入');
+            }
+            
+            if (typeof Utils === 'undefined') {
+                console.error('❌ Utils 工具函數未載入');
+            } else {
+                console.log('✅ Utils 工具函數已載入');
+            }
+            
+            // 檢查DOM元素
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput) {
+                console.error('❌ fileInput 元素未找到');
+            } else {
+                console.log('✅ fileInput 元素已找到');
+            }
+            
+            const uploadArea = document.getElementById('uploadArea');
+            if (!uploadArea) {
+                console.error('❌ uploadArea 元素未找到');
+            } else {
+                console.log('✅ uploadArea 元素已找到');
+            }
+            
+            // 檢查工具按鈕
+            const toolButtons = document.querySelectorAll('[data-action]');
+            console.log(`找到 ${toolButtons.length} 個工具按鈕`);
+            
+            const filterButtons = document.querySelectorAll('[data-filter]');
+            console.log(`找到 ${filterButtons.length} 個濾鏡按鈕`);
+            
+            const frameButtons = document.querySelectorAll('[data-frame]');
+            console.log(`找到 ${frameButtons.length} 個相框按鈕`);
+        });
+    </script>
+    
     <!-- JavaScript文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/utils.js"></script>

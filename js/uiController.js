@@ -13,14 +13,16 @@ class UIController {
         this.isDrawingMode = false; // 是否處於繪製模式
         this.eventListenersInitialized = false; // 防止重複初始化
         
-        // 延遲初始化，確保DOM已完全加載
-        setTimeout(() => {
-            this.initEventListeners();
-            this.initTabSystem();
-            this.initParameterControls();
-            this.initDrawingControls();
-            this.initDrawingTools(); // 新增：初始化繪製工具
-        }, 100);
+        console.log('UIController 開始初始化...');
+        
+        // 立即初始化，確保事件監聽器正確綁定
+        this.initEventListeners();
+        this.initTabSystem();
+        this.initParameterControls();
+        this.initDrawingControls();
+        this.initDrawingTools(); // 新增：初始化繪製工具
+        
+        console.log('UIController 初始化完成');
     }
 
     // 初始化事件監聽器
@@ -149,8 +151,11 @@ class UIController {
         // 使用事件委託來處理動態添加的按鈕
         const toolsContent = document.querySelector('.tools-content');
         if (toolsContent) {
+            console.log('找到 tools-content 元素，設置事件委託');
+            
             toolsContent.addEventListener('click', (e) => {
                 const target = e.target;
+                console.log('工具區域點擊事件:', target.tagName, target.className);
                 
                 // 處理 data-action 按鈕
                 if (target.hasAttribute('data-action')) {
@@ -202,6 +207,8 @@ class UIController {
                     return;
                 }
             });
+        } else {
+            console.error('未找到 .tools-content 元素');
         }
         
         // 統計按鈕數量
@@ -217,6 +224,15 @@ class UIController {
             frame: frameButtons.length,
             tool: toolButtons.length,
             annotation: annotationButtons.length
+        });
+        
+        // 檢查具體的按鈕
+        actionButtons.forEach((btn, index) => {
+            console.log(`工具按鈕 ${index + 1}:`, btn.textContent.trim(), btn.dataset.action);
+        });
+        
+        filterButtons.forEach((btn, index) => {
+            console.log(`濾鏡按鈕 ${index + 1}:`, btn.textContent.trim(), btn.dataset.filter);
         });
         
         console.log('工具按鈕初始化完成');
@@ -561,7 +577,7 @@ class UIController {
             const imageData = await processor.loadImage(file);
             
             // 獲取圖片的 base64 數據
-            const base64Data = processor.toBase64();
+            const base64Data = processor.toBase64('image/jpeg', 0.9);
             
             console.log('圖片載入成功:', {
                 fileName: file.name,
@@ -593,17 +609,22 @@ class UIController {
 
     // 處理工具動作 - 只對選中的圖片進行處理
     async handleToolAction(action) {
+        console.log('handleToolAction 被調用:', action);
+        
         if (this.images.length === 0) {
+            console.log('沒有圖片，顯示警告');
             Utils.showNotification('請先上傳圖片', 'warning');
             return;
         }
         
         if (this.isProcessing) {
+            console.log('正在處理中，顯示警告');
             Utils.showNotification('圖片正在處理中，請稍候', 'warning');
             return;
         }
         
         this.isProcessing = true;
+        console.log('開始處理工具動作:', action);
         
         try {
             // 確定要處理的圖片：如果有選中的圖片則處理選中的，否則處理當前圖片
@@ -614,7 +635,8 @@ class UIController {
             console.log('開始處理工具動作:', {
                 action: action,
                 imagesToProcess: imagesToProcess.length,
-                selectedCount: this.selectedImages.size
+                selectedCount: this.selectedImages.size,
+                currentIndex: this.currentImageIndex
             });
             
             Utils.updateProgress(0, '正在處理圖片...');
@@ -626,23 +648,32 @@ class UIController {
                 Utils.updateProgress(progress, `處理圖片 ${i + 1}/${imagesToProcess.length}`);
                 
                 console.log(`處理圖片 ${i + 1}:`, image.file.name);
+                console.log('處理器狀態:', {
+                    hasProcessor: !!processor,
+                    isLoaded: processor ? processor.isImageLoaded() : false
+                });
                 
                 let success = false;
                 
                 switch (action) {
                     case 'brighten':
+                        console.log('執行提亮操作');
                         success = processor.adjustBrightness(20);
                         break;
                     case 'contrast':
+                        console.log('執行對比度操作');
                         success = processor.adjustContrast(20);
                         break;
                     case 'grayscale':
+                        console.log('執行黑白濾鏡操作');
                         success = processor.applyFilter('grayscale');
                         break;
                     case 'sepia':
+                        console.log('執行復古濾鏡操作');
                         success = processor.applyFilter('sepia');
                         break;
                     case 'invert':
+                        console.log('執行反轉濾鏡操作');
                         success = processor.applyFilter('invert');
                         break;
                     default:
@@ -650,15 +681,19 @@ class UIController {
                         break;
                 }
                 
+                console.log(`操作結果: ${success ? '成功' : '失敗'}`);
+                
                 if (success) {
                     // 更新圖片的處理後數據
                     try {
-                        const processedBase64 = processor.toBase64();
+                        const processedBase64 = processor.toBase64('image/jpeg', 0.9);
                         if (processedBase64 && processedBase64 !== '') {
-                            image.processedData = {
-                                base64: processedBase64
-                            };
-                            console.log(`圖片 ${image.file.name} 處理完成`);
+                            // 確保 processedData 對象存在
+                            if (!image.processedData) {
+                                image.processedData = {};
+                            }
+                            image.processedData.base64 = processedBase64;
+                            console.log(`圖片 ${image.file.name} 處理完成，數據已保存`);
                         } else {
                             console.warn(`圖片 ${image.file.name} 處理後數據為空`);
                         }
@@ -681,6 +716,7 @@ class UIController {
             Utils.showNotification('處理失敗', 'error');
         } finally {
             this.isProcessing = false;
+            console.log('處理完成，重置處理狀態');
         }
     }
 
@@ -725,12 +761,14 @@ class UIController {
                 if (success) {
                     // 更新圖片的處理後數據
                     try {
-                        const processedBase64 = processor.toBase64();
+                        const processedBase64 = processor.toBase64('image/jpeg', 0.9);
                         if (processedBase64 && processedBase64 !== '') {
-                            image.processedData = {
-                                base64: processedBase64
-                            };
-                            console.log(`圖片 ${image.file.name} 濾鏡處理完成`);
+                            // 確保 processedData 對象存在
+                            if (!image.processedData) {
+                                image.processedData = {};
+                            }
+                            image.processedData.base64 = processedBase64;
+                            console.log(`圖片 ${image.file.name} 濾鏡處理完成，數據已保存`);
                         } else {
                             console.warn(`圖片 ${image.file.name} 濾鏡處理後數據為空`);
                         }
@@ -797,12 +835,14 @@ class UIController {
                 if (success) {
                     // 更新圖片的處理後數據
                     try {
-                        const processedBase64 = processor.toBase64();
+                        const processedBase64 = processor.toBase64('image/jpeg', 0.9);
                         if (processedBase64 && processedBase64 !== '') {
-                            image.processedData = {
-                                base64: processedBase64
-                            };
-                            console.log(`圖片 ${image.file.name} 相框處理完成`);
+                            // 確保 processedData 對象存在
+                            if (!image.processedData) {
+                                image.processedData = {};
+                            }
+                            image.processedData.base64 = processedBase64;
+                            console.log(`圖片 ${image.file.name} 相框處理完成，數據已保存`);
                         } else {
                             console.warn(`圖片 ${image.file.name} 相框處理後數據為空`);
                         }
@@ -1182,12 +1222,14 @@ class UIController {
             if (success) {
                 // 更新圖片的處理後數據
                 try {
-                    const processedBase64 = processor.toBase64();
+                    const processedBase64 = processor.toBase64('image/jpeg', 0.9);
                     if (processedBase64 && processedBase64 !== '') {
-                        image.processedData = {
-                            base64: processedBase64
-                        };
-                        console.log(`圖片 ${image.file.name} 參數調整完成，數據已更新`);
+                        // 確保 processedData 對象存在
+                        if (!image.processedData) {
+                            image.processedData = {};
+                        }
+                        image.processedData.base64 = processedBase64;
+                        console.log(`圖片 ${image.file.name} 參數調整完成，數據已保存`);
                     } else {
                         console.warn(`圖片 ${image.file.name} 參數調整後數據為空`);
                     }
@@ -1639,7 +1681,8 @@ class UIController {
         console.log('更新預覽:', {
             currentImageIndex: this.currentImageIndex,
             imagesLength: this.images.length,
-            currentImage: currentImage.file.name
+            currentImage: currentImage.file.name,
+            hasProcessedData: !!(currentImage.processedData && currentImage.processedData.base64)
         });
         
         // 優先使用處理後的圖片數據
@@ -1647,13 +1690,18 @@ class UIController {
         
         if (currentImage.processedData && currentImage.processedData.base64) {
             imageSrc = currentImage.processedData.base64;
-            console.log('使用處理後的圖片數據');
+            console.log('使用緩存的處理後圖片數據');
         } else {
             try {
                 // 從處理器獲取當前圖片數據
-                imageSrc = processor.toBase64();
+                imageSrc = processor.toBase64('image/jpeg', 0.9);
                 if (imageSrc && imageSrc !== '') {
                     console.log('從處理器獲取圖片數據');
+                    // 保存到處理後數據中
+                    if (!currentImage.processedData) {
+                        currentImage.processedData = {};
+                    }
+                    currentImage.processedData.base64 = imageSrc;
                 } else {
                     console.warn('處理器返回的圖片數據為空');
                     imageSrc = currentImage.data.base64;
@@ -1729,9 +1777,14 @@ class UIController {
             } else {
                 try {
                     // 使用新的簡化方法獲取圖片數據
-                    imageSrc = processor.toBase64();
+                    imageSrc = processor.toBase64('image/jpeg', 0.9);
                     if (imageSrc && imageSrc !== '') {
                         console.log(`圖片 ${image.file.name} 使用處理後數據`);
+                        // 保存到處理後數據中
+                        if (!image.processedData) {
+                            image.processedData = {};
+                        }
+                        image.processedData.base64 = imageSrc;
                     } else {
                         console.warn(`圖片 ${image.file.name} 處理後數據為空`);
                         // 回退到原始數據

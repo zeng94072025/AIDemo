@@ -710,7 +710,7 @@ class DownloadFixedImageProcessor {
         if (!this.isLoaded) return null;
         
         return {
-            base64: this.toBase64(),
+            base64: this.toBase64('image/jpeg', 0.9),
             width: this.canvas.width,
             height: this.canvas.height
         };
