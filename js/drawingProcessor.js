@@ -149,6 +149,12 @@ class DrawingProcessor {
 
     // 應用畫筆樣式
     applyBrushStyle(x, y) {
+        // 如果有選擇的漸變色，優先使用漸變色
+        if (this.currentGradient) {
+            this.applyGradient(x, y);
+            return;
+        }
+        
         switch (this.brushStyle) {
             case 'solid':
                 this.ctx.lineTo(x, y);
@@ -221,6 +227,49 @@ class DrawingProcessor {
         this.ctx.strokeStyle = color;
         this.ctx.fillStyle = color;
         console.log('畫筆顏色已設置為:', color);
+    }
+
+    // 設置漸變色
+    setGradient(gradientType) {
+        this.currentGradient = gradientType;
+        console.log('漸變色已設置為:', gradientType);
+    }
+
+    // 獲取漸變色
+    getGradient(gradientType) {
+        const gradients = {
+            'sunset': ['#ff6b6b', '#feca57'],
+            'ocean': ['#4ecdc4', '#45b7d1'],
+            'forest': ['#96ceb4', '#06ffa5'],
+            'sunrise': ['#ff9ff3', '#ff6b35'],
+            'aurora': ['#a855f7', '#00d4ff'],
+            'rainbow': ['#ff0000', '#ff8000', '#ffff00', '#00ff00', '#0080ff', '#8000ff']
+        };
+        
+        return gradients[gradientType] || ['#ff0000', '#00ff00'];
+    }
+
+    // 應用漸變色到繪製
+    applyGradient(x, y) {
+        if (!this.currentGradient) return;
+        
+        const colors = this.getGradient(this.currentGradient);
+        const gradient = this.ctx.createLinearGradient(this.lastX, this.lastY, x, y);
+        
+        if (colors.length === 2) {
+            gradient.addColorStop(0, colors[0]);
+            gradient.addColorStop(1, colors[1]);
+        } else {
+            // 彩虹漸變
+            colors.forEach((color, index) => {
+                gradient.addColorStop(index / (colors.length - 1), color);
+            });
+        }
+        
+        this.ctx.strokeStyle = gradient;
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+        this.ctx.strokeStyle = this.brushColor;
     }
 
     // 設置畫筆大小

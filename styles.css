@@ -1071,6 +1071,123 @@ body {
     box-shadow: var(--shadow-light);
 }
 
+/* 新增：预设颜色样式 */
+.preset-colors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preset-colors label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.color-buttons {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+}
+
+.color-btn {
+    width: 32px;
+    height: 32px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.color-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: var(--transition);
+}
+
+.color-btn:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-light);
+}
+
+.color-btn:hover::before {
+    width: 8px;
+    height: 8px;
+}
+
+.color-btn.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
+.color-btn.active::before {
+    width: 12px;
+    height: 12px;
+}
+
+/* 新增：渐变色样式 */
+.gradient-colors {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.gradient-colors label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.gradient-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.gradient-btn {
+    height: 32px;
+    border: 2px solid transparent;
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.gradient-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: var(--transition);
+}
+
+.gradient-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-light);
+}
+
+.gradient-btn:hover::before {
+    left: 100%;
+}
+
+.gradient-btn.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+}
+
 .size-control {
     display: flex;
     flex-direction: column;
@@ -1273,6 +1390,26 @@ body {
     
     .color-controls {
         gap: 12px;
+    }
+    
+    /* 移动端颜色按钮优化 */
+    .color-buttons {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 4px;
+    }
+    
+    .color-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .gradient-buttons {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+    
+    .gradient-btn {
+        height: 28px;
     }
 }
 

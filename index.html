@@ -275,6 +275,43 @@
                                 <label>主色調:</label>
                                 <input type="color" id="drawingColor" value="#ff0000">
                             </div>
+                            
+                            <!-- 新增：预设颜色选择 -->
+                            <div class="preset-colors">
+                                <label>快速選擇:</label>
+                                <div class="color-buttons">
+                                    <button class="color-btn active" data-color="#ff0000" style="background-color: #ff0000;" title="紅色"></button>
+                                    <button class="color-btn" data-color="#ff6b35" style="background-color: #ff6b35;" title="橙色"></button>
+                                    <button class="color-btn" data-color="#ffd23f" style="background-color: #ffd23f;" title="黃色"></button>
+                                    <button class="color-btn" data-color="#06ffa5" style="background-color: #06ffa5;" title="綠色"></button>
+                                    <button class="color-btn" data-color="#00d4ff" style="background-color: #00d4ff;" title="藍色"></button>
+                                    <button class="color-btn" data-color="#a855f7" style="background-color: #a855f7;" title="紫色"></button>
+                                    <button class="color-btn" data-color="#ff69b4" style="background-color: #ff69b4;" title="粉色"></button>
+                                    <button class="color-btn" data-color="#8b4513" style="background-color: #8b4513;" title="棕色"></button>
+                                    <button class="color-btn" data-color="#ffffff" style="background-color: #ffffff; border: 1px solid #ccc;" title="白色"></button>
+                                    <button class="color-btn" data-color="#000000" style="background-color: #000000;" title="黑色"></button>
+                                    <button class="color-btn" data-color="#ff6b6b" style="background-color: #ff6b6b;" title="珊瑚紅"></button>
+                                    <button class="color-btn" data-color="#4ecdc4" style="background-color: #4ecdc4;" title="青綠"></button>
+                                    <button class="color-btn" data-color="#45b7d1" style="background-color: #45b7d1;" title="天藍"></button>
+                                    <button class="color-btn" data-color="#96ceb4" style="background-color: #96ceb4;" title="薄荷綠"></button>
+                                    <button class="color-btn" data-color="#feca57" style="background-color: #feca57;" title="金黃"></button>
+                                    <button class="color-btn" data-color="#ff9ff3" style="background-color: #ff9ff3;" title="粉紫"></button>
+                                </div>
+                            </div>
+                            
+                            <!-- 新增：渐变色选择 -->
+                            <div class="gradient-colors">
+                                <label>漸變色彩:</label>
+                                <div class="gradient-buttons">
+                                    <button class="gradient-btn" data-gradient="sunset" style="background: linear-gradient(45deg, #ff6b6b, #feca57);" title="日落"></button>
+                                    <button class="gradient-btn" data-gradient="ocean" style="background: linear-gradient(45deg, #4ecdc4, #45b7d1);" title="海洋"></button>
+                                    <button class="gradient-btn" data-gradient="forest" style="background: linear-gradient(45deg, #96ceb4, #06ffa5);" title="森林"></button>
+                                    <button class="gradient-btn" data-gradient="sunrise" style="background: linear-gradient(45deg, #ff9ff3, #ff6b35);" title="日出"></button>
+                                    <button class="gradient-btn" data-gradient="aurora" style="background: linear-gradient(45deg, #a855f7, #00d4ff);" title="極光"></button>
+                                    <button class="gradient-btn" data-gradient="rainbow" style="background: linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #00ff00, #0080ff, #8000ff);" title="彩虹"></button>
+                                </div>
+                            </div>
+                            
                             <div class="size-control">
                                 <label>畫筆大小: <span id="brushSizeValue">5px</span></label>
                                 <input type="range" id="brushSize" min="1" max="50" value="5">
@@ -386,7 +423,7 @@
     <!-- JavaScript文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/utils.js"></script>
-    <script src="js/fixedImageProcessor.js"></script>
+    <script src="js/reliableImageProcessor.js"></script>
     <script src="js/drawingProcessor.js"></script>
     <script src="js/uiController.js"></script>
     <script src="js/main.js"></script>

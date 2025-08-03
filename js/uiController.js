@@ -11,15 +11,27 @@ class UIController {
         this.selectedImages = new Set(); // 新增：選中的圖片集合
         this.drawingProcessor = null; // 塗鴉標註處理器
         this.isDrawingMode = false; // 是否處於繪製模式
+        this.eventListenersInitialized = false; // 防止重複初始化
         
-        this.initEventListeners();
-        this.initTabSystem();
-        this.initParameterControls();
-        this.initDrawingControls();
+        // 延遲初始化，確保DOM已完全加載
+        setTimeout(() => {
+            this.initEventListeners();
+            this.initTabSystem();
+            this.initParameterControls();
+            this.initDrawingControls();
+            this.initDrawingTools(); // 新增：初始化繪製工具
+        }, 100);
     }
 
     // 初始化事件監聽器
     initEventListeners() {
+        if (this.eventListenersInitialized) {
+            console.log('事件監聽器已經初始化，跳過重複初始化');
+            return;
+        }
+        
+        console.log('開始初始化事件監聽器...');
+        
         // 文件上傳
         this.initFileUpload();
         
@@ -43,6 +55,9 @@ class UIController {
         
         // 圖片導航控制
         this.initImageNavigation();
+        
+        this.eventListenersInitialized = true;
+        console.log('事件監聽器初始化完成');
     }
 
     // 初始化文件上傳
@@ -129,60 +144,82 @@ class UIController {
 
     // 初始化工具按鈕
     initToolButtons() {
-        // 智能優化按鈕
-        document.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const action = e.target.dataset.action;
-                console.log('工具按鈕點擊:', action);
-                this.handleToolAction(action);
+        console.log('初始化工具按鈕...');
+        
+        // 使用事件委託來處理動態添加的按鈕
+        const toolsContent = document.querySelector('.tools-content');
+        if (toolsContent) {
+            toolsContent.addEventListener('click', (e) => {
+                const target = e.target;
+                
+                // 處理 data-action 按鈕
+                if (target.hasAttribute('data-action')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const action = target.dataset.action;
+                    console.log('工具按鈕點擊:', action);
+                    this.handleToolAction(action);
+                    return;
+                }
+                
+                // 處理 data-filter 按鈕
+                if (target.hasAttribute('data-filter')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const filter = target.dataset.filter;
+                    console.log('濾鏡按鈕點擊:', filter);
+                    this.handleFilterAction(filter);
+                    return;
+                }
+                
+                // 處理 data-frame 按鈕
+                if (target.hasAttribute('data-frame')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const frame = target.dataset.frame;
+                    console.log('相框按鈕點擊:', frame);
+                    this.handleFrameAction(frame);
+                    return;
+                }
+                
+                // 處理 data-tool 按鈕
+                if (target.hasAttribute('data-tool')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const tool = target.dataset.tool;
+                    console.log('繪製工具點擊:', tool);
+                    this.handleDrawingTool(tool, e);
+                    return;
+                }
+                
+                // 處理 data-annotation 按鈕
+                if (target.hasAttribute('data-annotation')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const annotation = target.dataset.annotation;
+                    console.log('標註工具點擊:', annotation);
+                    this.handleAnnotationTool(annotation);
+                    return;
+                }
             });
+        }
+        
+        // 統計按鈕數量
+        const actionButtons = document.querySelectorAll('[data-action]');
+        const filterButtons = document.querySelectorAll('[data-filter]');
+        const frameButtons = document.querySelectorAll('[data-frame]');
+        const toolButtons = document.querySelectorAll('[data-tool]');
+        const annotationButtons = document.querySelectorAll('[data-annotation]');
+        
+        console.log('按鈕統計:', {
+            action: actionButtons.length,
+            filter: filterButtons.length,
+            frame: frameButtons.length,
+            tool: toolButtons.length,
+            annotation: annotationButtons.length
         });
-
-        // 濾鏡按鈕
-        document.querySelectorAll('[data-filter]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const filter = e.target.dataset.filter;
-                console.log('濾鏡按鈕點擊:', filter);
-                this.handleFilterAction(filter);
-            });
-        });
-
-        // 相框按鈕
-        document.querySelectorAll('[data-frame]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const frame = e.target.dataset.frame;
-                console.log('相框按鈕點擊:', frame);
-                this.handleFrameAction(frame);
-            });
-        });
-
-        // 繪製工具
-        document.querySelectorAll('[data-tool]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const tool = e.target.dataset.tool;
-                console.log('繪製工具點擊:', tool);
-                this.handleDrawingTool(tool);
-            });
-        });
-
-        // 標註工具
-        document.querySelectorAll('[data-annotation]').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const annotation = e.target.dataset.annotation;
-                console.log('標註工具點擊:', annotation);
-                this.handleAnnotationTool(annotation);
-            });
-        });
+        
+        console.log('工具按鈕初始化完成');
     }
 
     // 初始化預覽控制
@@ -350,8 +387,40 @@ class UIController {
                 if (this.drawingProcessor) {
                     this.drawingProcessor.setColor(e.target.value);
                 }
+                // 更新预设颜色按钮状态
+                this.updateColorButtonState(e.target.value);
             });
         }
+
+        // 预设颜色按钮控制
+        const colorButtons = document.querySelectorAll('.color-btn');
+        colorButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const color = btn.dataset.color;
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.setColor(color);
+                }
+                // 更新颜色选择器
+                if (colorInput) {
+                    colorInput.value = color;
+                }
+                // 更新按钮状态
+                this.updateColorButtonState(color);
+            });
+        });
+
+        // 渐变色按钮控制
+        const gradientButtons = document.querySelectorAll('.gradient-btn');
+        gradientButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const gradient = btn.dataset.gradient;
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.setGradient(gradient);
+                }
+                // 更新渐变色按钮状态
+                this.updateGradientButtonState(gradient);
+            });
+        });
 
         // 畫筆大小控制
         const brushSizeSlider = document.getElementById('brushSize');
@@ -367,6 +436,28 @@ class UIController {
                 }
             });
         }
+    }
+
+    // 更新颜色按钮状态
+    updateColorButtonState(selectedColor) {
+        const colorButtons = document.querySelectorAll('.color-btn');
+        colorButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.color === selectedColor) {
+                btn.classList.add('active');
+            }
+        });
+    }
+
+    // 更新渐变色按钮状态
+    updateGradientButtonState(selectedGradient) {
+        const gradientButtons = document.querySelectorAll('.gradient-btn');
+        gradientButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.gradient === selectedGradient) {
+                btn.classList.add('active');
+            }
+        });
     }
 
     // 處理文件選擇
@@ -465,8 +556,8 @@ class UIController {
         try {
             console.log('開始載入圖片:', file.name);
             
-            // 使用修復後的圖片處理器
-            const processor = new FixedImageProcessor();
+            // 使用可靠的圖片處理器
+            const processor = new ReliableImageProcessor();
             const imageData = await processor.loadImage(file);
             
             // 獲取圖片的 base64 數據
@@ -536,40 +627,46 @@ class UIController {
                 
                 console.log(`處理圖片 ${i + 1}:`, image.file.name);
                 
+                let success = false;
+                
                 switch (action) {
                     case 'brighten':
-                        processor.adjustBrightness(20);
+                        success = processor.adjustBrightness(20);
                         break;
                     case 'contrast':
-                        processor.adjustContrast(20);
+                        success = processor.adjustContrast(20);
                         break;
                     case 'grayscale':
-                        processor.applyFilter('grayscale');
+                        success = processor.applyFilter('grayscale');
                         break;
                     case 'sepia':
-                        processor.applyFilter('sepia');
+                        success = processor.applyFilter('sepia');
                         break;
                     case 'invert':
-                        processor.applyFilter('invert');
+                        success = processor.applyFilter('invert');
                         break;
                     default:
                         console.warn('不支持的工具動作:', action);
                         break;
                 }
                 
-                // 更新圖片的處理後數據
-                try {
-                    const processedBase64 = processor.toBase64();
-                    if (processedBase64 && processedBase64 !== '') {
-                        image.processedData = {
-                            base64: processedBase64
-                        };
-                        console.log(`圖片 ${image.file.name} 處理完成`);
-                    } else {
-                        console.warn(`圖片 ${image.file.name} 處理後數據為空`);
+                if (success) {
+                    // 更新圖片的處理後數據
+                    try {
+                        const processedBase64 = processor.toBase64();
+                        if (processedBase64 && processedBase64 !== '') {
+                            image.processedData = {
+                                base64: processedBase64
+                            };
+                            console.log(`圖片 ${image.file.name} 處理完成`);
+                        } else {
+                            console.warn(`圖片 ${image.file.name} 處理後數據為空`);
+                        }
+                    } catch (error) {
+                        console.error('更新處理後數據失敗:', error);
                     }
-                } catch (error) {
-                    console.error('更新處理後數據失敗:', error);
+                } else {
+                    console.error(`圖片 ${image.file.name} 處理失敗`);
                 }
             }
             
@@ -623,21 +720,25 @@ class UIController {
                 
                 console.log(`應用濾鏡到圖片 ${i + 1}:`, image.file.name);
                 
-                processor.applyFilter(filter);
+                const success = processor.applyFilter(filter);
                 
-                // 更新圖片的處理後數據
-                try {
-                    const processedBase64 = processor.toBase64();
-                    if (processedBase64 && processedBase64 !== '') {
-                        image.processedData = {
-                            base64: processedBase64
-                        };
-                        console.log(`圖片 ${image.file.name} 濾鏡處理完成`);
-                    } else {
-                        console.warn(`圖片 ${image.file.name} 濾鏡處理後數據為空`);
+                if (success) {
+                    // 更新圖片的處理後數據
+                    try {
+                        const processedBase64 = processor.toBase64();
+                        if (processedBase64 && processedBase64 !== '') {
+                            image.processedData = {
+                                base64: processedBase64
+                            };
+                            console.log(`圖片 ${image.file.name} 濾鏡處理完成`);
+                        } else {
+                            console.warn(`圖片 ${image.file.name} 濾鏡處理後數據為空`);
+                        }
+                    } catch (error) {
+                        console.error('更新濾鏡處理後數據失敗:', error);
                     }
-                } catch (error) {
-                    console.error('更新濾鏡處理後數據失敗:', error);
+                } else {
+                    console.error(`圖片 ${image.file.name} 濾鏡處理失敗`);
                 }
             }
             
@@ -702,6 +803,8 @@ class UIController {
                                 base64: processedBase64
                             };
                             console.log(`圖片 ${image.file.name} 相框處理完成`);
+                        } else {
+                            console.warn(`圖片 ${image.file.name} 相框處理後數據為空`);
                         }
                     } catch (error) {
                         console.error('更新相框處理後數據失敗:', error);
@@ -726,7 +829,7 @@ class UIController {
     }
 
     // 處理繪製工具
-    handleDrawingTool(tool) {
+    handleDrawingTool(tool, event) {
         // 檢查是否有圖片載入
         if (this.images.length === 0) {
             Utils.showNotification('請先上傳圖片', 'warning');
@@ -739,7 +842,9 @@ class UIController {
         });
         
         // 添加活動狀態
-        event.target.classList.add('active');
+        if (event && event.target) {
+            event.target.classList.add('active');
+        }
         
         // 初始化繪製模式
         this.initDrawingMode(tool);
@@ -1060,32 +1165,37 @@ class UIController {
         
         imagesToProcess.forEach(image => {
             const processor = image.processor;
+            let success = false;
             
             switch (parameter) {
                 case 'brightness':
-                    processor.adjustBrightness(parseInt(value));
+                    success = processor.adjustBrightness(parseInt(value));
                     break;
                 case 'contrast':
-                    processor.adjustContrast(parseInt(value));
+                    success = processor.adjustContrast(parseInt(value));
                     break;
                 default:
                     console.warn('不支持的參數:', parameter);
                     break;
             }
             
-            // 更新圖片的處理後數據
-            try {
-                const processedBase64 = processor.toBase64();
-                if (processedBase64 && processedBase64 !== '') {
-                    image.processedData = {
-                        base64: processedBase64
-                    };
-                    console.log(`圖片 ${image.file.name} 參數調整完成，數據已更新`);
-                } else {
-                    console.warn(`圖片 ${image.file.name} 參數調整後數據為空`);
+            if (success) {
+                // 更新圖片的處理後數據
+                try {
+                    const processedBase64 = processor.toBase64();
+                    if (processedBase64 && processedBase64 !== '') {
+                        image.processedData = {
+                            base64: processedBase64
+                        };
+                        console.log(`圖片 ${image.file.name} 參數調整完成，數據已更新`);
+                    } else {
+                        console.warn(`圖片 ${image.file.name} 參數調整後數據為空`);
+                    }
+                } catch (error) {
+                    console.error('更新處理後數據失敗:', error);
                 }
-            } catch (error) {
-                console.error('更新處理後數據失敗:', error);
+            } else {
+                console.error(`圖片 ${image.file.name} 參數調整失敗`);
             }
         });
         

@@ -61,6 +61,13 @@ class AIImageOptimizer {
 
     // 初始化模組
     async initModules() {
+        // 等待DOM完全加載
+        if (document.readyState === 'loading') {
+            await new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', resolve);
+            });
+        }
+        
         // 初始化UI控制器
         this.uiController = new UIController();
         window.uiController = this.uiController;

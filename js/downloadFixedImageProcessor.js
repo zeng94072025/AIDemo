@@ -1,9 +1,9 @@
 /**
- * 可靠的圖片處理器
- * 解決所有已知的圖片處理問題，確保穩定可靠
+ * 專門修復下載問題的圖片處理器
+ * 確保生成的圖片文件可以正常打開，解決"圖片已破損"問題
  */
 
-class ReliableImageProcessor {
+class DownloadFixedImageProcessor {
     constructor() {
         this.canvas = null;
         this.ctx = null;
@@ -12,9 +12,8 @@ class ReliableImageProcessor {
         this.isLoaded = false;
         this.history = []; // 操作歷史
         this.historyIndex = -1; // 當前歷史索引
-        this.maxHistorySize = 20; // 最大歷史記錄數量
         
-        console.log('ReliableImageProcessor 初始化成功');
+        console.log('DownloadFixedImageProcessor 初始化成功');
     }
 
     // 載入圖片
@@ -117,7 +116,7 @@ class ReliableImageProcessor {
             this.history.push(imageData);
             
             // 限制歷史記錄數量
-            if (this.history.length > this.maxHistorySize) {
+            if (this.history.length > 20) {
                 this.history.shift();
             }
             
@@ -147,7 +146,7 @@ class ReliableImageProcessor {
         return false;
     }
 
-    // 可靠的 Blob 生成方法
+    // 修復版本的 Blob 生成方法
     toBlob(type = 'image/jpeg', quality = 0.9) {
         return new Promise((resolve, reject) => {
             try {
@@ -262,7 +261,7 @@ class ReliableImageProcessor {
         });
     }
 
-    // 可靠的 Base64 轉換方法
+    // 修復版本的 Base64 轉換方法
     toBase64(type = 'image/jpeg', quality = 0.9) {
         try {
             // 檢查是否已載入圖片
@@ -732,5 +731,5 @@ class ReliableImageProcessor {
     }
 }
 
-// 導出可靠的圖片處理器
-window.ReliableImageProcessor = ReliableImageProcessor; 
+// 導出修復的圖片處理器
+window.DownloadFixedImageProcessor = DownloadFixedImageProcessor; 
