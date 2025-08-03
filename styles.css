@@ -904,29 +904,419 @@ body {
     box-shadow: var(--shadow-medium);
 }
 
+/* 特效工具样式 */
+.special-effects {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.effect-btn {
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    background: var(--gradient-surface);
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.effect-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s;
+}
+
+.effect-btn:hover::before {
+    left: 100%;
+}
+
+.effect-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+    border-color: var(--primary-color);
+}
+
+.effect-btn[data-effect="heart"] {
+    background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 100%);
+    color: white;
+}
+
+.effect-btn[data-effect="star"] {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #333;
+}
+
+.effect-btn[data-effect="explosion"] {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+    color: white;
+}
+
+.effect-btn[data-effect="emoji"] {
+    background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%);
+    color: white;
+}
+
+.effect-btn[data-effect="bubble"] {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #333;
+}
+
+.effect-btn[data-effect="progress"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* 画笔样式按钮 */
+.brush-styles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.style-btn {
+    padding: 10px 12px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    background: var(--gradient-surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+}
+
+.style-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-light);
+}
+
+.style-btn:hover:not(.active) {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-light);
+    border-color: var(--primary-color);
+}
+
+.style-btn[data-style="gradient"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.style-btn[data-style="rainbow"] {
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57);
+    color: white;
+}
+
+.style-btn[data-style="glow"] {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    color: #333;
+}
+
+.style-btn[data-style="dotted"] {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+    color: #333;
+}
+
+.style-btn[data-style="dashed"] {
+    background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+    color: #333;
+}
+
+/* 颜色控制样式 */
 .color-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.color-picker {
     display: flex;
     align-items: center;
     gap: 12px;
 }
 
-.color-controls input[type="color"] {
-    width: 44px;
-    height: 44px;
+.color-picker label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 60px;
+}
+
+.color-picker input[type="color"] {
+    width: 50px;
+    height: 40px;
     border: none;
     border-radius: var(--border-radius-small);
+    cursor: pointer;
+    background: none;
+    transition: var(--transition);
+}
+
+.color-picker input[type="color"]:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-light);
+}
+
+.size-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.size-control label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.size-control input[type="range"] {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) 50%, #e0e0e0 50%, #e0e0e0 100%);
+    outline: none;
+    transition: var(--transition);
+}
+
+.size-control input[type="range"]:hover {
+    height: 8px;
+}
+
+.size-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
     cursor: pointer;
     box-shadow: var(--shadow-light);
     transition: var(--transition);
 }
 
-.color-controls input[type="color"]:hover {
-    transform: scale(1.05);
+.size-control input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
     box-shadow: var(--shadow-medium);
 }
 
-.color-controls input[type="range"] {
-    flex: 1;
+/* 操作控制样式 */
+.action-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.action-controls .btn {
+    padding: 10px 12px;
+    font-size: 13px;
+    min-height: 40px;
+}
+
+.action-controls .btn i {
+    font-size: 12px;
+}
+
+/* 增强的绘制工具样式 */
+.drawing-tools {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.drawing-btn {
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    background: var(--gradient-surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.drawing-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s;
+}
+
+.drawing-btn:hover::before {
+    left: 100%;
+}
+
+.drawing-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-light);
+}
+
+.drawing-btn:hover:not(.active) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+    border-color: var(--primary-color);
+}
+
+.drawing-btn[data-tool="spray"] {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    color: #333;
+}
+
+.drawing-btn[data-tool="neon"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.drawing-btn[data-tool="sparkle"] {
+    background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+    color: #333;
+}
+
+/* 增强的标注工具样式 */
+.annotation-tools {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.annotation-btn {
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-small);
+    background: var(--gradient-surface);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.annotation-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s;
+}
+
+.annotation-btn:hover::before {
+    left: 100%;
+}
+
+.annotation-btn.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-light);
+}
+
+.annotation-btn:hover:not(.active) {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-medium);
+    border-color: var(--primary-color);
+}
+
+.annotation-btn[data-annotation="neon-arrow"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+/* 响应式设计增强 */
+@media (max-width: 768px) {
+    .special-effects,
+    .brush-styles {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .drawing-tools {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .annotation-tools {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-controls {
+        grid-template-columns: 1fr;
+    }
+    
+    .color-controls {
+        gap: 12px;
+    }
+}
+
+/* 动画效果 */
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(0, 122, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(0, 122, 255, 0.8);
+    }
+}
+
+.effect-btn:hover,
+.style-btn:hover,
+.drawing-btn:hover,
+.annotation-btn:hover {
+    animation: pulse-glow 2s infinite;
+}
+
+/* 工具提示 */
+.tool-group {
+    position: relative;
+}
+
+.tool-group:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.tool-group:hover:hover::after {
+    opacity: 1;
 }
 
 /* 底部狀態欄 */

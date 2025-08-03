@@ -801,73 +801,238 @@ class UIController {
         console.log('已退出繪製模式');
     }
 
-    // 處理標註工具
-    handleAnnotationTool(annotation) {
-        // 檢查是否有圖片載入
-        if (this.images.length === 0) {
-            Utils.showNotification('請先上傳圖片', 'warning');
-            return;
+    // 初始化塗鴉標註工具
+    initDrawingTools() {
+        // 繪製工具按鈕
+        const drawingBtns = document.querySelectorAll('.drawing-btn');
+        drawingBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // 移除其他按鈕的active狀態
+                drawingBtns.forEach(b => b.classList.remove('active'));
+                // 添加當前按鈕的active狀態
+                btn.classList.add('active');
+                
+                const tool = btn.dataset.tool;
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.setTool(tool);
+                }
+            });
+        });
+
+        // 特效工具按鈕
+        const effectBtns = document.querySelectorAll('.effect-btn');
+        effectBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const effect = btn.dataset.effect;
+                this.handleEffectTool(effect);
+            });
+        });
+
+        // 標註工具按鈕
+        const annotationBtns = document.querySelectorAll('.annotation-btn');
+        annotationBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // 移除其他按鈕的active狀態
+                annotationBtns.forEach(b => b.classList.remove('active'));
+                // 添加當前按鈕的active狀態
+                btn.classList.add('active');
+                
+                const annotation = btn.dataset.annotation;
+                this.handleAnnotationTool(annotation);
+            });
+        });
+
+        // 畫筆樣式按鈕
+        const styleBtns = document.querySelectorAll('.style-btn');
+        styleBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // 移除其他按鈕的active狀態
+                styleBtns.forEach(b => b.classList.remove('active'));
+                // 添加當前按鈕的active狀態
+                btn.classList.add('active');
+                
+                const style = btn.dataset.style;
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.setBrushStyle(style);
+                }
+            });
+        });
+
+        // 顏色設置
+        const colorInput = document.getElementById('drawingColor');
+        if (colorInput) {
+            colorInput.addEventListener('change', (e) => {
+                const color = e.target.value;
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.setColor(color);
+                }
+            });
         }
 
-        // 移除所有活動狀態
-        document.querySelectorAll('.annotation-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // 添加活動狀態
-        event.target.classList.add('active');
-        
-        // 初始化繪製模式
-        this.initDrawingMode('annotation');
-        
-        // 設置標註工具
-        this.setAnnotationTool(annotation);
-        
-        Utils.showNotification(`${annotation}工具已選擇`, 'info');
+        // 畫筆大小設置
+        const brushSizeInput = document.getElementById('brushSize');
+        const brushSizeValue = document.getElementById('brushSizeValue');
+        if (brushSizeInput && brushSizeValue) {
+            brushSizeInput.addEventListener('input', (e) => {
+                const size = e.target.value;
+                brushSizeValue.textContent = size + 'px';
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.setBrushSize(parseInt(size));
+                }
+            });
+        }
+
+        // 操作控制按鈕
+        const undoBtn = document.getElementById('undoBtn');
+        const redoBtn = document.getElementById('redoBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => {
+                if (this.drawingProcessor) {
+                    const success = this.drawingProcessor.undo();
+                    if (success) {
+                        this.showStatus('已撤銷上一步操作', 'success');
+                    } else {
+                        this.showStatus('沒有可撤銷的操作', 'warning');
+                    }
+                }
+            });
+        }
+
+        if (redoBtn) {
+            redoBtn.addEventListener('click', () => {
+                if (this.drawingProcessor) {
+                    const success = this.drawingProcessor.redo();
+                    if (success) {
+                        this.showStatus('已重做上一步操作', 'success');
+                    } else {
+                        this.showStatus('沒有可重做的操作', 'warning');
+                    }
+                }
+            });
+        }
+
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                if (this.drawingProcessor) {
+                    this.drawingProcessor.clear();
+                    this.showStatus('已清空畫布', 'success');
+                }
+            });
+        }
+
+        console.log('塗鴉標註工具初始化完成');
     }
 
-    // 設置標註工具
-    setAnnotationTool(annotation) {
+    // 處理特效工具
+    handleEffectTool(effect) {
         if (!this.drawingProcessor) return;
 
-        // 為標註工具添加點擊事件
-        const drawingCanvas = document.getElementById('drawingCanvas');
-        if (!drawingCanvas) return;
+        // 獲取當前滑鼠位置（模擬點擊）
+        const rect = this.drawingProcessor.canvas.getBoundingClientRect();
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
 
-        // 移除舊的點擊事件
-        drawingCanvas.removeEventListener('click', this.handleAnnotationClick);
-        
-        // 添加新的點擊事件
-        this.currentAnnotation = annotation;
-        drawingCanvas.addEventListener('click', this.handleAnnotationClick.bind(this));
-    }
-
-    // 處理標註點擊事件
-    handleAnnotationClick(e) {
-        if (!this.drawingProcessor || !this.currentAnnotation) return;
-
-        const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        switch (this.currentAnnotation) {
-            case 'arrow':
-                // 簡單的箭頭標註
-                this.drawingProcessor.drawArrow(x - 20, y, x + 20, y);
+        switch (effect) {
+            case 'heart':
+                this.drawingProcessor.drawHeart(centerX, centerY, 30);
+                this.showStatus('已添加愛心特效', 'success');
                 break;
-            case 'highlight':
-                // 高亮區域
-                this.drawingProcessor.drawHighlight(x - 30, y - 20, 60, 40);
+            case 'star':
+                this.drawingProcessor.drawStar(centerX, centerY, 25);
+                this.showStatus('已添加星星特效', 'success');
                 break;
-            case 'stamp':
-                // 印章
-                this.drawingProcessor.drawStamp(x, y, '✓');
+            case 'explosion':
+                this.drawingProcessor.drawExplosion(centerX, centerY, 40);
+                this.showStatus('已添加爆炸特效', 'success');
                 break;
-            case 'measure':
-                // 測量標註
-                this.drawingProcessor.addText('測量點', x, y - 10);
+            case 'emoji':
+                this.drawingProcessor.drawEmoji(centerX, centerY);
+                this.showStatus('已添加表情符號', 'success');
+                break;
+            case 'bubble':
+                this.drawingProcessor.drawSpeechBubble(centerX, centerY, 'Wow!', 120, 80);
+                this.showStatus('已添加對話框', 'success');
+                break;
+            case 'progress':
+                this.drawingProcessor.drawProgressBar(centerX, centerY, 0.8, 150, 25);
+                this.showStatus('已添加進度條', 'success');
                 break;
         }
+    }
+
+    // 處理標註工具
+    handleAnnotationTool(annotation) {
+        if (!this.drawingProcessor) return;
+
+        // 設置為繪製模式，等待用戶點擊
+        this.currentAnnotation = annotation;
+        this.drawingProcessor.canvas.style.cursor = 'crosshair';
+        
+        // 添加一次性點擊事件
+        const handleAnnotationClick = (e) => {
+            const rect = this.drawingProcessor.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            switch (annotation) {
+                case 'arrow':
+                    // 繪製箭頭（從中心到點擊位置）
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    this.drawingProcessor.drawArrow(centerX, centerY, x, y);
+                    this.showStatus('已添加箭頭標註', 'success');
+                    break;
+                case 'neon-arrow':
+                    // 繪製霓虹箭頭
+                    const neonCenterX = rect.width / 2;
+                    const neonCenterY = rect.height / 2;
+                    this.drawingProcessor.drawNeonArrow(neonCenterX, neonCenterY, x, y);
+                    this.showStatus('已添加霓虹箭頭標註', 'success');
+                    break;
+                case 'highlight':
+                    // 繪製高亮區域
+                    this.drawingProcessor.drawHighlight(x - 50, y - 30, 100, 60);
+                    this.showStatus('已添加高亮標註', 'success');
+                    break;
+                case 'stamp':
+                    // 繪製印章
+                    this.drawingProcessor.drawStamp(x, y, '✓');
+                    this.showStatus('已添加印章標註', 'success');
+                    break;
+                case 'measure':
+                    // 繪製測量線
+                    const measureCenterX = rect.width / 2;
+                    const measureCenterY = rect.height / 2;
+                    this.drawingProcessor.drawLine(measureCenterX, measureCenterY, x, y);
+                    // 添加測量文字
+                    const distance = Math.sqrt((x - measureCenterX) ** 2 + (y - measureCenterY) ** 2);
+                    this.drawingProcessor.addText(`${Math.round(distance)}px`, (x + measureCenterX) / 2, (y + measureCenterY) / 2 - 10);
+                    this.showStatus('已添加測量標註', 'success');
+                    break;
+            }
+
+            // 移除事件監聽器
+            this.drawingProcessor.canvas.removeEventListener('click', handleAnnotationClick);
+            this.currentAnnotation = null;
+            this.drawingProcessor.canvas.style.cursor = 'crosshair';
+        };
+
+        this.drawingProcessor.canvas.addEventListener('click', handleAnnotationClick);
+        this.showStatus(`請點擊畫布來放置${this.getAnnotationName(annotation)}`, 'info');
+    }
+
+    // 獲取標註工具的中文名稱
+    getAnnotationName(annotation) {
+        const names = {
+            'arrow': '箭頭',
+            'neon-arrow': '霓虹箭頭',
+            'highlight': '高亮區域',
+            'stamp': '印章',
+            'measure': '測量線'
+        };
+        return names[annotation] || annotation;
     }
 
     // 更新繪製畫布位置

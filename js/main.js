@@ -65,6 +65,11 @@ class AIImageOptimizer {
         this.uiController = new UIController();
         window.uiController = this.uiController;
         
+        // 初始化塗鴉標註工具
+        if (this.uiController) {
+            this.uiController.initDrawingTools();
+        }
+        
         console.log('所有模組初始化完成');
     }
 

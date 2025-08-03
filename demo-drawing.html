@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>塗鴉標註功能演示</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #F2F2F7 0%, #E5E5EA 100%);
+            min-height: 100vh;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: var(--gradient-primary);
+            color: white;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .demo-header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .demo-header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow-light);
+        }
+        
+        .demo-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .canvas-wrapper {
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            margin: 20px 0;
+            background: white;
+            position: relative;
+        }
+        
+        #demoCanvas {
+            display: block;
+            margin: 0 auto;
+            cursor: crosshair;
+        }
+        
+        .tool-panel {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .tool-btn {
+            padding: 12px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-small);
+            background: var(--gradient-surface);
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.6s;
+        }
+        
+        .tool-btn:hover::before {
+            left: 100%;
+        }
+        
+        .tool-btn.active {
+            background: var(--gradient-primary);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow-light);
+        }
+        
+        .tool-btn:hover:not(.active) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+            border-color: var(--primary-color);
+        }
+        
+        .effect-panel {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .effect-btn {
+            padding: 10px 14px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius-small);
+            background: var(--gradient-surface);
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .effect-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-light);
+            border-color: var(--primary-color);
+        }
+        
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            min-width: 80px;
+        }
+        
+        .control-group input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: none;
+            border-radius: var(--border-radius-small);
+            cursor: pointer;
+        }
+        
+        .control-group input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) 50%, #e0e0e0 50%, #e0e0e0 100%);
+            outline: none;
+        }
+        
+        .status-display {
+            background: var(--gradient-surface);
+            padding: 15px;
+            border-radius: var(--border-radius-small);
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .instructions {
+            background: var(--gradient-surface);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .instructions h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .instructions li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions li:last-child {
+            border-bottom: none;
+        }
+        
+        .instructions .icon {
+            font-size: 1.2em;
+            width: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tool-panel {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .effect-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🎨 塗鴉標註功能演示</h1>
+            <p>體驗最新的互聯網熱門樣式和效果</p>
+            <p>支持噴漆、霓虹、閃爍、彩虹等多種特效</p>
+        </div>
+        
+        <div class="demo-grid">
+            <div class="demo-section">
+                <h2><i class="fas fa-paint-brush"></i> 繪製工具</h2>
+                <div class="canvas-wrapper">
+                    <canvas id="demoCanvas" width="400" height="300"></canvas>
+                </div>
+                
+                <div class="tool-panel">
+                    <button class="tool-btn active" data-tool="brush">畫筆</button>
+                    <button class="tool-btn" data-tool="spray">噴漆</button>
+                    <button class="tool-btn" data-tool="neon">霓虹</button>
+                    <button class="tool-btn" data-tool="sparkle">閃爍</button>
+                    <button class="tool-btn" data-tool="eraser">橡皮擦</button>
+                    <button class="tool-btn" data-tool="text">文字</button>
+                </div>
+                
+                <div class="control-panel">
+                    <div class="control-group">
+                        <label>顏色:</label>
+                        <input type="color" id="demoColor" value="#ff0000">
+                    </div>
+                    <div class="control-group">
+                        <label>大小:</label>
+                        <input type="range" id="demoSize" min="1" max="30" value="5">
+                        <span id="sizeValue">5px</span>
+                    </div>
+                </div>
+                
+                <div class="status-display" id="statusDisplay">
+                    選擇工具開始繪製
+                </div>
+            </div>
+            
+            <div class="demo-section">
+                <h2><i class="fas fa-magic"></i> 特效工具</h2>
+                
+                <div class="effect-panel">
+                    <button class="effect-btn" data-effect="heart">💖 愛心</button>
+                    <button class="effect-btn" data-effect="star">⭐ 星星</button>
+                    <button class="effect-btn" data-effect="explosion">💥 爆炸</button>
+                    <button class="effect-btn" data-effect="emoji">😀 表情</button>
+                    <button class="effect-btn" data-effect="bubble">💬 對話框</button>
+                    <button class="effect-btn" data-effect="progress">📊 進度條</button>
+                </div>
+                
+                <div class="instructions">
+                    <h3>使用說明</h3>
+                    <ul>
+                        <li><span class="icon">🎨</span> 選擇繪製工具，在畫布上拖拽繪製</li>
+                        <li><span class="icon">✨</span> 點擊特效按鈕，自動添加特效到畫布中心</li>
+                        <li><span class="icon">🎛️</span> 調整顏色和大小，實時預覽效果</li>
+                        <li><span class="icon">🔄</span> 使用撤銷/重做按鈕管理操作歷史</li>
+                        <li><span class="icon">🗑️</span> 點擊清空按鈕重置畫布</li>
+                    </ul>
+                </div>
+                
+                <div class="tool-panel">
+                    <button class="btn btn-secondary" id="undoBtn">
+                        <i class="fas fa-undo"></i> 撤銷
+                    </button>
+                    <button class="btn btn-secondary" id="redoBtn">
+                        <i class="fas fa-redo"></i> 重做
+                    </button>
+                    <button class="btn btn-secondary" id="clearBtn">
+                        <i class="fas fa-trash"></i> 清空
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="js/drawingProcessor.js"></script>
+    <script>
+        let drawingProcessor;
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('demoCanvas');
+            drawingProcessor = new DrawingProcessor(canvas);
+            
+            // 設置初始工具
+            drawingProcessor.setTool('brush');
+            drawingProcessor.setColor('#ff0000');
+            drawingProcessor.setBrushSize(5);
+            
+            initEventListeners();
+            updateStatus('系統已初始化，選擇工具開始繪製');
+        });
+        
+        function initEventListeners() {
+            // 繪製工具按鈕
+            const toolBtns = document.querySelectorAll('.tool-btn');
+            toolBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    toolBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    const tool = btn.dataset.tool;
+                    drawingProcessor.setTool(tool);
+                    updateStatus(`已切換到${btn.textContent.trim()}工具`);
+                });
+            });
+            
+            // 特效按鈕
+            const effectBtns = document.querySelectorAll('.effect-btn');
+            effectBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const effect = btn.dataset.effect;
+                    addEffect(effect);
+                });
+            });
+            
+            // 顏色控制
+            const colorInput = document.getElementById('demoColor');
+            colorInput.addEventListener('change', (e) => {
+                const color = e.target.value;
+                drawingProcessor.setColor(color);
+                updateStatus(`顏色已更改為 ${color}`);
+            });
+            
+            // 大小控制
+            const sizeInput = document.getElementById('demoSize');
+            const sizeValue = document.getElementById('sizeValue');
+            sizeInput.addEventListener('input', (e) => {
+                const size = e.target.value;
+                sizeValue.textContent = size + 'px';
+                drawingProcessor.setBrushSize(parseInt(size));
+                updateStatus(`畫筆大小已調整為 ${size}px`);
+            });
+            
+            // 操作按鈕
+            document.getElementById('undoBtn').addEventListener('click', () => {
+                const success = drawingProcessor.undo();
+                updateStatus(success ? '已撤銷上一步操作' : '沒有可撤銷的操作');
+            });
+            
+            document.getElementById('redoBtn').addEventListener('click', () => {
+                const success = drawingProcessor.redo();
+                updateStatus(success ? '已重做上一步操作' : '沒有可重做的操作');
+            });
+            
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                drawingProcessor.clear();
+                updateStatus('畫布已清空');
+            });
+        }
+        
+        function addEffect(effect) {
+            const canvas = drawingProcessor.canvas;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            switch (effect) {
+                case 'heart':
+                    drawingProcessor.drawHeart(centerX, centerY, 25);
+                    updateStatus('已添加愛心特效');
+                    break;
+                case 'star':
+                    drawingProcessor.drawStar(centerX, centerY, 20);
+                    updateStatus('已添加星星特效');
+                    break;
+                case 'explosion':
+                    drawingProcessor.drawExplosion(centerX, centerY, 35);
+                    updateStatus('已添加爆炸特效');
+                    break;
+                case 'emoji':
+                    drawingProcessor.drawEmoji(centerX, centerY);
+                    updateStatus('已添加表情符號');
+                    break;
+                case 'bubble':
+                    drawingProcessor.drawSpeechBubble(centerX, centerY, 'Cool!', 100, 60);
+                    updateStatus('已添加對話框');
+                    break;
+                case 'progress':
+                    drawingProcessor.drawProgressBar(centerX, centerY, 0.7, 150, 20);
+                    updateStatus('已添加進度條');
+                    break;
+            }
+        }
+        
+        function updateStatus(message) {
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.textContent = message;
+            statusDisplay.style.background = 'var(--gradient-primary)';
+            statusDisplay.style.color = 'white';
+            
+            setTimeout(() => {
+                statusDisplay.style.background = 'var(--gradient-surface)';
+                statusDisplay.style.color = 'var(--text-primary)';
+            }, 2000);
+        }
+    </script>
+</body>
+</html> 
