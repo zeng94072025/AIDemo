@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        .preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .image-list {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .image-item {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+        .image-item:hover {
+            border-color: #007bff;
+        }
+        .image-item.selected {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        .image-item img {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 4px;
+        }
+        .image-item .name {
+            font-size: 12px;
+            margin-top: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .slider-controls {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .slider-controls label {
+            display: block;
+            margin: 10px 0;
+        }
+        .slider-controls input[type="range"] {
+            width: 200px;
+            margin-left: 10px;
+        }
+        .slider-controls span {
+            margin-left: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>圖片處理功能測試</h1>
+        <p>這個頁面測試修復後的圖片處理功能是否正常工作。</p>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <p>點擊選擇圖片文件</p>
+            <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="handleFileSelect(event)">
+        </div>
+        
+        <div class="image-list" id="imageList"></div>
+        
+        <div class="preview" id="preview" style="display: none;">
+            <h3>圖片預覽</h3>
+            <img id="previewImage" alt="預覽圖片">
+            <div id="imageInfo"></div>
+        </div>
+        
+        <div class="slider-controls" id="sliderControls" style="display: none;">
+            <h3>參數調節</h3>
+            <label>
+                亮度: <input type="range" id="brightness" min="-100" max="100" value="0">
+                <span id="brightnessValue">0</span>
+            </label>
+            <label>
+                對比度: <input type="range" id="contrast" min="-100" max="100" value="0">
+                <span id="contrastValue">0</span>
+            </label>
+        </div>
+        
+        <div class="controls" id="controls" style="display: none;">
+            <button onclick="downloadCurrent()">下載當前圖片</button>
+            <button onclick="downloadAll()">下載所有圖片</button>
+            <button onclick="applyFilter('grayscale')">黑白濾鏡</button>
+            <button onclick="applyFilter('sepia')">復古濾鏡</button>
+            <button onclick="applyFilter('invert')">反轉濾鏡</button>
+            <button onclick="adjustBrightness(20)">增加亮度</button>
+            <button onclick="adjustContrast(20)">增加對比度</button>
+            <button onclick="resetImage()">重置圖片</button>
+        </div>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let images = [];
+        let currentImageIndex = 0;
+        let selectedImages = new Set();
+        
+        // 處理文件選擇
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            showResult('正在載入圖片...', 'info');
+            
+            Array.from(files).forEach(file => {
+                loadImage(file);
+            });
+        }
+        
+        // 載入圖片
+        async function loadImage(file) {
+            try {
+                const processor = new SimpleImageProcessor();
+                await processor.loadImage(file);
+                
+                const base64Data = processor.toBase64();
+                
+                const imageData = {
+                    file: file,
+                    processor: processor,
+                    base64: base64Data,
+                    originalBase64: base64Data // 保存原始數據用於重置
+                };
+                
+                images.push(imageData);
+                
+                updateImageList();
+                updatePreview();
+                showControls();
+                
+                showResult(`圖片 ${file.name} 載入成功！`, 'success');
+                
+            } catch (error) {
+                showResult(`圖片 ${file.name} 載入失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 更新圖片列表
+        function updateImageList() {
+            const imageList = document.getElementById('imageList');
+            imageList.innerHTML = '';
+            
+            images.forEach((image, index) => {
+                const imageItem = document.createElement('div');
+                imageItem.className = 'image-item';
+                if (index === currentImageIndex) {
+                    imageItem.classList.add('selected');
+                }
+                
+                imageItem.innerHTML = `
+                    <img src="${image.base64}" alt="${image.file.name}">
+                    <div class="name">${image.file.name}</div>
+                `;
+                
+                imageItem.onclick = () => {
+                    currentImageIndex = index;
+                    updateImageList();
+                    updatePreview();
+                };
+                
+                imageList.appendChild(imageItem);
+            });
+        }
+        
+        // 更新預覽
+        function updatePreview() {
+            if (images.length === 0) return;
+            
+            const preview = document.getElementById('preview');
+            const previewImage = document.getElementById('previewImage');
+            const imageInfo = document.getElementById('imageInfo');
+            
+            const currentImage = images[currentImageIndex];
+            
+            previewImage.src = currentImage.base64;
+            imageInfo.innerHTML = `
+                <p><strong>文件名:</strong> ${currentImage.file.name}</p>
+                <p><strong>大小:</strong> ${(currentImage.file.size / 1024).toFixed(2)} KB</p>
+                <p><strong>類型:</strong> ${currentImage.file.type}</p>
+            `;
+            
+            preview.style.display = 'block';
+        }
+        
+        // 顯示控制按鈕
+        function showControls() {
+            document.getElementById('controls').style.display = 'flex';
+            document.getElementById('sliderControls').style.display = 'block';
+            
+            // 初始化滑塊控制
+            initSliderControls();
+        }
+        
+        // 初始化滑塊控制
+        function initSliderControls() {
+            const brightnessSlider = document.getElementById('brightness');
+            const contrastSlider = document.getElementById('contrast');
+            const brightnessValue = document.getElementById('brightnessValue');
+            const contrastValue = document.getElementById('contrastValue');
+            
+            brightnessSlider.oninput = function() {
+                brightnessValue.textContent = this.value;
+                adjustBrightness(parseInt(this.value));
+            };
+            
+            contrastSlider.oninput = function() {
+                contrastValue.textContent = this.value;
+                adjustContrast(parseInt(this.value));
+            };
+        }
+        
+        // 下載當前圖片
+        async function downloadCurrent() {
+            if (images.length === 0) {
+                showResult('沒有可下載的圖片', 'error');
+                return;
+            }
+            
+            try {
+                const currentImage = images[currentImageIndex];
+                const blob = await currentImage.processor.toBlob('image/jpeg', 0.9);
+                downloadBlob(blob, `processed_${currentImage.file.name.replace(/\.[^/.]+$/, '')}.jpg`);
+                showResult('下載完成', 'success');
+            } catch (error) {
+                showResult(`下載失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 下載所有圖片
+        async function downloadAll() {
+            if (images.length === 0) {
+                showResult('沒有可下載的圖片', 'error');
+                return;
+            }
+            
+            try {
+                for (let i = 0; i < images.length; i++) {
+                    const image = images[i];
+                    const blob = await image.processor.toBlob('image/jpeg', 0.9);
+                    downloadBlob(blob, `processed_${image.file.name.replace(/\.[^/.]+$/, '')}.jpg`);
+                }
+                showResult('所有圖片下載完成', 'success');
+            } catch (error) {
+                showResult(`下載失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 應用濾鏡
+        async function applyFilter(filterType) {
+            if (images.length === 0) {
+                showResult('請先載入圖片', 'error');
+                return;
+            }
+            
+            try {
+                const currentImage = images[currentImageIndex];
+                currentImage.processor.applyFilter(filterType);
+                
+                // 更新 base64 數據
+                currentImage.base64 = currentImage.processor.toBase64();
+                
+                updateImageList();
+                updatePreview();
+                
+                showResult(`${filterType} 濾鏡應用成功`, 'success');
+            } catch (error) {
+                showResult(`濾鏡應用失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 調整亮度
+        async function adjustBrightness(value) {
+            if (images.length === 0) {
+                showResult('請先載入圖片', 'error');
+                return;
+            }
+            
+            try {
+                const currentImage = images[currentImageIndex];
+                currentImage.processor.adjustBrightness(value);
+                
+                // 更新 base64 數據
+                currentImage.base64 = currentImage.processor.toBase64();
+                
+                updateImageList();
+                updatePreview();
+                
+                showResult(`亮度調整為 ${value}`, 'success');
+            } catch (error) {
+                showResult(`亮度調整失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 調整對比度
+        async function adjustContrast(value) {
+            if (images.length === 0) {
+                showResult('請先載入圖片', 'error');
+                return;
+            }
+            
+            try {
+                const currentImage = images[currentImageIndex];
+                currentImage.processor.adjustContrast(value);
+                
+                // 更新 base64 數據
+                currentImage.base64 = currentImage.processor.toBase64();
+                
+                updateImageList();
+                updatePreview();
+                
+                showResult(`對比度調整為 ${value}`, 'success');
+            } catch (error) {
+                showResult(`對比度調整失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 重置圖片
+        async function resetImage() {
+            if (images.length === 0) {
+                showResult('請先載入圖片', 'error');
+                return;
+            }
+            
+            try {
+                const currentImage = images[currentImageIndex];
+                
+                // 重新載入原始圖片
+                await currentImage.processor.loadImage(currentImage.file);
+                
+                // 更新 base64 數據
+                currentImage.base64 = currentImage.processor.toBase64();
+                
+                // 重置滑塊
+                document.getElementById('brightness').value = 0;
+                document.getElementById('contrast').value = 0;
+                document.getElementById('brightnessValue').textContent = '0';
+                document.getElementById('contrastValue').textContent = '0';
+                
+                updateImageList();
+                updatePreview();
+                
+                showResult('圖片已重置', 'success');
+            } catch (error) {
+                showResult(`重置失敗: ${error.message}`, 'error');
+            }
+        }
+        
+        // 下載 Blob
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+        }
+        
+        // 顯示結果
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+        }
+        
+        // 簡化的圖片處理器類
+        class SimpleImageProcessor {
+            constructor() {
+                this.canvas = document.createElement('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.originalImage = null;
+                this.currentImage = null;
+            }
+            
+            async loadImage(file) {
+                const img = await this.createImageFromFile(file);
+                
+                // 設置 Canvas 尺寸為圖片原始尺寸
+                this.canvas.width = img.naturalWidth;
+                this.canvas.height = img.naturalHeight;
+                
+                // 繪製圖片到 Canvas
+                this.ctx.drawImage(img, 0, 0);
+                
+                this.originalImage = {
+                    file: file,
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                    type: file.type
+                };
+                
+                this.currentImage = { ...this.originalImage };
+                
+                console.log('圖片載入成功:', {
+                    width: img.naturalWidth,
+                    height: img.naturalHeight,
+                    type: file.type
+                });
+                
+                return this.currentImage;
+            }
+            
+            createImageFromFile(file) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    
+                    img.onload = () => {
+                        console.log('圖片加載完成:', {
+                            naturalWidth: img.naturalWidth,
+                            naturalHeight: img.naturalHeight,
+                            complete: img.complete
+                        });
+                        resolve(img);
+                    };
+                    
+                    img.onerror = () => {
+                        reject(new Error('圖片加載失敗'));
+                    };
+                    
+                    const url = URL.createObjectURL(file);
+                    img.src = url;
+                    
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        resolve(img);
+                    };
+                });
+            }
+            
+            toBlob(type = 'image/jpeg', quality = 0.9) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
+                            reject(new Error('Canvas 無效'));
+                            return;
+                        }
+                        
+                        this.canvas.toBlob((blob) => {
+                            if (blob && blob.size > 0) {
+                                console.log('Blob 生成成功:', {
+                                    size: blob.size,
+                                    type: blob.type
+                                });
+                                resolve(blob);
+                            } else {
+                                reject(new Error('生成的 Blob 無效'));
+                            }
+                        }, type, quality);
+                        
+                    } catch (error) {
+                        console.error('生成 Blob 失敗:', error);
+                        reject(error);
+                    }
+                });
+            }
+            
+            toBase64(type = 'image/jpeg', quality = 0.9) {
+                try {
+                    if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
+                        console.error('Canvas 無效');
+                        return '';
+                    }
+                    
+                    const dataUrl = this.canvas.toDataURL(type, quality);
+                    console.log('Base64 生成成功:', {
+                        length: dataUrl.length,
+                        type: type
+                    });
+                    
+                    return dataUrl;
+                } catch (error) {
+                    console.error('生成 Base64 失敗:', error);
+                    return '';
+                }
+            }
+            
+            adjustBrightness(value) {
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const data = imageData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, Math.max(0, data[i] + value));     // R
+                    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + value)); // G
+                    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + value)); // B
+                }
+                
+                this.ctx.putImageData(imageData, 0, 0);
+            }
+            
+            adjustContrast(value) {
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const data = imageData.data;
+                const factor = (259 * (value + 255)) / (255 * (259 - value));
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));     // R
+                    data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128)); // G
+                    data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128)); // B
+                }
+                
+                this.ctx.putImageData(imageData, 0, 0);
+            }
+            
+            applyFilter(filterType) {
+                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+                const data = imageData.data;
+                
+                switch (filterType) {
+                    case 'grayscale':
+                        for (let i = 0; i < data.length; i += 4) {
+                            const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                            data[i] = gray;     // R
+                            data[i + 1] = gray; // G
+                            data[i + 2] = gray; // B
+                        }
+                        break;
+                        
+                    case 'sepia':
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+                            
+                            data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));     // R
+                            data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168)); // G
+                            data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131)); // B
+                        }
+                        break;
+                        
+                    case 'invert':
+                        for (let i = 0; i < data.length; i += 4) {
+                            data[i] = 255 - data[i];     // R
+                            data[i + 1] = 255 - data[i + 1]; // G
+                            data[i + 2] = 255 - data[i + 2]; // B
+                        }
+                        break;
+                }
+                
+                this.ctx.putImageData(imageData, 0, 0);
+            }
+        }
+    </script>
+</body>
+</html> 

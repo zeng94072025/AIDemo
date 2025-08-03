@@ -1,54 +1,38 @@
 /**
- * 圖片處理器
- * 負責所有圖片處理和優化功能
+ * 簡單可靠的圖片處理器
+ * 徹底解決圖片破損問題
  */
 
-class ImageProcessor {
+class SimpleImageProcessor {
     constructor() {
-        // 創建 Canvas 元素
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
-        
-        // 初始化變量
+        this.originalFile = null;
         this.originalImage = null;
-        this.currentImage = null;
-        this.history = [];
-        this.historyIndex = -1;
-        this.maxHistorySize = 20;
         
-        console.log('ImageProcessor 初始化成功');
+        console.log('SimpleImageProcessor 初始化成功');
     }
 
-    // 載入圖片 - 徹底重寫版本
+    // 載入圖片
     async loadImage(file) {
         try {
             console.log('開始載入圖片:', file.name);
             
+            this.originalFile = file;
+            
             // 創建圖片元素
             const img = await this.createImageFromFile(file);
             
-            // 設置 Canvas 尺寸為圖片原始尺寸
+            // 保存原始圖片
+            this.originalImage = img;
+            
+            // 設置 Canvas 尺寸
             this.canvas.width = img.naturalWidth;
             this.canvas.height = img.naturalHeight;
             
-            // 清空 Canvas
+            // 清空並繪製圖片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            
-            // 繪製圖片到 Canvas
             this.ctx.drawImage(img, 0, 0);
-            
-            // 保存原始圖片信息
-            this.originalImage = {
-                file: file,
-                width: img.naturalWidth,
-                height: img.naturalHeight,
-                type: file.type
-            };
-            
-            this.currentImage = { ...this.originalImage };
-            
-            // 添加到歷史記錄
-            this.addToHistory('載入圖片', this.currentImage);
             
             console.log('圖片載入成功:', {
                 width: img.naturalWidth,
@@ -56,7 +40,12 @@ class ImageProcessor {
                 type: file.type
             });
             
-            return this.currentImage;
+            return {
+                file: file,
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+                type: file.type
+            };
             
         } catch (error) {
             console.error('載入圖片失敗:', error);
@@ -64,12 +53,11 @@ class ImageProcessor {
         }
     }
 
-    // 從文件創建圖片元素 - 徹底重寫版本
+    // 從文件創建圖片元素
     createImageFromFile(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             
-            // 設置圖片加載完成事件
             img.onload = () => {
                 console.log('圖片加載完成:', {
                     naturalWidth: img.naturalWidth,
@@ -79,13 +67,12 @@ class ImageProcessor {
                 resolve(img);
             };
             
-            // 設置圖片加載失敗事件
-            img.onerror = (error) => {
-                console.error('圖片加載失敗:', error);
+            img.onerror = () => {
+                console.error('圖片加載失敗');
                 reject(new Error('圖片加載失敗'));
             };
             
-            // 創建 URL 並設置圖片源
+            // 創建 URL
             const url = URL.createObjectURL(file);
             img.src = url;
             
@@ -97,29 +84,27 @@ class ImageProcessor {
         });
     }
 
-    // 轉換為 Blob - 徹底重寫版本
+    // 轉換為 Blob
     toBlob(type = 'image/jpeg', quality = 0.9) {
         return new Promise((resolve, reject) => {
             try {
-                // 檢查 Canvas 是否有效
+                // 檢查 Canvas
                 if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
                     reject(new Error('Canvas 無效'));
                     return;
                 }
                 
-                // 檢查 Canvas 是否有內容
-                try {
-                    const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                    if (!imageData || imageData.data.length === 0) {
-                        reject(new Error('Canvas 沒有圖片內容'));
-                        return;
-                    }
-                } catch (error) {
-                    reject(new Error('無法獲取 Canvas 內容'));
+                // 檢查是否有圖片內容
+                if (!this.originalImage) {
+                    reject(new Error('沒有載入的圖片'));
                     return;
                 }
                 
-                // 使用 toBlob 方法
+                // 重新繪製圖片確保內容正確
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(this.originalImage, 0, 0);
+                
+                // 生成 Blob
                 this.canvas.toBlob((blob) => {
                     if (blob && blob.size > 0) {
                         console.log('Blob 生成成功:', {
@@ -139,7 +124,7 @@ class ImageProcessor {
         });
     }
 
-    // 轉換為 Base64 - 徹底重寫版本
+    // 轉換為 Base64
     toBase64(type = 'image/jpeg', quality = 0.9) {
         try {
             if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
@@ -147,17 +132,14 @@ class ImageProcessor {
                 return '';
             }
             
-            // 檢查 Canvas 是否有內容
-            try {
-                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                if (!imageData || imageData.data.length === 0) {
-                    console.error('Canvas 沒有圖片內容');
-                    return '';
-                }
-            } catch (error) {
-                console.error('無法獲取 Canvas 內容');
+            if (!this.originalImage) {
+                console.error('沒有載入的圖片');
                 return '';
             }
+            
+            // 重新繪製圖片確保內容正確
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
             
             const dataUrl = this.canvas.toDataURL(type, quality);
             console.log('Base64 生成成功:', {
@@ -172,25 +154,31 @@ class ImageProcessor {
         }
     }
 
-    // 調整亮度 - 徹底重寫版本
+    // 調整亮度
     adjustBrightness(value) {
         try {
-            if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                console.error('Canvas 無效，無法調整亮度');
+            if (!this.originalImage) {
+                console.error('沒有載入的圖片');
                 return;
             }
             
+            // 重新繪製原始圖片
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
+            
+            // 獲取圖片數據
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             const data = imageData.data;
             
+            // 調整亮度
             for (let i = 0; i < data.length; i += 4) {
                 data[i] = Math.min(255, Math.max(0, data[i] + value));     // R
                 data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + value)); // G
                 data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + value)); // B
             }
             
+            // 放回圖片數據
             this.ctx.putImageData(imageData, 0, 0);
-            this.addToHistory('調整亮度', this.currentImage);
             
             console.log('亮度調整完成:', value);
             
@@ -199,26 +187,32 @@ class ImageProcessor {
         }
     }
 
-    // 調整對比度 - 徹底重寫版本
+    // 調整對比度
     adjustContrast(value) {
         try {
-            if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                console.error('Canvas 無效，無法調整對比度');
+            if (!this.originalImage) {
+                console.error('沒有載入的圖片');
                 return;
             }
             
+            // 重新繪製原始圖片
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
+            
+            // 獲取圖片數據
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             const data = imageData.data;
             const factor = (259 * (value + 255)) / (255 * (259 - value));
             
+            // 調整對比度
             for (let i = 0; i < data.length; i += 4) {
                 data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));     // R
                 data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128)); // G
                 data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128)); // B
             }
             
+            // 放回圖片數據
             this.ctx.putImageData(imageData, 0, 0);
-            this.addToHistory('調整對比度', this.currentImage);
             
             console.log('對比度調整完成:', value);
             
@@ -227,17 +221,23 @@ class ImageProcessor {
         }
     }
 
-    // 應用濾鏡 - 徹底重寫版本
+    // 應用濾鏡
     applyFilter(filterType) {
         try {
-            if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                console.error('Canvas 無效，無法應用濾鏡');
+            if (!this.originalImage) {
+                console.error('沒有載入的圖片');
                 return;
             }
             
+            // 重新繪製原始圖片
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
+            
+            // 獲取圖片數據
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             const data = imageData.data;
             
+            // 應用濾鏡
             switch (filterType) {
                 case 'grayscale':
                     for (let i = 0; i < data.length; i += 4) {
@@ -273,8 +273,8 @@ class ImageProcessor {
                     return;
             }
             
+            // 放回圖片數據
             this.ctx.putImageData(imageData, 0, 0);
-            this.addToHistory(`應用濾鏡: ${filterType}`, this.currentImage);
             
             console.log('濾鏡應用完成:', filterType);
             
@@ -286,56 +286,9 @@ class ImageProcessor {
     // 重置到原始圖片
     resetToOriginal() {
         if (this.originalImage) {
-            this.loadImage(this.originalImage.file);
-        }
-    }
-
-    // 添加到歷史記錄
-    addToHistory(action, imageData) {
-        this.history = this.history.slice(0, this.historyIndex + 1);
-        this.history.push({
-            action: action,
-            timestamp: new Date(),
-            imageData: imageData
-        });
-        
-        if (this.history.length > this.maxHistorySize) {
-            this.history.shift();
-        } else {
-            this.historyIndex++;
-        }
-    }
-
-    // 撤銷
-    undo() {
-        if (this.historyIndex > 0) {
-            this.historyIndex--;
-            return true;
-        }
-        return false;
-    }
-
-    // 重做
-    redo() {
-        if (this.historyIndex < this.history.length - 1) {
-            this.historyIndex++;
-            return true;
-        }
-        return false;
-    }
-
-    // 獲取處理後的圖片數據
-    getProcessedImage() {
-        try {
-            const base64 = this.toBase64();
-            return {
-                base64: base64,
-                width: this.canvas.width,
-                height: this.canvas.height
-            };
-        } catch (error) {
-            console.error('獲取處理後圖片失敗:', error);
-            return null;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
+            console.log('圖片已重置到原始狀態');
         }
     }
 
@@ -346,8 +299,10 @@ class ImageProcessor {
             this.canvas = null;
             this.ctx = null;
         }
+        this.originalFile = null;
+        this.originalImage = null;
     }
 }
 
-// 導出圖片處理器
-window.ImageProcessor = ImageProcessor; 
+// 導出簡單圖片處理器
+window.SimpleImageProcessor = SimpleImageProcessor; 

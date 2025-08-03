@@ -134,15 +134,70 @@ function base64ToBlob(base64, mimeType) {
 }
 
 // 下載文件
+// 下載文件（支持選擇保存位置）
 function downloadFile(blob, filename) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // 檢查是否支持 showSaveFilePicker API
+    if ('showSaveFilePicker' in window) {
+        // 使用現代瀏覽器的文件選擇器
+        window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+                description: '圖片文件',
+                accept: {
+                    'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+                }
+            }]
+        }).then(handle => {
+            const writable = handle.createWritable();
+            writable.write(blob);
+            writable.close();
+        }).catch(err => {
+            console.log('用戶取消了文件保存或瀏覽器不支持，使用傳統下載方式');
+            // 回退到傳統下載方式
+            downloadFileLegacy(blob, filename);
+        });
+    } else {
+        // 回退到傳統下載方式
+        downloadFileLegacy(blob, filename);
+    }
+}
+
+// 傳統下載方式（兼容舊瀏覽器）
+function downloadFileLegacy(blob, filename) {
+    try {
+        // 驗證 blob 是否有效
+        if (!blob || blob.size === 0) {
+            console.error('Blob 無效或為空:', blob);
+            throw new Error('Blob 無效或為空');
+        }
+        
+        console.log('開始下載文件:', {
+            filename: filename,
+            blobSize: blob.size,
+            blobType: blob.type
+        });
+        
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // 延遲釋放 URL 對象
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 1000);
+        
+        console.log('文件下載成功:', filename);
+        
+    } catch (error) {
+        console.error('下載文件失敗:', error);
+        throw error;
+    }
 }
 
 // 顯示通知
@@ -187,6 +242,58 @@ function showNotification(message, type = 'info', duration = 3000) {
     // 自動隱藏
     setTimeout(() => {
         notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 300);
+    }, duration);
+}
+
+// 顯示頂部中間提示（用於圖片處理結果）
+function showTopCenterNotification(message, type = 'info', duration = 3000) {
+    const notification = document.createElement('div');
+    notification.className = `top-center-notification top-center-notification-${type}`;
+    notification.textContent = message;
+    
+    // 添加樣式
+    Object.assign(notification.style, {
+        position: 'fixed',
+        top: '20px',
+        left: '50%',
+        transform: 'translateX(-50%) translateY(-100%)',
+        padding: '8px 16px',
+        borderRadius: '6px',
+        color: 'white',
+        fontSize: '11px',
+        fontWeight: '400',
+        zIndex: '3000',
+        transition: 'transform 0.3s ease',
+        maxWidth: '400px',
+        wordWrap: 'break-word',
+        textAlign: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+    });
+    
+    // 設置背景色
+    const colors = {
+        info: '#007AFF',
+        success: '#34C759',
+        warning: '#FF9500',
+        error: '#FF3B30'
+    };
+    notification.style.backgroundColor = colors[type] || colors.info;
+    
+    document.body.appendChild(notification);
+    
+    // 動畫顯示
+    setTimeout(() => {
+        notification.style.transform = 'translateX(-50%) translateY(0)';
+    }, 100);
+    
+    // 自動隱藏
+    setTimeout(() => {
+        notification.style.transform = 'translateX(-50%) translateY(-100%)';
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.parentNode.removeChild(notification);
@@ -307,19 +414,34 @@ function showPrompt(message, defaultValue = '', title = '輸入') {
 // 更新進度條
 function updateProgress(percentage, text = '') {
     const progressFill = document.getElementById('progressFill');
-    const progressText = document.getElementById('progressText');
-    const statusText = document.getElementById('statusText');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const progressStatusText = document.getElementById('progressStatusText');
+    const processingProgress = document.getElementById('processingProgress');
     
     if (progressFill) {
         progressFill.style.width = `${percentage}%`;
     }
     
-    if (progressText) {
-        progressText.textContent = `${Math.round(percentage)}%`;
+    if (progressPercentage) {
+        progressPercentage.textContent = `${Math.round(percentage)}%`;
     }
     
-    if (statusText && text) {
-        statusText.textContent = text;
+    if (progressStatusText && text) {
+        progressStatusText.textContent = text;
+    }
+    
+    // 顯示/隱藏進度條
+    if (processingProgress) {
+        if (percentage > 0 && percentage < 100) {
+            processingProgress.style.display = 'block';
+        } else if (percentage >= 100) {
+            // 完成後延遲隱藏
+            setTimeout(() => {
+                if (processingProgress) {
+                    processingProgress.style.display = 'none';
+                }
+            }, 1000);
+        }
     }
 }
 
@@ -478,6 +600,7 @@ window.Utils = {
     base64ToBlob,
     downloadFile,
     showNotification,
+    showTopCenterNotification,
     showConfirm,
     showPrompt,
     updateProgress,

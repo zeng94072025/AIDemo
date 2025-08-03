@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖片處理功能測試</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f5f7;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #0056CC;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>圖片處理功能測試</h1>
+        
+        <div class="test-section">
+            <h3>1. 基礎功能測試</h3>
+            <button class="test-button" onclick="testBasicFunctions()">測試基礎功能</button>
+            <div id="basicTestResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 圖片處理器測試</h3>
+            <input type="file" id="testImageInput" accept="image/*" style="display: none;">
+            <button class="test-button" onclick="document.getElementById('testImageInput').click()">選擇測試圖片</button>
+            <button class="test-button" onclick="testImageProcessor()">測試圖片處理器</button>
+            <div id="processorTestResult"></div>
+            <canvas id="testCanvas" width="300" height="200"></canvas>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 工具函數測試</h3>
+            <button class="test-button" onclick="testUtils()">測試工具函數</button>
+            <div id="utilsTestResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 錯誤處理測試</h3>
+            <button class="test-button" onclick="testErrorHandling()">測試錯誤處理</button>
+            <div id="errorTestResult"></div>
+        </div>
+    </div>
+
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="js/utils.js"></script>
+    <script src="js/fixedImageProcessor.js"></script>
+    <script src="js/uiController.js"></script>
+    <script src="js/main.js"></script>
+    
+    <script>
+        let testImage = null;
+        
+        // 基礎功能測試
+        function testBasicFunctions() {
+            const result = document.getElementById('basicTestResult');
+            result.innerHTML = '';
+            
+            try {
+                // 測試類是否正確定義
+                const tests = [
+                    { name: 'Utils', obj: window.Utils, expected: 'object' },
+                    { name: 'FixedImageProcessor', obj: window.FixedImageProcessor, expected: 'function' },
+                    { name: 'UIController', obj: window.UIController, expected: 'function' },
+                    { name: 'AIImageOptimizer', obj: window.AIImageOptimizer, expected: 'function' }
+                ];
+                
+                let successCount = 0;
+                let totalCount = tests.length;
+                
+                tests.forEach(test => {
+                    if (typeof test.obj === test.expected) {
+                        result.innerHTML += `<div class="test-result success">✓ ${test.name} 正確定義</div>`;
+                        successCount++;
+                    } else {
+                        result.innerHTML += `<div class="test-result error">✗ ${test.name} 定義錯誤 (期望: ${test.expected}, 實際: ${typeof test.obj})</div>`;
+                    }
+                });
+                
+                result.innerHTML += `<div class="test-result info">基礎功能測試完成: ${successCount}/${totalCount} 通過</div>`;
+                
+            } catch (error) {
+                result.innerHTML = `<div class="test-result error">基礎功能測試失敗: ${error.message}</div>`;
+            }
+        }
+        
+        // 圖片處理器測試
+        function testImageProcessor() {
+            const result = document.getElementById('processorTestResult');
+            result.innerHTML = '';
+            
+            if (!testImage) {
+                result.innerHTML = '<div class="test-result error">請先選擇測試圖片</div>';
+                return;
+            }
+            
+            const processor = new FixedImageProcessor();
+            
+            processor.loadImage(testImage)
+                .then(imageData => {
+                    result.innerHTML += `<div class="test-result success">✓ 圖片載入成功: ${imageData.width}x${imageData.height}</div>`;
+                    
+                    // 測試亮度調整
+                    processor.adjustBrightness(20);
+                    result.innerHTML += `<div class="test-result success">✓ 亮度調整成功</div>`;
+                    
+                    // 測試對比度調整
+                    processor.adjustContrast(20);
+                    result.innerHTML += `<div class="test-result success">✓ 對比度調整成功</div>`;
+                    
+                    // 測試濾鏡
+                    processor.applyFilter('grayscale');
+                    result.innerHTML += `<div class="test-result success">✓ 黑白濾鏡應用成功</div>`;
+                    
+                    // 測試轉換為Base64
+                    const base64 = processor.toBase64();
+                    if (base64) {
+                        result.innerHTML += `<div class="test-result success">✓ Base64轉換成功 (長度: ${base64.length})</div>`;
+                        
+                        // 顯示處理後的圖片
+                        const canvas = document.getElementById('testCanvas');
+                        const ctx = canvas.getContext('2d');
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        };
+                        img.src = base64;
+                    } else {
+                        result.innerHTML += `<div class="test-result error">✗ Base64轉換失敗</div>`;
+                    }
+                    
+                    // 測試轉換為Blob
+                    processor.toBlob()
+                        .then(blob => {
+                            result.innerHTML += `<div class="test-result success">✓ Blob轉換成功 (大小: ${blob.size} bytes)</div>`;
+                        })
+                        .catch(error => {
+                            result.innerHTML += `<div class="test-result error">✗ Blob轉換失敗: ${error.message}</div>`;
+                        });
+                    
+                })
+                .catch(error => {
+                    result.innerHTML = `<div class="test-result error">圖片處理器測試失敗: ${error.message}</div>`;
+                });
+        }
+        
+        // 工具函數測試
+        function testUtils() {
+            const result = document.getElementById('utilsTestResult');
+            result.innerHTML = '';
+            
+            try {
+                // 測試文件大小格式化
+                const sizeTests = [
+                    { bytes: 0, expected: '0 Bytes' },
+                    { bytes: 1024, expected: '1 KB' },
+                    { bytes: 1048576, expected: '1 MB' }
+                ];
+                
+                sizeTests.forEach(test => {
+                    const formatted = Utils.formatFileSize(test.bytes);
+                    if (formatted.includes('1')) {
+                        result.innerHTML += `<div class="test-result success">✓ 文件大小格式化: ${test.bytes} bytes → ${formatted}</div>`;
+                    } else {
+                        result.innerHTML += `<div class="test-result error">✗ 文件大小格式化失敗: ${test.bytes} bytes → ${formatted}</div>`;
+                    }
+                });
+                
+                // 測試防抖函數
+                let debounceCount = 0;
+                const debouncedFn = Utils.debounce(() => debounceCount++, 100);
+                debouncedFn();
+                debouncedFn();
+                debouncedFn();
+                
+                setTimeout(() => {
+                    if (debounceCount === 1) {
+                        result.innerHTML += `<div class="test-result success">✓ 防抖函數正常工作</div>`;
+                    } else {
+                        result.innerHTML += `<div class="test-result error">✗ 防抖函數異常 (執行次數: ${debounceCount})</div>`;
+                    }
+                }, 200);
+                
+                // 測試通知功能
+                Utils.showNotification('測試通知', 'success', 1000);
+                result.innerHTML += `<div class="test-result success">✓ 通知功能測試完成</div>`;
+                
+            } catch (error) {
+                result.innerHTML = `<div class="test-result error">工具函數測試失敗: ${error.message}</div>`;
+            }
+        }
+        
+        // 錯誤處理測試
+        function testErrorHandling() {
+            const result = document.getElementById('errorTestResult');
+            result.innerHTML = '';
+            
+            try {
+                // 測試無效文件處理
+                const invalidFile = new File([''], 'test.txt', { type: 'text/plain' });
+                const isValid = Utils.isValidImageFile(invalidFile);
+                
+                if (!isValid) {
+                    result.innerHTML += `<div class="test-result success">✓ 無效文件類型檢測正常</div>`;
+                } else {
+                    result.innerHTML += `<div class="test-result error">✗ 無效文件類型檢測失敗</div>`;
+                }
+                
+                // 測試大文件處理
+                const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+                const isSizeValid = Utils.isValidFileSize(largeFile, 10);
+                
+                if (!isSizeValid) {
+                    result.innerHTML += `<div class="test-result success">✓ 大文件檢測正常</div>`;
+                } else {
+                    result.innerHTML += `<div class="test-result error">✗ 大文件檢測失敗</div>`;
+                }
+                
+                // 測試空處理器
+                const processor = new FixedImageProcessor();
+                try {
+                    processor.toBase64();
+                    result.innerHTML += `<div class="test-result error">✗ 空處理器應該拋出錯誤</div>`;
+                } catch (error) {
+                    result.innerHTML += `<div class="test-result success">✓ 空處理器錯誤處理正常</div>`;
+                }
+                
+            } catch (error) {
+                result.innerHTML = `<div class="test-result error">錯誤處理測試失敗: ${error.message}</div>`;
+            }
+        }
+        
+        // 文件選擇處理
+        document.getElementById('testImageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                testImage = file;
+                document.getElementById('processorTestResult').innerHTML = 
+                    `<div class="test-result info">已選擇測試圖片: ${file.name} (${Utils.formatFileSize(file.size)})</div>`;
+            }
+        });
+        
+        // 頁面加載完成後自動運行基礎測試
+        window.addEventListener('load', () => {
+            setTimeout(testBasicFunctions, 500);
+        });
+    </script>
+</body>
+</html> 

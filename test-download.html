@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖片下載測試</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e1e1e1;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #1d1d1f;
+        }
+        .test-button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #0056CC;
+        }
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .canvas-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            max-width: 100%;
+            height: auto;
+        }
+        .file-input {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>圖片下載功能測試</h1>
+        
+        <div class="test-section">
+            <h3>1. 創建測試圖片</h3>
+            <button class="test-button" onclick="createTestImage()">創建測試圖片</button>
+            <div class="canvas-container">
+                <canvas id="testCanvas" width="400" height="300"></canvas>
+            </div>
+            <div id="testImageResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 測試 Blob 生成</h3>
+            <button class="test-button" onclick="testBlobGeneration()">測試 Blob 生成</button>
+            <div id="blobResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 測試下載功能</h3>
+            <button class="test-button" onclick="testDownload()">測試下載</button>
+            <div id="downloadResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>4. 上傳圖片測試</h3>
+            <input type="file" id="fileInput" accept="image/*" class="file-input">
+            <button class="test-button" onclick="testUploadedImage()">測試上傳的圖片</button>
+            <div id="uploadResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>5. 完整流程測試</h3>
+            <button class="test-button" onclick="testFullWorkflow()">完整流程測試</button>
+            <div id="workflowResult"></div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="js/imageProcessor.js"></script>
+    
+    <script>
+        let testImageProcessor = null;
+        let uploadedFile = null;
+        
+        // 創建測試圖片
+        function createTestImage() {
+            const canvas = document.getElementById('testCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 清空畫布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製漸變背景
+            const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#4ecdc4');
+            gradient.addColorStop(1, '#45b7d1');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製文字
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('測試圖片', canvas.width / 2, canvas.height / 2);
+            
+            // 繪製一些圖形
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.arc(100, 100, 30, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.beginPath();
+            ctx.arc(300, 200, 40, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            showResult('testImageResult', 'success', '測試圖片創建成功！Canvas 尺寸: ' + canvas.width + 'x' + canvas.height);
+        }
+        
+        // 測試 Blob 生成
+        async function testBlobGeneration() {
+            try {
+                const canvas = document.getElementById('testCanvas');
+                
+                // 創建圖片處理器
+                testImageProcessor = new ImageProcessor();
+                
+                // 將 Canvas 內容轉換為圖片
+                const img = new Image();
+                img.onload = async () => {
+                    try {
+                        testImageProcessor.setupCanvas(img.width, img.height);
+                        testImageProcessor.drawImage(img);
+                        
+                        // 測試不同格式的 Blob 生成
+                        const formats = ['image/jpeg', 'image/png', 'image/webp'];
+                        const results = [];
+                        
+                        for (const format of formats) {
+                            try {
+                                const blob = await testImageProcessor.toBlob(format, 0.9);
+                                results.push({
+                                    format: format,
+                                    size: blob.size,
+                                    type: blob.type,
+                                    success: true
+                                });
+                            } catch (error) {
+                                results.push({
+                                    format: format,
+                                    error: error.message,
+                                    success: false
+                                });
+                            }
+                        }
+                        
+                        let resultHtml = '<h4>Blob 生成結果:</h4>';
+                        results.forEach(result => {
+                            if (result.success) {
+                                resultHtml += `<div style="color: green;">✓ ${result.format}: ${result.size} bytes</div>`;
+                            } else {
+                                resultHtml += `<div style="color: red;">✗ ${result.format}: ${result.error}</div>`;
+                            }
+                        });
+                        
+                        showResult('blobResult', 'success', resultHtml);
+                        
+                    } catch (error) {
+                        showResult('blobResult', 'error', 'Blob 生成失敗: ' + error.message);
+                    }
+                };
+                img.src = canvas.toDataURL();
+                
+            } catch (error) {
+                showResult('blobResult', 'error', '測試失敗: ' + error.message);
+            }
+        }
+        
+        // 測試下載功能
+        async function testDownload() {
+            try {
+                if (!testImageProcessor) {
+                    showResult('downloadResult', 'error', '請先創建測試圖片');
+                    return;
+                }
+                
+                const blob = await testImageProcessor.toBlob('image/jpeg', 0.9);
+                const filename = 'test_image_' + Date.now() + '.jpg';
+                
+                Utils.downloadFile(blob, filename);
+                showResult('downloadResult', 'success', '下載測試完成！文件名: ' + filename);
+                
+            } catch (error) {
+                showResult('downloadResult', 'error', '下載測試失敗: ' + error.message);
+            }
+        }
+        
+        // 測試上傳的圖片
+        async function testUploadedImage() {
+            try {
+                const fileInput = document.getElementById('fileInput');
+                const file = fileInput.files[0];
+                
+                if (!file) {
+                    showResult('uploadResult', 'error', '請先選擇圖片文件');
+                    return;
+                }
+                
+                uploadedFile = file;
+                
+                // 創建圖片處理器
+                const processor = new ImageProcessor();
+                await processor.loadImage(file);
+                
+                // 測試 Blob 生成
+                const blob = await processor.toBlob('image/jpeg', 0.9);
+                const filename = 'uploaded_' + file.name.replace(/\.[^/.]+$/, '') + '_' + Date.now() + '.jpg';
+                
+                Utils.downloadFile(blob, filename);
+                showResult('uploadResult', 'success', '上傳圖片處理成功！原始文件: ' + file.name + ', 生成文件: ' + filename);
+                
+            } catch (error) {
+                showResult('uploadResult', 'error', '上傳圖片測試失敗: ' + error.message);
+            }
+        }
+        
+        // 完整流程測試
+        async function testFullWorkflow() {
+            try {
+                showResult('workflowResult', 'info', '開始完整流程測試...');
+                
+                // 1. 創建測試圖片
+                createTestImage();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 2. 創建圖片處理器
+                const processor = new ImageProcessor();
+                
+                // 3. 將 Canvas 轉換為文件
+                const canvas = document.getElementById('testCanvas');
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                const file = new File([blob], 'test_image.png', { type: 'image/png' });
+                
+                // 4. 加載圖片
+                await processor.loadImage(file);
+                
+                // 5. 應用一些處理效果
+                processor.adjustBrightness(10);
+                processor.adjustContrast(5);
+                
+                // 6. 生成處理後的 Blob
+                const processedBlob = await processor.toBlob('image/jpeg', 0.9);
+                
+                // 7. 下載
+                const filename = 'processed_test_' + Date.now() + '.jpg';
+                Utils.downloadFile(processedBlob, filename);
+                
+                showResult('workflowResult', 'success', '完整流程測試成功！包括：創建圖片 → 加載 → 處理 → 生成 Blob → 下載');
+                
+            } catch (error) {
+                showResult('workflowResult', 'error', '完整流程測試失敗: ' + error.message);
+            }
+        }
+        
+        // 顯示結果
+        function showResult(elementId, type, message) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        // 頁面加載完成後初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('圖片下載測試頁面已加載');
+        });
+    </script>
+</body>
+</html> 

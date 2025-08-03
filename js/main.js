@@ -209,17 +209,18 @@ class AIImageOptimizer {
             '💡 提示：使用方向鍵切換圖片'
         ];
         
-        let tipIndex = 0;
-        const showNextTip = () => {
-            if (tipIndex < tips.length) {
-                Utils.showNotification(tips[tipIndex], 'info', 5000);
-                tipIndex++;
-                setTimeout(showNextTip, 10000);
-            }
-        };
+        // 移除自動彈出的使用提示
+        // let tipIndex = 0;
+        // const showNextTip = () => {
+        //     if (tipIndex < tips.length) {
+        //         Utils.showNotification(tips[tipIndex], 'info', 5000);
+        //         tipIndex++;
+        //         setTimeout(showNextTip, 10000);
+        //     }
+        // };
         
         // 延遲顯示第一個提示
-        setTimeout(showNextTip, 3000);
+        // setTimeout(showNextTip, 3000);
     }
 
     // 顯示歡迎信息
@@ -240,7 +241,8 @@ class AIImageOptimizer {
         `;
         
         console.log(welcomeMessage);
-        Utils.showNotification('歡迎使用AI圖片優化助手！', 'success', 3000);
+        // 移除自動彈出的歡迎通知
+        // Utils.showNotification('歡迎使用AI圖片優化助手！', 'success', 3000);
     }
 
     // 顯示錯誤信息
@@ -429,11 +431,8 @@ class AIImageOptimizer {
                 this.imageProcessor = new ImageProcessor();
             }
             
-            // 清空歷史記錄
-            const historyList = document.getElementById('historyList');
-            if (historyList) {
-                historyList.innerHTML = '<div class="history-item"><span class="history-time">尚未處理</span><span class="history-action">等待操作</span></div>';
-            }
+            // 清空選中的圖片
+            this.uiController.selectedImages.clear();
             
             // 清空對話歷史
             const chatMessages = document.getElementById('chatMessages');
@@ -463,6 +462,8 @@ class AIImageOptimizer {
             Utils.updateProgress(0, '準備導出...');
             
             const images = [];
+            let successCount = 0;
+            let errorCount = 0;
             
             for (let i = 0; i < this.uiController.images.length; i++) {
                 const progress = (i / this.uiController.images.length) * 100;
@@ -470,12 +471,42 @@ class AIImageOptimizer {
                 
                 const image = this.uiController.images[i];
                 const processor = image.processor;
-                const blob = await processor.toBlob(`image/${format}`, quality);
                 
-                images.push({
-                    name: image.file.name,
-                    blob: blob
-                });
+                try {
+                    // 驗證處理器
+                    if (!processor) {
+                        console.error(`圖片 ${image.file.name} 的處理器無效`);
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    const blob = await processor.toBlob(`image/${format}`, quality);
+                    
+                    // 驗證生成的 blob
+                    if (!blob || blob.size === 0) {
+                        console.error(`圖片 ${image.file.name} 生成的 Blob 無效`);
+                        errorCount++;
+                        continue;
+                    }
+                    
+                    images.push({
+                        name: image.file.name,
+                        blob: blob
+                    });
+                    successCount++;
+                    
+                    console.log(`圖片 ${image.file.name} 處理成功:`, {
+                        blobSize: blob.size
+                    });
+                    
+                } catch (error) {
+                    console.error(`處理圖片 ${image.file.name} 失敗:`, error);
+                    errorCount++;
+                }
+            }
+            
+            if (successCount === 0) {
+                throw new Error('沒有成功處理的圖片');
             }
             
             Utils.updateProgress(100, '導出完成');
@@ -487,11 +518,16 @@ class AIImageOptimizer {
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            Utils.showNotification('所有圖片導出完成', 'success');
+            let message = `已導出 ${successCount} 張圖片`;
+            if (errorCount > 0) {
+                message += `，${errorCount} 張處理失敗`;
+            }
+            
+            Utils.showNotification(message, successCount > 0 ? 'success' : 'warning');
             
         } catch (error) {
             console.error('導出失敗:', error);
-            Utils.showNotification('導出失敗', 'error');
+            Utils.showNotification(`導出失敗: ${error.message}`, 'error');
         }
     }
 }
