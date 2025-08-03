@@ -129,6 +129,7 @@
                     <button class="tab-btn active" data-tab="basic">基礎處理</button>
                     <button class="tab-btn" data-tab="advanced">高級處理</button>
                     <button class="tab-btn" data-tab="effects">特效濾鏡</button>
+                    <button class="tab-btn" data-tab="ai">AI處理</button>
                     <button class="tab-btn" data-tab="drawing">塗鴉標註</button>
                 </div>
                 <div class="tools-content">
@@ -212,6 +213,96 @@
                             <button class="frame-btn" data-frame="elegant">優雅相框</button>
                             <button class="frame-btn" data-frame="minimal">極簡相框</button>
                             <button class="frame-btn" data-frame="artistic">藝術相框</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI處理工具 -->
+                <div class="tab-content" id="ai">
+                    <div class="tool-group">
+                        <h3>畫質修復</h3>
+                        <div class="ai-tools">
+                            <button class="ai-btn" data-ai="repair-old-photo">
+                                <i class="fas fa-magic"></i>
+                                老照片修復
+                            </button>
+                            <button class="ai-btn" data-ai="upscale-8k">
+                                <i class="fas fa-expand-arrows-alt"></i>
+                                8K超分辨率
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>智能一鍵修復</h3>
+                        <div class="ai-tools">
+                            <button class="ai-btn" data-ai="select-and-repair">
+                                <i class="fas fa-crop-alt"></i>
+                                選擇區域並一鍵修復
+                            </button>
+                            <button class="ai-btn" data-ai="one-click-repair">
+                                <i class="fas fa-user-check"></i>
+                                全圖智能修復
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>智能摳圖</h3>
+                        <div class="ai-tools">
+                            <button class="ai-btn" data-ai="extract-portrait">
+                                <i class="fas fa-user"></i>
+                                人像分離
+                            </button>
+                            <button class="ai-btn" data-ai="extract-object">
+                                <i class="fas fa-cut"></i>
+                                物體摳圖
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>風格化生成</h3>
+                        <div class="ai-tools">
+                            <button class="ai-btn" data-ai="artistic-oil">
+                                <i class="fas fa-palette"></i>
+                                油畫風格
+                            </button>
+                            <button class="ai-btn" data-ai="artistic-watercolor">
+                                <i class="fas fa-paint-brush"></i>
+                                水彩風格
+                            </button>
+                            <button class="ai-btn" data-ai="artistic-sketch">
+                                <i class="fas fa-pencil-alt"></i>
+                                素描風格
+                            </button>
+                            <button class="ai-btn" data-ai="artistic-cartoon">
+                                <i class="fas fa-smile"></i>
+                                卡通風格
+                            </button>
+                            <button class="ai-btn" data-ai="artistic-vintage">
+                                <i class="fas fa-camera-retro"></i>
+                                復古風格
+                            </button>
+                            <button class="ai-btn" data-ai="cartoonize">
+                                <i class="fas fa-child"></i>
+                                卡通化
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <h3>AI處理狀態</h3>
+                        <div class="ai-status">
+                            <div class="status-indicator" id="aiStatusIndicator">
+                                <span class="status-text">就緒</span>
+                            </div>
+                            <div class="ai-progress" id="aiProgress" style="display: none;">
+                                <div class="progress-bar">
+                                    <div class="progress-fill" id="aiProgressFill"></div>
+                                </div>
+                                <span class="progress-text" id="aiProgressText">處理中...</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -480,6 +571,14 @@
             
             const frameButtons = document.querySelectorAll('[data-frame]');
             console.log(`找到 ${frameButtons.length} 個相框按鈕`);
+            
+            const aiButtons = document.querySelectorAll('[data-ai]');
+            console.log(`找到 ${aiButtons.length} 個AI按鈕`);
+            
+            // 檢查具體的AI按鈕
+            aiButtons.forEach((btn, index) => {
+                console.log(`AI按鈕 ${index + 1}:`, btn.textContent.trim(), btn.dataset.ai);
+            });
         });
     </script>
     
@@ -487,6 +586,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/reliableImageProcessor.js"></script>
+    <script src="js/aiImageProcessor.js"></script>
     <script src="js/drawingProcessor.js"></script>
     <script src="js/uiController.js"></script>
     <script src="js/main.js"></script>

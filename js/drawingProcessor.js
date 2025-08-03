@@ -185,6 +185,11 @@ class DrawingProcessor {
     endDrawing() {
         this.ctx.closePath();
         this.saveToHistory();
+        
+        // 通知UIController保存繪製結果
+        if (this.onDrawingComplete) {
+            this.onDrawingComplete(this.getCanvasData());
+        }
     }
 
     // 設置繪製工具

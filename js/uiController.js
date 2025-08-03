@@ -11,7 +11,13 @@ class UIController {
         this.selectedImages = new Set(); // 新增：選中的圖片集合
         this.drawingProcessor = null; // 塗鴉標註處理器
         this.isDrawingMode = false; // 是否處於繪製模式
+        this.aiProcessor = null; // AI圖片處理器
+        this.isAIProcessing = false; // 是否正在AI處理
         this.eventListenersInitialized = false; // 防止重複初始化
+        this.selectedRegion = null; // 新增：選中的區域
+        this.isSelectingRegion = false; // 新增：是否正在選擇區域
+        this.selectionStart = null; // 新增：選擇開始點
+        this.selectionEnd = null; // 新增：選擇結束點
         
         console.log('UIController 開始初始化...');
         
@@ -21,6 +27,7 @@ class UIController {
         this.initParameterControls();
         this.initDrawingControls();
         this.initDrawingTools(); // 新增：初始化繪製工具
+        this.initRegionSelection(); // 新增：初始化區域選擇
         
         console.log('UIController 初始化完成');
     }
@@ -157,53 +164,71 @@ class UIController {
                 const target = e.target;
                 console.log('工具區域點擊事件:', target.tagName, target.className);
                 
+                // 查找最近的具有data屬性的元素
+                const actionButton = target.closest('[data-action]');
+                const filterButton = target.closest('[data-filter]');
+                const frameButton = target.closest('[data-frame]');
+                const toolButton = target.closest('[data-tool]');
+                const annotationButton = target.closest('[data-annotation]');
+                const aiButton = target.closest('[data-ai]');
+                
                 // 處理 data-action 按鈕
-                if (target.hasAttribute('data-action')) {
+                if (actionButton) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const action = target.dataset.action;
+                    const action = actionButton.dataset.action;
                     console.log('工具按鈕點擊:', action);
                     this.handleToolAction(action);
                     return;
                 }
                 
                 // 處理 data-filter 按鈕
-                if (target.hasAttribute('data-filter')) {
+                if (filterButton) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const filter = target.dataset.filter;
+                    const filter = filterButton.dataset.filter;
                     console.log('濾鏡按鈕點擊:', filter);
                     this.handleFilterAction(filter);
                     return;
                 }
                 
                 // 處理 data-frame 按鈕
-                if (target.hasAttribute('data-frame')) {
+                if (frameButton) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const frame = target.dataset.frame;
+                    const frame = frameButton.dataset.frame;
                     console.log('相框按鈕點擊:', frame);
                     this.handleFrameAction(frame);
                     return;
                 }
                 
                 // 處理 data-tool 按鈕
-                if (target.hasAttribute('data-tool')) {
+                if (toolButton) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const tool = target.dataset.tool;
+                    const tool = toolButton.dataset.tool;
                     console.log('繪製工具點擊:', tool);
                     this.handleDrawingTool(tool, e);
                     return;
                 }
                 
                 // 處理 data-annotation 按鈕
-                if (target.hasAttribute('data-annotation')) {
+                if (annotationButton) {
                     e.preventDefault();
                     e.stopPropagation();
-                    const annotation = target.dataset.annotation;
+                    const annotation = annotationButton.dataset.annotation;
                     console.log('標註工具點擊:', annotation);
                     this.handleAnnotationTool(annotation);
+                    return;
+                }
+                
+                // 處理 data-ai 按鈕
+                if (aiButton) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const aiAction = aiButton.dataset.ai;
+                    console.log('AI工具點擊:', aiAction);
+                    this.handleAIAction(aiAction);
                     return;
                 }
             });
@@ -217,13 +242,15 @@ class UIController {
         const frameButtons = document.querySelectorAll('[data-frame]');
         const toolButtons = document.querySelectorAll('[data-tool]');
         const annotationButtons = document.querySelectorAll('[data-annotation]');
+        const aiButtons = document.querySelectorAll('[data-ai]');
         
         console.log('按鈕統計:', {
             action: actionButtons.length,
             filter: filterButtons.length,
             frame: frameButtons.length,
             tool: toolButtons.length,
-            annotation: annotationButtons.length
+            annotation: annotationButtons.length,
+            ai: aiButtons.length
         });
         
         // 檢查具體的按鈕
@@ -233,6 +260,10 @@ class UIController {
         
         filterButtons.forEach((btn, index) => {
             console.log(`濾鏡按鈕 ${index + 1}:`, btn.textContent.trim(), btn.dataset.filter);
+        });
+        
+        aiButtons.forEach((btn, index) => {
+            console.log(`AI按鈕 ${index + 1}:`, btn.textContent.trim(), btn.dataset.ai);
         });
         
         console.log('工具按鈕初始化完成');
@@ -924,6 +955,10 @@ class UIController {
         // 初始化繪製處理器
         if (!this.drawingProcessor) {
             this.drawingProcessor = new DrawingProcessor(drawingCanvas);
+            // 設置繪製完成回調
+            this.drawingProcessor.onDrawingComplete = (canvasData) => {
+                this.saveDrawingResult();
+            };
         }
 
         this.isDrawingMode = true;
@@ -1037,9 +1072,11 @@ class UIController {
                 if (this.drawingProcessor) {
                     const success = this.drawingProcessor.undo();
                     if (success) {
-                        this.showStatus('已撤銷上一步操作', 'success');
+                        Utils.showNotification('已撤銷上一步操作', 'success');
+                        // 自動保存塗鴉標註結果
+                        this.saveDrawingResult();
                     } else {
-                        this.showStatus('沒有可撤銷的操作', 'warning');
+                        Utils.showNotification('沒有可撤銷的操作', 'warning');
                     }
                 }
             });
@@ -1050,9 +1087,11 @@ class UIController {
                 if (this.drawingProcessor) {
                     const success = this.drawingProcessor.redo();
                     if (success) {
-                        this.showStatus('已重做上一步操作', 'success');
+                        Utils.showNotification('已重做上一步操作', 'success');
+                        // 自動保存塗鴉標註結果
+                        this.saveDrawingResult();
                     } else {
-                        this.showStatus('沒有可重做的操作', 'warning');
+                        Utils.showNotification('沒有可重做的操作', 'warning');
                     }
                 }
             });
@@ -1062,10 +1101,14 @@ class UIController {
             clearBtn.addEventListener('click', () => {
                 if (this.drawingProcessor) {
                     this.drawingProcessor.clear();
-                    this.showStatus('已清空畫布', 'success');
+                    Utils.showNotification('已清空畫布', 'success');
+                    // 自動保存塗鴉標註結果
+                    this.saveDrawingResult();
                 }
             });
         }
+
+        console.log('塗鴉標註工具初始化完成');
 
         console.log('塗鴉標註工具初始化完成');
     }
@@ -1082,29 +1125,32 @@ class UIController {
         switch (effect) {
             case 'heart':
                 this.drawingProcessor.drawHeart(centerX, centerY, 30);
-                this.showStatus('已添加愛心特效', 'success');
+                Utils.showNotification('已添加愛心特效', 'success');
                 break;
             case 'star':
                 this.drawingProcessor.drawStar(centerX, centerY, 25);
-                this.showStatus('已添加星星特效', 'success');
+                Utils.showNotification('已添加星星特效', 'success');
                 break;
             case 'explosion':
                 this.drawingProcessor.drawExplosion(centerX, centerY, 40);
-                this.showStatus('已添加爆炸特效', 'success');
+                Utils.showNotification('已添加爆炸特效', 'success');
                 break;
             case 'emoji':
                 this.drawingProcessor.drawEmoji(centerX, centerY);
-                this.showStatus('已添加表情符號', 'success');
+                Utils.showNotification('已添加表情符號', 'success');
                 break;
             case 'bubble':
                 this.drawingProcessor.drawSpeechBubble(centerX, centerY, 'Wow!', 120, 80);
-                this.showStatus('已添加對話框', 'success');
+                Utils.showNotification('已添加對話框', 'success');
                 break;
             case 'progress':
                 this.drawingProcessor.drawProgressBar(centerX, centerY, 0.8, 150, 25);
-                this.showStatus('已添加進度條', 'success');
+                Utils.showNotification('已添加進度條', 'success');
                 break;
         }
+        
+        // 自動保存塗鴉標註結果
+        this.saveDrawingResult();
     }
 
     // 處理標註工具
@@ -1127,24 +1173,24 @@ class UIController {
                     const centerX = rect.width / 2;
                     const centerY = rect.height / 2;
                     this.drawingProcessor.drawArrow(centerX, centerY, x, y);
-                    this.showStatus('已添加箭頭標註', 'success');
+                    Utils.showNotification('已添加箭頭標註', 'success');
                     break;
                 case 'neon-arrow':
                     // 繪製霓虹箭頭
                     const neonCenterX = rect.width / 2;
                     const neonCenterY = rect.height / 2;
                     this.drawingProcessor.drawNeonArrow(neonCenterX, neonCenterY, x, y);
-                    this.showStatus('已添加霓虹箭頭標註', 'success');
+                    Utils.showNotification('已添加霓虹箭頭標註', 'success');
                     break;
                 case 'highlight':
                     // 繪製高亮區域
                     this.drawingProcessor.drawHighlight(x - 50, y - 30, 100, 60);
-                    this.showStatus('已添加高亮標註', 'success');
+                    Utils.showNotification('已添加高亮標註', 'success');
                     break;
                 case 'stamp':
                     // 繪製印章
                     this.drawingProcessor.drawStamp(x, y, '✓');
-                    this.showStatus('已添加印章標註', 'success');
+                    Utils.showNotification('已添加印章標註', 'success');
                     break;
                 case 'measure':
                     // 繪製測量線
@@ -1154,9 +1200,12 @@ class UIController {
                     // 添加測量文字
                     const distance = Math.sqrt((x - measureCenterX) ** 2 + (y - measureCenterY) ** 2);
                     this.drawingProcessor.addText(`${Math.round(distance)}px`, (x + measureCenterX) / 2, (y + measureCenterY) / 2 - 10);
-                    this.showStatus('已添加測量標註', 'success');
+                    Utils.showNotification('已添加測量標註', 'success');
                     break;
             }
+
+            // 自動保存塗鴉標註結果
+            this.saveDrawingResult();
 
             // 移除事件監聽器
             this.drawingProcessor.canvas.removeEventListener('click', handleAnnotationClick);
@@ -1165,7 +1214,7 @@ class UIController {
         };
 
         this.drawingProcessor.canvas.addEventListener('click', handleAnnotationClick);
-        this.showStatus(`請點擊畫布來放置${this.getAnnotationName(annotation)}`, 'info');
+        Utils.showNotification(`請點擊畫布來放置${this.getAnnotationName(annotation)}`, 'info');
     }
 
     // 獲取標註工具的中文名稱
@@ -1178,6 +1227,185 @@ class UIController {
             'measure': '測量線'
         };
         return names[annotation] || annotation;
+    }
+
+    // 處理AI動作
+    async handleAIAction(aiAction) {
+        console.log('handleAIAction 被調用:', aiAction);
+        
+        if (this.images.length === 0) {
+            console.log('沒有圖片，顯示警告');
+            Utils.showNotification('請先上傳圖片', 'warning');
+            return;
+        }
+        
+        if (this.isAIProcessing) {
+            console.log('正在AI處理中，顯示警告');
+            Utils.showNotification('AI正在處理中，請稍候', 'warning');
+            return;
+        }
+        
+        this.isAIProcessing = true;
+        console.log('開始AI處理:', aiAction);
+        
+        try {
+            // 獲取當前圖片
+            const currentImage = this.images[this.currentImageIndex];
+            
+            // 創建AI處理器
+            if (!this.aiProcessor) {
+                this.aiProcessor = new AIImageProcessor();
+            }
+            
+            // 載入圖片到AI處理器
+            await this.aiProcessor.loadImage(currentImage.file);
+            
+            // 更新AI狀態
+            this.updateAIStatus('處理中...', true);
+            
+            let success = false;
+            
+            switch (aiAction) {
+                case 'repair-old-photo':
+                    console.log('執行老照片修復');
+                    success = await this.aiProcessor.repairOldPhoto();
+                    break;
+                case 'upscale-8k':
+                    console.log('執行8K超分辨率');
+                    success = await this.aiProcessor.upscaleTo8K();
+                    break;
+                case 'extract-portrait':
+                    console.log('執行人像摳圖');
+                    success = await this.aiProcessor.extractPortrait();
+                    break;
+                case 'extract-object':
+                    console.log('執行物體摳圖');
+                    success = await this.aiProcessor.extractObject();
+                    break;
+                case 'artistic-oil':
+                    console.log('執行油畫風格');
+                    success = await this.aiProcessor.applyArtisticStyle('oil-painting');
+                    break;
+                case 'artistic-watercolor':
+                    console.log('執行水彩風格');
+                    success = await this.aiProcessor.applyArtisticStyle('watercolor');
+                    break;
+                case 'artistic-sketch':
+                    console.log('執行素描風格');
+                    success = await this.aiProcessor.applyArtisticStyle('sketch');
+                    break;
+                case 'artistic-cartoon':
+                    console.log('執行卡通風格');
+                    success = await this.aiProcessor.applyArtisticStyle('cartoon');
+                    break;
+                case 'artistic-vintage':
+                    console.log('執行復古風格');
+                    success = await this.aiProcessor.applyArtisticStyle('vintage');
+                    break;
+                case 'cartoonize':
+                    console.log('執行卡通化');
+                    success = await this.aiProcessor.cartoonize();
+                    break;
+                case 'one-click-repair':
+                    console.log('執行一鍵修復');
+                    success = await this.aiProcessor.oneClickRepair(this.selectedRegion);
+                    
+                    // 處理完成後保存結果
+                    if (success) {
+                        const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
+                        if (processedBase64) {
+                            // 更新預覽圖片
+                            const previewImg = document.querySelector('.preview-container img');
+                            if (previewImg) {
+                                previewImg.src = processedBase64;
+                            }
+                            
+                            // 保存處理結果到圖片列表
+                            this.saveProcessedImage(processedBase64);
+                        }
+                    }
+                    break;
+                case 'select-region':
+                    console.log('開始區域選擇');
+                    this.startRegionSelection();
+                    success = true;
+                    break;
+                case 'select-and-repair':
+                    console.log('開始區域選擇並自動修復');
+                    this.startRegionSelectionAndRepair();
+                    success = true;
+                    break;
+                default:
+                    console.warn('不支持的AI動作:', aiAction);
+                    break;
+            }
+            
+            console.log(`AI處理結果: ${success ? '成功' : '失敗'}`);
+            
+            if (success) {
+                // 更新圖片的處理後數據
+                try {
+                    const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
+                    if (processedBase64 && processedBase64 !== '') {
+                        // 直接保存處理後的Base64數據
+                        this.saveProcessedImage(processedBase64);
+                        
+                        // 更新預覽
+                        this.updatePreview();
+                        
+                        Utils.showNotification('AI處理完成', 'success');
+                    } else {
+                        console.warn('AI處理後數據為空');
+                        Utils.showNotification('AI處理失敗', 'error');
+                    }
+                } catch (error) {
+                    console.error('更新AI處理後數據失敗:', error);
+                    Utils.showNotification('AI處理失敗', 'error');
+                }
+            } else {
+                console.error('AI處理失敗');
+                Utils.showNotification('AI處理失敗', 'error');
+            }
+            
+        } catch (error) {
+            console.error('AI處理過程出錯:', error);
+            Utils.showNotification('AI處理失敗', 'error');
+        } finally {
+            this.isAIProcessing = false;
+            this.updateAIStatus('就緒', false);
+            console.log('AI處理完成，重置處理狀態');
+        }
+    }
+
+    // 更新AI狀態
+    updateAIStatus(text, isProcessing = false) {
+        const statusIndicator = document.getElementById('aiStatusIndicator');
+        const aiProgress = document.getElementById('aiProgress');
+        const aiProgressText = document.getElementById('aiProgressText');
+        
+        if (statusIndicator) {
+            const statusText = statusIndicator.querySelector('.status-text');
+            if (statusText) {
+                statusText.textContent = text;
+            }
+            
+            if (isProcessing) {
+                statusIndicator.classList.add('processing');
+            } else {
+                statusIndicator.classList.remove('processing');
+            }
+        }
+        
+        if (aiProgress) {
+            if (isProcessing) {
+                aiProgress.style.display = 'block';
+                if (aiProgressText) {
+                    aiProgressText.textContent = text;
+                }
+            } else {
+                aiProgress.style.display = 'none';
+            }
+        }
     }
 
     // 更新繪製畫布位置
@@ -1272,23 +1500,40 @@ class UIController {
         
         try {
             const currentImage = this.images[this.currentImageIndex];
-            const processor = currentImage.processor;
-            
-            // 驗證處理器是否有效
-            if (!processor) {
-                throw new Error('圖片處理器無效');
-            }
-            
             const format = document.getElementById('outputFormat').value;
             const quality = document.getElementById('quality').value / 100;
             
-            console.log('開始生成 Blob:', {
+            console.log('開始下載圖片:', {
                 format: format,
                 quality: quality,
-                imageName: currentImage.file.name
+                imageName: currentImage.file.name,
+                hasProcessedData: !!currentImage.processedData
             });
             
-            const blob = await processor.toBlob(`image/${format}`, quality);
+            let blob;
+            let filename;
+            
+            // 檢查是否有處理後的數據（AI處理或塗鴉標註結果）
+            if (currentImage.processedData) {
+                // 使用處理後的數據
+                blob = await this.dataURLToBlob(currentImage.processedData);
+                filename = this.generateFilename(currentImage.file.name, format);
+                console.log('使用處理後的數據下載');
+            } else if (currentImage.processor) {
+                // 使用傳統處理器的數據
+                const processor = currentImage.processor;
+                
+                // 驗證處理器是否有效
+                if (!processor) {
+                    throw new Error('圖片處理器無效');
+                }
+                
+                blob = await processor.toBlob(`image/${format}`, quality);
+                filename = this.generateFilename(currentImage.file.name, format);
+                console.log('使用傳統處理器數據下載');
+            } else {
+                throw new Error('沒有可用的圖片數據');
+            }
             
             // 驗證生成的 blob
             if (!blob || blob.size === 0) {
@@ -1299,8 +1544,6 @@ class UIController {
                 blobSize: blob.size,
                 blobType: blob.type
             });
-            
-            const filename = this.generateFilename(currentImage.file.name, format);
             
             // 檢查是否為處理後的圖片（與原圖不同）
             const isProcessed = this.isImageProcessed(currentImage);
@@ -1326,6 +1569,27 @@ class UIController {
             console.error('下載失敗:', error);
             Utils.showNotification(`下載失敗: ${error.message}`, 'error');
         }
+    }
+    
+    // 將DataURL轉換為Blob
+    async dataURLToBlob(dataURL) {
+        return new Promise((resolve, reject) => {
+            try {
+                const arr = dataURL.split(',');
+                const mime = arr[0].match(/:(.*?);/)[1];
+                const bstr = atob(arr[1]);
+                let n = bstr.length;
+                const u8arr = new Uint8Array(n);
+                
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                
+                resolve(new Blob([u8arr], { type: mime }));
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 
     // 下載所有圖片
@@ -1375,14 +1639,22 @@ class UIController {
                 Utils.updateProgress(progress, `處理圖片 ${i + 1}/${this.images.length}`);
                 
                 try {
-                    // 驗證處理器
-                    if (!processor) {
-                        console.error(`圖片 ${image.file.name} 的處理器無效`);
+                    let blob;
+                    let filename = this.generateFilename(image.file.name, format);
+                    
+                    // 優先使用處理後的數據（AI處理或塗鴉標註結果）
+                    if (image.processedData) {
+                        blob = await this.dataURLToBlob(image.processedData);
+                        console.log(`使用處理後的數據處理圖片 ${image.file.name}`);
+                    } else if (processor) {
+                        // 使用傳統處理器的數據
+                        blob = await processor.toBlob(`image/${format}`, quality);
+                        console.log(`使用傳統處理器處理圖片 ${image.file.name}`);
+                    } else {
+                        console.error(`圖片 ${image.file.name} 沒有可用的處理數據`);
                         errorCount++;
                         continue;
                     }
-                    
-                    const blob = await processor.toBlob(`image/${format}`, quality);
                     
                     // 驗證生成的 blob
                     if (!blob || blob.size === 0) {
@@ -1390,8 +1662,6 @@ class UIController {
                         errorCount++;
                         continue;
                     }
-                    
-                    const filename = this.generateFilename(image.file.name, format);
                     
                     // 將圖片添加到壓縮包
                     zip.file(`${folderName}/${filename}`, blob);
@@ -1452,8 +1722,8 @@ class UIController {
 
     // 檢查圖片是否已處理
     isImageProcessed(image) {
-        // 檢查是否有處理後的數據
-        if (image.processedData && image.processedData.base64) {
+        // 檢查是否有處理後的數據（AI處理或塗鴉標註結果）
+        if (image.processedData) {
             return true;
         }
         
@@ -1518,12 +1788,17 @@ class UIController {
                 hasBase64: !!(image.data.base64 && image.data.base64 !== '')
             });
             
+            // 檢查圖片是否已處理
+            const isProcessed = this.isImageProcessed(image);
+            const processedBadge = isProcessed ? '<div class="processed-badge" title="已處理"><i class="fas fa-magic"></i></div>' : '';
+            
             imageItem.innerHTML = `
                 <div style="position: relative; width: 100%; height: 100%;">
                     <img src="${image.data.base64}" alt="${image.file.name}" style="max-width: 100%; max-height: 100%; object-fit: cover;">
                     <button class="delete-btn" title="刪除圖片">
                         <i class="fas fa-times"></i>
                     </button>
+                    ${processedBadge}
                 </div>
                 <div class="image-info">
                     <div class="image-name">${image.file.name}</div>
@@ -1937,6 +2212,396 @@ class UIController {
         
         navLeft.disabled = isAtStart;
         navRight.disabled = isAtEnd;
+    }
+
+    // 初始化區域選擇
+    initRegionSelection() {
+        console.log('初始化區域選擇功能...');
+        
+        // 添加區域選擇畫布到預覽容器
+        const previewContainer = document.querySelector('.preview-container');
+        if (previewContainer) {
+            const selectionCanvas = document.createElement('canvas');
+            selectionCanvas.id = 'selectionCanvas';
+            selectionCanvas.style.position = 'absolute';
+            selectionCanvas.style.top = '0';
+            selectionCanvas.style.left = '0';
+            selectionCanvas.style.pointerEvents = 'none';
+            selectionCanvas.style.zIndex = '1000';
+            selectionCanvas.style.display = 'none';
+            
+            // 設置預覽容器為相對定位
+            previewContainer.style.position = 'relative';
+            previewContainer.appendChild(selectionCanvas);
+        }
+        
+        console.log('區域選擇功能初始化完成');
+    }
+
+    // 開始區域選擇
+    startRegionSelection() {
+        console.log('開始區域選擇模式');
+        this.isSelectingRegion = true;
+        this.selectedRegion = null;
+        
+        const previewImg = document.querySelector('.preview-container img');
+        const selectionCanvas = document.getElementById('selectionCanvas');
+        
+        if (!previewImg || !selectionCanvas) {
+            console.error('找不到預覽圖片或選擇畫布');
+            return;
+        }
+        
+        // 確保預覽圖片已經載入
+        if (previewImg.src.includes('data:image/svg+xml')) {
+            Utils.showNotification('請先上傳圖片', 'warning');
+            return;
+        }
+        
+        // 設置畫布大小
+        selectionCanvas.width = previewImg.offsetWidth;
+        selectionCanvas.height = previewImg.offsetHeight;
+        selectionCanvas.style.display = 'block';
+        selectionCanvas.style.pointerEvents = 'auto';
+        
+        const ctx = selectionCanvas.getContext('2d');
+        
+        // 添加事件監聽器
+        const handleMouseDown = (e) => {
+            const rect = selectionCanvas.getBoundingClientRect();
+            this.selectionStart = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        };
+        
+        const handleMouseMove = (e) => {
+            if (!this.selectionStart) return;
+            
+            const rect = selectionCanvas.getBoundingClientRect();
+            this.selectionEnd = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            
+            // 清除畫布並重繪選擇框
+            ctx.clearRect(0, 0, selectionCanvas.width, selectionCanvas.height);
+            this.drawSelectionBox(ctx);
+        };
+        
+        const handleMouseUp = (e) => {
+            if (!this.selectionStart || !this.selectionEnd) return;
+            
+            // 計算選擇區域
+            const x = Math.min(this.selectionStart.x, this.selectionEnd.x);
+            const y = Math.min(this.selectionStart.y, this.selectionEnd.y);
+            const width = Math.abs(this.selectionEnd.x - this.selectionStart.x);
+            const height = Math.abs(this.selectionEnd.y - this.selectionStart.y);
+            
+            // 轉換為圖片坐標
+            const imgRect = previewImg.getBoundingClientRect();
+            const scaleX = previewImg.naturalWidth / imgRect.width;
+            const scaleY = previewImg.naturalHeight / imgRect.height;
+            
+            this.selectedRegion = {
+                x: Math.round(x * scaleX),
+                y: Math.round(y * scaleY),
+                width: Math.round(width * scaleX),
+                height: Math.round(height * scaleY)
+            };
+            
+            console.log('選擇區域:', this.selectedRegion);
+            
+            // 退出選擇模式
+            this.exitRegionSelection();
+        };
+        
+        selectionCanvas.addEventListener('mousedown', handleMouseDown);
+        selectionCanvas.addEventListener('mousemove', handleMouseMove);
+        selectionCanvas.addEventListener('mouseup', handleMouseUp);
+        
+        // 保存事件監聽器以便移除
+        this.regionSelectionHandlers = {
+            mouseDown: handleMouseDown,
+            mouseMove: handleMouseMove,
+            mouseUp: handleMouseUp
+        };
+        
+        Utils.showNotification('請拖拽選擇要處理的區域', 'info');
+    }
+    
+    // 退出區域選擇
+    exitRegionSelection() {
+        this.isSelectingRegion = false;
+        this.selectionStart = null;
+        this.selectionEnd = null;
+        
+        const selectionCanvas = document.getElementById('selectionCanvas');
+        if (selectionCanvas) {
+            selectionCanvas.style.display = 'none';
+            selectionCanvas.style.pointerEvents = 'none';
+            
+            // 移除事件監聽器
+            if (this.regionSelectionHandlers) {
+                selectionCanvas.removeEventListener('mousedown', this.regionSelectionHandlers.mouseDown);
+                selectionCanvas.removeEventListener('mousemove', this.regionSelectionHandlers.mouseMove);
+                selectionCanvas.removeEventListener('mouseup', this.regionSelectionHandlers.mouseUp);
+                this.regionSelectionHandlers = null;
+            }
+        }
+        
+        if (this.selectedRegion) {
+            Utils.showNotification('區域選擇完成，可以執行一鍵修復', 'success');
+        }
+    }
+    
+    // 繪製選擇框
+    drawSelectionBox(ctx) {
+        if (!this.selectionStart || !this.selectionEnd) return;
+        
+        const x = Math.min(this.selectionStart.x, this.selectionEnd.x);
+        const y = Math.min(this.selectionStart.y, this.selectionEnd.y);
+        const width = Math.abs(this.selectionEnd.x - this.selectionStart.x);
+        const height = Math.abs(this.selectionEnd.y - this.selectionStart.y);
+        
+        // 繪製半透明背景
+        ctx.fillStyle = 'rgba(0, 123, 255, 0.2)';
+        ctx.fillRect(x, y, width, height);
+        
+        // 繪製邊框
+        ctx.strokeStyle = '#007bff';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(x, y, width, height);
+        
+        // 重置線條樣式
+        ctx.setLineDash([]);
+    }
+
+    // 開始區域選擇並自動修復
+    async startRegionSelectionAndRepair() {
+        console.log('開始區域選擇並自動修復模式');
+        this.isSelectingRegion = true;
+        this.selectedRegion = null;
+        
+        const previewImg = document.querySelector('.preview-container img');
+        const selectionCanvas = document.getElementById('selectionCanvas');
+        
+        if (!previewImg || !selectionCanvas) {
+            console.error('找不到預覽圖片或選擇畫布');
+            return;
+        }
+        
+        // 確保預覽圖片已經載入
+        if (previewImg.src.includes('data:image/svg+xml')) {
+            Utils.showNotification('請先上傳圖片', 'warning');
+            return;
+        }
+        
+        // 設置畫布大小
+        selectionCanvas.width = previewImg.offsetWidth;
+        selectionCanvas.height = previewImg.offsetHeight;
+        selectionCanvas.style.display = 'block';
+        selectionCanvas.style.pointerEvents = 'auto';
+        
+        const ctx = selectionCanvas.getContext('2d');
+        
+        // 添加事件監聽器
+        const handleMouseDown = (e) => {
+            const rect = selectionCanvas.getBoundingClientRect();
+            this.selectionStart = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        };
+        
+        const handleMouseMove = (e) => {
+            if (!this.selectionStart) return;
+            
+            const rect = selectionCanvas.getBoundingClientRect();
+            this.selectionEnd = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            
+            // 清除畫布並重繪選擇框
+            ctx.clearRect(0, 0, selectionCanvas.width, selectionCanvas.height);
+            this.drawSelectionBox(ctx);
+        };
+        
+        const handleMouseUp = async (e) => {
+            if (!this.selectionStart || !this.selectionEnd) return;
+            
+            // 計算選擇區域
+            const x = Math.min(this.selectionStart.x, this.selectionEnd.x);
+            const y = Math.min(this.selectionStart.y, this.selectionEnd.y);
+            const width = Math.abs(this.selectionEnd.x - this.selectionStart.x);
+            const height = Math.abs(this.selectionEnd.y - this.selectionStart.y);
+            
+            // 轉換為圖片坐標
+            const imgRect = previewImg.getBoundingClientRect();
+            const scaleX = previewImg.naturalWidth / imgRect.width;
+            const scaleY = previewImg.naturalHeight / imgRect.height;
+            
+            this.selectedRegion = {
+                x: Math.round(x * scaleX),
+                y: Math.round(y * scaleY),
+                width: Math.round(width * scaleX),
+                height: Math.round(height * scaleY)
+            };
+            
+            console.log('選擇區域:', this.selectedRegion);
+            
+            // 退出選擇模式
+            this.exitRegionSelection();
+            
+            // 自動執行一鍵修復
+            await this.executeAutoRepair();
+        };
+        
+        selectionCanvas.addEventListener('mousedown', handleMouseDown);
+        selectionCanvas.addEventListener('mousemove', handleMouseMove);
+        selectionCanvas.addEventListener('mouseup', handleMouseUp);
+        
+        // 保存事件監聽器以便移除
+        this.regionSelectionHandlers = {
+            mouseDown: handleMouseDown,
+            mouseMove: handleMouseMove,
+            mouseUp: handleMouseUp
+        };
+        
+        Utils.showNotification('請拖拽選擇要處理的區域，選擇完成後將自動進行一鍵修復', 'info');
+    }
+    
+    // 執行自動修復
+    async executeAutoRepair() {
+        if (!this.selectedRegion) {
+            Utils.showNotification('未選擇區域', 'warning');
+            return;
+        }
+        
+        try {
+            Utils.showNotification('開始執行一鍵修復...', 'info');
+            
+            // 創建AI處理器
+            if (!this.aiProcessor) {
+                this.aiProcessor = new AIImageProcessor();
+            }
+            
+            // 載入當前圖片
+            const previewImg = document.querySelector('.preview-container img');
+            if (previewImg && !previewImg.src.includes('data:image/svg+xml')) {
+                await this.aiProcessor.loadImageFromDataURL(previewImg.src);
+                
+                // 執行一鍵修復（帶區域選擇）
+                const success = await this.aiProcessor.oneClickRepair(this.selectedRegion);
+                
+                if (success) {
+                    // 更新預覽圖片
+                    const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
+                    if (processedBase64) {
+                        previewImg.src = processedBase64;
+                        
+                        // 保存處理結果到圖片列表
+                        this.saveProcessedImage(processedBase64);
+                        
+                        Utils.showNotification('區域一鍵修復完成！', 'success');
+                    } else {
+                        throw new Error('結果生成失敗');
+                    }
+                } else {
+                    throw new Error('一鍵修復執行失敗');
+                }
+            } else {
+                throw new Error('沒有有效的圖片');
+            }
+        } catch (error) {
+            console.error('自動修復失敗:', error);
+            Utils.showNotification(`修復失敗: ${error.message}`, 'error');
+        }
+    }
+
+    // 保存處理後的圖片到圖片列表
+    saveProcessedImage(processedBase64) {
+        if (this.images.length > 0 && this.currentImageIndex < this.images.length) {
+            // 保存處理後的數據
+            this.images[this.currentImageIndex].processedData = processedBase64;
+            this.images[this.currentImageIndex].isProcessed = true;
+            
+            // 更新圖片列表顯示
+            this.updateImageList();
+            
+            // 啟用下載功能
+            this.updateDownloadButtons();
+            
+            console.log('處理結果已保存到圖片列表');
+        }
+    }
+
+    // 新增：保存塗鴉標註結果
+    saveDrawingResult() {
+        if (this.drawingProcessor && this.images.length > 0 && this.currentImageIndex < this.images.length) {
+            try {
+                // 獲取繪製畫布的數據
+                const canvasData = this.drawingProcessor.getCanvasData();
+                if (canvasData) {
+                    // 將繪製結果與原圖合併
+                    this.mergeDrawingWithImage(canvasData);
+                }
+            } catch (error) {
+                console.error('保存塗鴉標註結果失敗:', error);
+                Utils.showNotification('保存塗鴉標註結果失敗', 'error');
+            }
+        }
+    }
+
+    // 新增：將塗鴉標註結果與原圖合併
+    async mergeDrawingWithImage(drawingCanvasData) {
+        try {
+            const currentImage = this.images[this.currentImageIndex];
+            const previewImg = document.querySelector('.preview-container img');
+            
+            if (!previewImg || !currentImage) {
+                throw new Error('找不到預覽圖片或當前圖片數據');
+            }
+
+            // 創建合併用的Canvas
+            const mergeCanvas = document.createElement('canvas');
+            const mergeCtx = mergeCanvas.getContext('2d');
+            
+            // 設置Canvas尺寸為原圖尺寸
+            mergeCanvas.width = previewImg.naturalWidth;
+            mergeCanvas.height = previewImg.naturalHeight;
+            
+            // 先繪製原圖
+            mergeCtx.drawImage(previewImg, 0, 0);
+            
+            // 再繪製塗鴉標註結果
+            const drawingCanvas = document.getElementById('drawingCanvas');
+            if (drawingCanvas && drawingCanvas.width > 0 && drawingCanvas.height > 0) {
+                // 計算縮放比例
+                const scaleX = previewImg.naturalWidth / drawingCanvas.width;
+                const scaleY = previewImg.naturalHeight / drawingCanvas.height;
+                
+                // 繪製塗鴉標註結果到合併Canvas
+                mergeCtx.drawImage(drawingCanvas, 0, 0, drawingCanvas.width, drawingCanvas.height, 
+                                  0, 0, previewImg.naturalWidth, previewImg.naturalHeight);
+            }
+            
+            // 轉換為Base64並保存
+            const mergedBase64 = mergeCanvas.toDataURL('image/png', 0.9);
+            this.saveProcessedImage(mergedBase64);
+            
+            // 更新預覽圖片
+            previewImg.src = mergedBase64;
+            
+            console.log('塗鴉標註結果已合併並保存');
+            Utils.showNotification('塗鴉標註已保存', 'success');
+            
+        } catch (error) {
+            console.error('合併塗鴉標註結果失敗:', error);
+            Utils.showNotification('合併塗鴉標註結果失敗', 'error');
+        }
     }
 }
 

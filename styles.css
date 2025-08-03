@@ -547,6 +547,28 @@ body {
     box-shadow: 0 2px 8px rgba(255, 59, 48, 0.4);
 }
 
+/* 處理狀態徽章 */
+.processed-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: var(--shadow-light);
+    animation: pulse-glow 2s infinite;
+}
+
+.processed-badge i {
+    color: white;
+}
+
 /* 中間面板 */
 .center-panel {
     display: flex;
@@ -1795,4 +1817,101 @@ body {
 
 .tooltip:hover::after {
     opacity: 1;
+}
+
+/* AI工具按鈕 */
+.ai-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.ai-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.ai-btn:active {
+    transform: translateY(0);
+}
+
+.ai-btn i {
+    font-size: 14px;
+}
+
+/* AI工具容器 */
+.ai-tools {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+    margin: 10px 0;
+}
+
+/* AI狀態指示器 */
+.ai-status {
+    margin: 15px 0;
+}
+
+.status-indicator {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.status-indicator.processing {
+    border-color: #667eea;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+}
+
+.status-text {
+    font-weight: 500;
+    color: #495057;
+}
+
+.status-indicator.processing .status-text {
+    color: #667eea;
+}
+
+/* AI進度條 */
+.ai-progress {
+    margin-top: 10px;
+}
+
+.ai-progress .progress-bar {
+    background: #e9ecef;
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.ai-progress .progress-fill {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    font-size: 12px;
+    color: #6c757d;
+    text-align: center;
+    display: block;
 } 

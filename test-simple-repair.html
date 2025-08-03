@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡單一鍵修復測試</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        #fileInput { display: none; }
+        .preview { margin: 20px 0; }
+        .preview img { max-width: 100%; max-height: 200px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>簡單一鍵修復測試</h1>
+        
+        <div class="upload-area" id="uploadArea">
+            <p>點擊上傳圖片</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+        
+        <div class="preview">
+            <h3>原始圖片</h3>
+            <img id="originalImage" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuekuuS+i+WbvueJhzwvdGV4dD48L3N2Zz4=" alt="原始圖片">
+        </div>
+        
+        <div class="preview">
+            <h3>處理後圖片</h3>
+            <img id="processedImage" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuekuuS+i+WbvueJhzwvdGV4dD48L3N2Zz4=" alt="處理後圖片">
+        </div>
+        
+        <button class="button" id="testRepair">測試一鍵修復</button>
+        <button class="button" id="downloadResult" disabled>下載結果</button>
+        
+        <div id="status" class="status info">等待開始測試...</div>
+        
+        <div class="log" id="logContainer">
+            <div>測試系統初始化完成...</div>
+        </div>
+    </div>
+
+    <script src="js/aiImageProcessor.js"></script>
+    <script>
+        class SimpleTest {
+            constructor() {
+                this.aiProcessor = null;
+                this.setupEvents();
+            }
+            
+            setupEvents() {
+                document.getElementById('uploadArea').addEventListener('click', () => {
+                    document.getElementById('fileInput').click();
+                });
+                
+                document.getElementById('fileInput').addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleFile(e.target.files[0]);
+                    }
+                });
+                
+                document.getElementById('testRepair').addEventListener('click', () => this.testRepair());
+                document.getElementById('downloadResult').addEventListener('click', () => this.downloadResult());
+            }
+            
+            handleFile(file) {
+                this.log(`選擇文件: ${file.name}`);
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('originalImage').src = e.target.result;
+                    this.log('圖片載入完成');
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            async testRepair() {
+                this.log('開始一鍵修復測試...');
+                this.updateStatus('開始測試...', 'info');
+                
+                try {
+                    // 創建AI處理器
+                    this.aiProcessor = new AIImageProcessor();
+                    this.log('✓ AI處理器創建成功');
+                    
+                    // 載入圖片
+                    const originalImage = document.getElementById('originalImage');
+                    if (originalImage.src && !originalImage.src.includes('data:image/svg+xml')) {
+                        await this.aiProcessor.loadImageFromDataURL(originalImage.src);
+                        this.log('✓ 圖片載入成功');
+                        
+                        // 執行一鍵修復
+                        this.log('執行oneClickRepair方法...');
+                        const success = await this.aiProcessor.oneClickRepair();
+                        
+                        if (success) {
+                            this.log('✓ 一鍵修復執行成功');
+                            const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
+                            if (processedBase64) {
+                                document.getElementById('processedImage').src = processedBase64;
+                                document.getElementById('downloadResult').disabled = false;
+                                this.log('✓ 結果生成成功');
+                                this.updateStatus('測試成功！', 'success');
+                            } else {
+                                throw new Error('結果生成失敗');
+                            }
+                        } else {
+                            throw new Error('一鍵修復返回false');
+                        }
+                    } else {
+                        throw new Error('請先上傳圖片');
+                    }
+                } catch (error) {
+                    this.log(`✗ 測試失敗: ${error.message}`, 'error');
+                    this.updateStatus(`測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            downloadResult() {
+                if (this.aiProcessor) {
+                    const link = document.createElement('a');
+                    link.href = this.aiProcessor.toBase64('image/png', 0.9);
+                    link.download = 'repair-result.png';
+                    link.click();
+                    this.log('結果已下載');
+                }
+            }
+            
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('logContainer');
+                const entry = document.createElement('div');
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                if (type === 'error') entry.style.color = 'red';
+                logContainer.appendChild(entry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            updateStatus(message, type = 'info') {
+                const status = document.getElementById('status');
+                status.textContent = message;
+                status.className = `status ${type}`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            new SimpleTest();
+        });
+    </script>
+</body>
+</html> 
