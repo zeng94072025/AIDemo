@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選擇套餐 - AI圖片優化助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .payment-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .payment-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .payment-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .payment-logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .payment-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .payment-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .plan-selection {
+            margin-bottom: 30px;
+        }
+        
+        .plan-option {
+            border: 2px solid #e1e5e9;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .plan-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.1);
+        }
+        
+        .plan-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+        
+        .plan-option.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 24px;
+            height: 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .plan-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .plan-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .plan-features li {
+            padding: 5px 0;
+            color: #666;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .plan-features li::before {
+            content: '✓';
+            color: #2ed573;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .payment-method {
+            margin-bottom: 30px;
+        }
+        
+        .payment-method-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .payment-methods {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .payment-method-option {
+            flex: 1;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-method-option:hover {
+            border-color: #667eea;
+        }
+        
+        .payment-method-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .payment-method-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .payment-method-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .wechat-pay {
+            color: #07c160;
+        }
+        
+        .alipay {
+            color: #1677ff;
+        }
+        
+        .order-summary {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .order-summary-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .order-item:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            font-size: 18px;
+            color: #667eea;
+        }
+        
+        .pay-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .pay-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .pay-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .security-notice {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .security-notice i {
+            color: #667eea;
+            margin-right: 5px;
+        }
+        
+        .qr-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .qr-modal.show {
+            display: flex;
+        }
+        
+        .qr-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+        }
+        
+        .qr-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .qr-tips {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .qr-close {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .payment-status {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .payment-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .payment-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .payment-status.processing {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .retry-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-card">
+            <div class="payment-header">
+                <div class="payment-logo">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h1 class="payment-title">選擇您的套餐</h1>
+                <p class="payment-subtitle">解鎖所有AI功能，享受專業級圖片處理</p>
+            </div>
+            
+            <!-- 支付狀態提示 -->
+            <div class="payment-status" id="paymentStatus"></div>
+            
+            <!-- 套餐選擇 -->
+            <div class="plan-selection">
+                <div class="plan-option" data-plan="free">
+                    <div class="plan-header">
+                        <div class="plan-name">免費版</div>
+                        <div class="plan-price">¥0</div>
+                    </div>
+                    <ul class="plan-features">
+                        <li>基礎圖片處理功能</li>
+                        <li>每日3次處理限制</li>
+                        <li>標準客服支持</li>
+                    </ul>
+                </div>
+                
+                <div class="plan-option selected" data-plan="pro">
+                    <div class="plan-header">
+                        <div class="plan-name">專業版</div>
+                        <div class="plan-price">¥2</div>
+                    </div>
+                    <ul class="plan-features">
+                        <li>所有AI處理功能</li>
+                        <li>無限制處理次數</li>
+                        <li>高級濾鏡和特效</li>
+                        <li>批量處理功能</li>
+                        <li>優先客服支持</li>
+                        <li>終身使用權限</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 支付方式選擇 -->
+            <div class="payment-method">
+                <div class="payment-method-title">選擇支付方式</div>
+                <div class="payment-methods">
+                    <div class="payment-method-option selected" data-method="wechat">
+                        <div class="payment-method-icon wechat-pay">
+                            <i class="fab fa-weixin"></i>
+                        </div>
+                        <div class="payment-method-name">微信支付</div>
+                    </div>
+                    <div class="payment-method-option" data-method="alipay">
+                        <div class="payment-method-icon alipay">
+                            <i class="fab fa-alipay"></i>
+                        </div>
+                        <div class="payment-method-name">支付寶</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 訂單摘要 -->
+            <div class="order-summary">
+                <div class="order-summary-title">訂單摘要</div>
+                <div class="order-item">
+                    <span>專業版套餐</span>
+                    <span>¥2.00</span>
+                </div>
+                <div class="order-item">
+                    <span>服務費</span>
+                    <span>¥0.00</span>
+                </div>
+                <div class="order-item">
+                    <span>總計</span>
+                    <span>¥2.00</span>
+                </div>
+            </div>
+            
+            <!-- 支付按鈕 -->
+            <button class="pay-button" id="payButton">
+                <span class="btn-text">立即支付 ¥2.00</span>
+                <span class="loading-spinner" style="display: none;"></span>
+            </button>
+            
+            <!-- 安全提示 -->
+            <div class="security-notice">
+                <i class="fas fa-shield-alt"></i>
+                支付安全由微信/支付寶官方保障，資金直達簽約賬戶
+            </div>
+        </div>
+    </div>
+    
+    <!-- 支付二維碼模態框 -->
+    <div class="qr-modal" id="qrModal">
+        <div class="qr-content">
+            <div class="qr-title">請掃碼支付</div>
+            <div class="qr-code" id="qrCode">
+                <div>
+                    <i class="fas fa-qrcode" style="font-size: 60px; color: #ccc;"></i>
+                    <br>
+                    模擬二維碼
+                </div>
+            </div>
+            <div class="qr-tips">
+                請使用微信/支付寶掃描上方二維碼完成支付
+            </div>
+            <button class="qr-close" id="qrClose">關閉</button>
+        </div>
+    </div>
+
+    <script>
+        class PaymentManager {
+            constructor() {
+                this.selectedPlan = 'pro';
+                this.selectedMethod = 'wechat';
+                this.orderId = '';
+                this.paymentStatus = 'pending';
+                this.retryCount = 0;
+                this.maxRetries = 3;
+                this.paymentTimeout = 300000; // 5分鐘超時
+                this.statusCheckInterval = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.initPlanSelection();
+                this.initPaymentMethodSelection();
+                this.initPayButton();
+                this.initQrModal();
+                this.checkUserStatus();
+                this.generateOrderId();
+            }
+            
+            initPlanSelection() {
+                const planOptions = document.querySelectorAll('.plan-option');
+                
+                planOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        // 移除其他選中狀態
+                        planOptions.forEach(opt => opt.classList.remove('selected'));
+                        // 添加當前選中狀態
+                        option.classList.add('selected');
+                        
+                        this.selectedPlan = option.dataset.plan;
+                        this.updateOrderSummary();
+                    });
+                });
+            }
+            
+            initPaymentMethodSelection() {
+                const methodOptions = document.querySelectorAll('.payment-method-option');
+                
+                methodOptions.forEach(option => {
+                    option.addEventListener('click', () => {
+                        // 移除其他選中狀態
+                        methodOptions.forEach(opt => opt.classList.remove('selected'));
+                        // 添加當前選中狀態
+                        option.classList.add('selected');
+                        
+                        this.selectedMethod = option.dataset.method;
+                    });
+                });
+            }
+            
+            initPayButton() {
+                const payButton = document.getElementById('payButton');
+                payButton.addEventListener('click', () => {
+                    this.processPayment();
+                });
+            }
+            
+            initQrModal() {
+                const qrModal = document.getElementById('qrModal');
+                const qrClose = document.getElementById('qrClose');
+                
+                qrClose.addEventListener('click', () => {
+                    this.closeQrModal();
+                });
+                
+                // 點擊背景關閉
+                qrModal.addEventListener('click', (e) => {
+                    if (e.target === qrModal) {
+                        this.closeQrModal();
+                    }
+                });
+            }
+            
+            checkUserStatus() {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                
+                if (userInfo.isPaid || userInfo.isTestUser) {
+                    // 用戶已付費，直接跳轉到主頁
+                    window.location.href = 'index.html';
+                }
+            }
+            
+            generateOrderId() {
+                const timestamp = Date.now();
+                const random = Math.floor(Math.random() * 10000);
+                this.orderId = `ORDER${timestamp}${random}`;
+            }
+            
+            updateOrderSummary() {
+                const totalElement = document.querySelector('.order-item:last-child span:last-child');
+                const payButton = document.getElementById('payButton');
+                
+                if (this.selectedPlan === 'free') {
+                    totalElement.textContent = '¥0.00';
+                    payButton.querySelector('.btn-text').textContent = '選擇免費版';
+                } else {
+                    totalElement.textContent = '¥2.00';
+                    payButton.querySelector('.btn-text').textContent = '立即支付 ¥2.00';
+                }
+            }
+            
+            async processPayment() {
+                if (this.selectedPlan === 'free') {
+                    this.handleFreePlan();
+                    return;
+                }
+                
+                // 防超額支付檢查
+                if (!this.checkPaymentLimit()) {
+                    this.showPaymentStatus('error', '支付限額已達上限，請稍後重試');
+                    return;
+                }
+                
+                // 設置支付狀態
+                this.paymentStatus = 'processing';
+                this.showPaymentStatus('processing', '正在生成支付訂單...');
+                
+                const payButton = document.getElementById('payButton');
+                this.setLoading(payButton, true);
+                
+                try {
+                    // 創建支付訂單
+                    const orderResult = await this.createPaymentOrder();
+                    
+                    if (orderResult.success) {
+                        // 顯示支付二維碼
+                        this.showQrModal();
+                        
+                        // 開始輪詢支付狀態
+                        this.startPaymentStatusCheck();
+                        
+                        // 設置支付超時
+                        setTimeout(() => {
+                            if (this.paymentStatus === 'processing') {
+                                this.handlePaymentTimeout();
+                            }
+                        }, this.paymentTimeout);
+                        
+                    } else {
+                        this.showPaymentStatus('error', orderResult.message);
+                    }
+                } catch (error) {
+                    console.error('支付處理失敗:', error);
+                    this.showPaymentStatus('error', '支付處理失敗，請重試');
+                } finally {
+                    this.setLoading(payButton, false);
+                }
+            }
+            
+            checkPaymentLimit() {
+                // 檢查用戶今日支付次數
+                const today = new Date().toDateString();
+                const paymentHistory = JSON.parse(localStorage.getItem('paymentHistory') || '{}');
+                const todayPayments = paymentHistory[today] || 0;
+                
+                // 限制每日最多支付10次
+                return todayPayments < 10;
+            }
+            
+            async createPaymentOrder() {
+                // 模擬API調用
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 生成支付簽名
+                const signature = this.generatePaymentSignature();
+                
+                const orderData = {
+                    orderId: this.orderId,
+                    amount: 2.00,
+                    currency: 'CNY',
+                    paymentMethod: this.selectedMethod,
+                    signature: signature,
+                    timestamp: Date.now(),
+                    userId: localStorage.getItem('userPhone'),
+                    planType: this.selectedPlan
+                };
+                
+                // 保存訂單信息
+                localStorage.setItem('currentOrder', JSON.stringify(orderData));
+                
+                return { success: true, orderId: this.orderId };
+            }
+            
+            generatePaymentSignature() {
+                // 模擬SHA256簽名生成
+                const data = `${this.orderId}${Date.now()}${localStorage.getItem('userPhone')}`;
+                return btoa(data).substring(0, 32);
+            }
+            
+            showQrModal() {
+                const qrModal = document.getElementById('qrModal');
+                const qrCode = document.getElementById('qrCode');
+                
+                // 生成模擬二維碼
+                qrCode.innerHTML = `
+                    <div style="text-align: center;">
+                        <i class="fas fa-qrcode" style="font-size: 60px; color: #07c160;"></i>
+                        <br>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            訂單號: ${this.orderId}<br>
+                            金額: ¥2.00
+                        </div>
+                    </div>
+                `;
+                
+                qrModal.classList.add('show');
+            }
+            
+            closeQrModal() {
+                const qrModal = document.getElementById('qrModal');
+                qrModal.classList.remove('show');
+                
+                // 停止支付狀態檢查
+                if (this.statusCheckInterval) {
+                    clearInterval(this.statusCheckInterval);
+                }
+            }
+            
+            startPaymentStatusCheck() {
+                // 每3秒檢查一次支付狀態
+                this.statusCheckInterval = setInterval(() => {
+                    this.checkPaymentStatus();
+                }, 3000);
+            }
+            
+            async checkPaymentStatus() {
+                try {
+                    // 模擬檢查支付狀態
+                    const paymentResult = await this.simulatePaymentCheck();
+                    
+                    if (paymentResult.success) {
+                        this.handlePaymentSuccess(paymentResult);
+                    } else if (paymentResult.status === 'failed') {
+                        this.handlePaymentFailure(paymentResult.message);
+                    }
+                    // 如果狀態仍為processing，繼續等待
+                    
+                } catch (error) {
+                    console.error('檢查支付狀態失敗:', error);
+                }
+            }
+            
+            async simulatePaymentCheck() {
+                // 模擬支付檢查，有20%概率成功
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const random = Math.random();
+                if (random < 0.2) {
+                    return { success: true, status: 'success' };
+                } else if (random < 0.3) {
+                    return { success: false, status: 'failed', message: '支付失敗' };
+                } else {
+                    return { success: false, status: 'processing' };
+                }
+            }
+            
+            handlePaymentSuccess(result) {
+                this.paymentStatus = 'success';
+                
+                // 停止狀態檢查
+                if (this.statusCheckInterval) {
+                    clearInterval(this.statusCheckInterval);
+                }
+                
+                // 更新用戶信息
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.isPaid = true;
+                userInfo.planType = 'paid';
+                userInfo.paymentTime = new Date().toISOString();
+                userInfo.orderId = this.orderId;
+                
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                // 記錄支付歷史
+                this.recordPaymentHistory();
+                
+                // 顯示成功信息
+                this.showPaymentStatus('success', '支付成功！正在跳轉...');
+                
+                // 關閉二維碼模態框
+                this.closeQrModal();
+                
+                // 延遲跳轉
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            }
+            
+            handlePaymentFailure(message) {
+                this.paymentStatus = 'failed';
+                
+                // 停止狀態檢查
+                if (this.statusCheckInterval) {
+                    clearInterval(this.statusCheckInterval);
+                }
+                
+                this.showPaymentStatus('error', `支付失敗: ${message}`, true);
+                this.closeQrModal();
+            }
+            
+            handlePaymentTimeout() {
+                this.paymentStatus = 'timeout';
+                
+                // 停止狀態檢查
+                if (this.statusCheckInterval) {
+                    clearInterval(this.statusCheckInterval);
+                }
+                
+                this.showPaymentStatus('error', '支付超時，請重新嘗試', true);
+                this.closeQrModal();
+            }
+            
+            recordPaymentHistory() {
+                const today = new Date().toDateString();
+                const paymentHistory = JSON.parse(localStorage.getItem('paymentHistory') || '{}');
+                
+                if (!paymentHistory[today]) {
+                    paymentHistory[today] = 0;
+                }
+                paymentHistory[today]++;
+                
+                localStorage.setItem('paymentHistory', JSON.stringify(paymentHistory));
+                
+                // 記錄詳細支付記錄
+                const paymentRecords = JSON.parse(localStorage.getItem('paymentRecords') || '[]');
+                paymentRecords.push({
+                    orderId: this.orderId,
+                    amount: 2.00,
+                    paymentMethod: this.selectedMethod,
+                    timestamp: new Date().toISOString(),
+                    userId: localStorage.getItem('userPhone'),
+                    status: 'success'
+                });
+                
+                localStorage.setItem('paymentRecords', JSON.stringify(paymentRecords));
+            }
+            
+            handleFreePlan() {
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                userInfo.planType = 'free';
+                userInfo.isPaid = false;
+                
+                localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                
+                this.showPaymentStatus('success', '已選擇免費版，正在跳轉...');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            }
+            
+            showPaymentStatus(type, message, showRetry = false) {
+                const statusElement = document.getElementById('paymentStatus');
+                
+                statusElement.className = `payment-status ${type}`;
+                statusElement.innerHTML = `
+                    <div>${message}</div>
+                    ${showRetry ? '<button class="retry-button" onclick="paymentManager.retryPayment()">重試</button>' : ''}
+                `;
+                statusElement.style.display = 'block';
+                
+                // 3秒後隱藏成功信息
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                    }, 3000);
+                }
+            }
+            
+            retryPayment() {
+                if (this.retryCount < this.maxRetries) {
+                    this.retryCount++;
+                    this.generateOrderId();
+                    this.processPayment();
+                } else {
+                    this.showPaymentStatus('error', '重試次數已達上限，請稍後重試');
+                }
+            }
+            
+            setLoading(button, loading) {
+                const btnText = button.querySelector('.btn-text');
+                const spinner = button.querySelector('.loading-spinner');
+                
+                if (loading) {
+                    btnText.style.display = 'none';
+                    spinner.style.display = 'inline-block';
+                    button.disabled = true;
+                } else {
+                    btnText.style.display = 'inline';
+                    spinner.style.display = 'none';
+                    button.disabled = false;
+                }
+            }
+        }
+        
+        // 初始化支付管理器
+        let paymentManager;
+        document.addEventListener('DOMContentLoaded', () => {
+            paymentManager = new PaymentManager();
+        });
+    </script>
+</body>
+</html> 

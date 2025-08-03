@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理員儀表板 - AI圖片優化助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-container {
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+        
+        .dashboard-header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .header-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .header-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .header-btn.secondary {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .header-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-content {
+            padding: 30px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .stat-title {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+        }
+        
+        .stat-icon.users {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        
+        .stat-icon.revenue {
+            background: linear-gradient(135deg, #2ed573, #1dd1a1);
+        }
+        
+        .stat-icon.orders {
+            background: linear-gradient(135deg, #ffa502, #ff6348);
+        }
+        
+        .stat-icon.conversion {
+            background: linear-gradient(135deg, #9c27b0, #673ab7);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .stat-change {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stat-change.positive {
+            color: #2ed573;
+        }
+        
+        .stat-change.negative {
+            color: #e74c3c;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .chart-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-btn {
+            padding: 6px 12px;
+            border: 1px solid #e1e5e9;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        
+        .chart-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .risk-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .risk-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .risk-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .risk-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .risk-status.safe {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .risk-status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .risk-status.danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .risk-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .risk-item {
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .risk-item.high {
+            border-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.05);
+        }
+        
+        .risk-item.medium {
+            border-color: #f39c12;
+            background: rgba(243, 156, 18, 0.05);
+        }
+        
+        .risk-item.low {
+            border-color: #2ed573;
+            background: rgba(46, 213, 115, 0.05);
+        }
+        
+        .risk-item-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .risk-item-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        
+        .risk-item.high .risk-item-value {
+            color: #e74c3c;
+        }
+        
+        .risk-item.medium .risk-item-value {
+            color: #f39c12;
+        }
+        
+        .risk-item.low .risk-item-value {
+            color: #2ed573;
+        }
+        
+        .orders-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .orders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .orders-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .orders-search {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-input {
+            padding: 8px 12px;
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 200px;
+        }
+        
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .orders-table th,
+        .orders-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+        
+        .orders-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .order-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .order-status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .order-status.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .order-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .export-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .export-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+            
+            .dashboard-content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <div class="header-title">
+                <i class="fas fa-chart-line"></i>
+                管理員儀表板
+            </div>
+            <div class="header-actions">
+                <button class="header-btn secondary" onclick="adminDashboard.exportData()">
+                    <i class="fas fa-download"></i>
+                    導出數據
+                </button>
+                <button class="header-btn primary" onclick="adminDashboard.refreshData()">
+                    <i class="fas fa-sync-alt"></i>
+                    刷新數據
+                </button>
+                <button class="header-btn secondary" onclick="adminDashboard.logout()">
+                    <i class="fas fa-sign-out-alt"></i>
+                    退出登錄
+                </button>
+            </div>
+        </div>
+        
+        <div class="dashboard-content">
+            <!-- 統計卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">總用戶數</div>
+                        <div class="stat-icon users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="totalUsers">0</div>
+                    <div class="stat-change positive" id="usersChange">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">付費用戶</div>
+                        <div class="stat-icon revenue">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="paidUsers">0</div>
+                    <div class="stat-change positive" id="paidUsersChange">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">今日收入</div>
+                        <div class="stat-icon orders">
+                            <i class="fas fa-yen-sign"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="todayRevenue">¥0</div>
+                    <div class="stat-change positive" id="revenueChange">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">轉化率</div>
+                        <div class="stat-icon conversion">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="conversionRate">0%</div>
+                    <div class="stat-change positive" id="conversionChange">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 圖表區域 -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">收入趨勢</div>
+                        <div class="chart-actions">
+                            <button class="chart-btn active" data-period="7">7天</button>
+                            <button class="chart-btn" data-period="30">30天</button>
+                            <button class="chart-btn" data-period="90">90天</button>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">支付方式分布</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="paymentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 風控面板 -->
+            <div class="risk-panel">
+                <div class="risk-header">
+                    <div class="risk-title">風控看板</div>
+                    <div class="risk-status safe" id="riskStatus">安全</div>
+                </div>
+                <div class="risk-items">
+                    <div class="risk-item low">
+                        <div class="risk-item-title">大額交易</div>
+                        <div class="risk-item-value" id="largeTransactions">0</div>
+                    </div>
+                    <div class="risk-item low">
+                        <div class="risk-item-title">異常登錄</div>
+                        <div class="risk-item-value" id="abnormalLogins">0</div>
+                    </div>
+                    <div class="risk-item low">
+                        <div class="risk-item-title">支付失敗率</div>
+                        <div class="risk-item-value" id="paymentFailureRate">0%</div>
+                    </div>
+                    <div class="risk-item low">
+                        <div class="risk-item-title">系統健康度</div>
+                        <div class="risk-item-value" id="systemHealth">100%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 訂單管理 -->
+            <div class="orders-panel">
+                <div class="orders-header">
+                    <div class="orders-title">訂單管理</div>
+                    <div class="orders-search">
+                        <input type="text" class="search-input" id="orderSearch" placeholder="搜索訂單號...">
+                        <button class="export-btn" onclick="adminDashboard.exportOrders()">
+                            <i class="fas fa-download"></i>
+                            導出
+                        </button>
+                    </div>
+                </div>
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>訂單號</th>
+                            <th>用戶</th>
+                            <th>金額</th>
+                            <th>支付方式</th>
+                            <th>狀態</th>
+                            <th>時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                        <!-- 訂單數據將在這裡動態生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加載遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script>
+        class AdminDashboard {
+            constructor() {
+                this.charts = {};
+                this.currentPeriod = 7;
+                this.isLoading = false;
+                
+                this.init();
+            }
+            
+            init() {
+                this.checkAuth();
+                this.initCharts();
+                this.loadData();
+                this.initEventListeners();
+                this.startAutoRefresh();
+            }
+            
+            checkAuth() {
+                const userRole = localStorage.getItem('userRole');
+                const userPhone = localStorage.getItem('userPhone');
+                
+                if (userRole !== 'admin' || userPhone !== '18551689698') {
+                    alert('無權限訪問管理員儀表板');
+                    window.location.href = 'login.html';
+                }
+            }
+            
+            initEventListeners() {
+                // 圖表時間範圍切換
+                document.querySelectorAll('.chart-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.currentPeriod = parseInt(btn.dataset.period);
+                        this.updateCharts();
+                    });
+                });
+                
+                // 訂單搜索
+                document.getElementById('orderSearch').addEventListener('input', (e) => {
+                    this.filterOrders(e.target.value);
+                });
+            }
+            
+            async loadData() {
+                this.showLoading(true);
+                
+                try {
+                    // 模擬API調用
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const data = this.generateMockData();
+                    this.updateStats(data);
+                    this.updateCharts(data);
+                    this.updateRiskPanel(data);
+                    this.updateOrdersTable(data.orders);
+                    
+                } catch (error) {
+                    console.error('加載數據失敗:', error);
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+            
+            generateMockData() {
+                const now = new Date();
+                const data = {
+                    stats: {
+                        totalUsers: Math.floor(Math.random() * 1000) + 500,
+                        paidUsers: Math.floor(Math.random() * 200) + 100,
+                        todayRevenue: Math.floor(Math.random() * 500) + 100,
+                        conversionRate: (Math.random() * 20 + 10).toFixed(1)
+                    },
+                    trends: {
+                        revenue: this.generateTrendData(30),
+                        users: this.generateTrendData(30),
+                        payments: this.generatePaymentData()
+                    },
+                    risk: {
+                        largeTransactions: Math.floor(Math.random() * 5),
+                        abnormalLogins: Math.floor(Math.random() * 3),
+                        paymentFailureRate: (Math.random() * 5).toFixed(1),
+                        systemHealth: (Math.random() * 10 + 90).toFixed(1)
+                    },
+                    orders: this.generateOrdersData()
+                };
+                
+                return data;
+            }
+            
+            generateTrendData(days) {
+                const data = [];
+                for (let i = days - 1; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    data.push({
+                        date: date.toISOString().split('T')[0],
+                        value: Math.floor(Math.random() * 100) + 50
+                    });
+                }
+                return data;
+            }
+            
+            generatePaymentData() {
+                return [
+                    { method: '微信支付', count: Math.floor(Math.random() * 100) + 50, percentage: 0 },
+                    { method: '支付寶', count: Math.floor(Math.random() * 80) + 30, percentage: 0 }
+                ];
+            }
+            
+            generateOrdersData() {
+                const orders = [];
+                const methods = ['微信支付', '支付寶'];
+                const statuses = ['success', 'pending', 'failed'];
+                
+                for (let i = 0; i < 20; i++) {
+                    const orderId = `ORDER${Date.now()}${i}`;
+                    const method = methods[Math.floor(Math.random() * methods.length)];
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    const amount = (Math.random() * 10 + 1).toFixed(2);
+                    
+                    orders.push({
+                        orderId: orderId,
+                        userPhone: `138****${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+                        amount: amount,
+                        method: method,
+                        status: status,
+                        time: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+                    });
+                }
+                
+                return orders;
+            }
+            
+            updateStats(data) {
+                const { stats } = data;
+                
+                document.getElementById('totalUsers').textContent = stats.totalUsers.toLocaleString();
+                document.getElementById('paidUsers').textContent = stats.paidUsers.toLocaleString();
+                document.getElementById('todayRevenue').textContent = `¥${stats.todayRevenue.toLocaleString()}`;
+                document.getElementById('conversionRate').textContent = `${stats.conversionRate}%`;
+                
+                // 模擬變化率
+                const changes = ['positive', 'negative'];
+                document.querySelectorAll('.stat-change').forEach((change, index) => {
+                    const isPositive = Math.random() > 0.3;
+                    const changeValue = (Math.random() * 20 + 5).toFixed(1);
+                    
+                    change.className = `stat-change ${isPositive ? 'positive' : 'negative'}`;
+                    change.innerHTML = `
+                        <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i>
+                        <span>${changeValue}%</span>
+                    `;
+                });
+            }
+            
+            initCharts() {
+                this.initRevenueChart();
+                this.initPaymentChart();
+            }
+            
+            initRevenueChart() {
+                const ctx = document.getElementById('revenueChart').getContext('2d');
+                
+                this.charts.revenue = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [{
+                            label: '收入 (¥)',
+                            data: [],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0,0,0,0.1)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            initPaymentChart() {
+                const ctx = document.getElementById('paymentChart').getContext('2d');
+                
+                this.charts.payment = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['微信支付', '支付寶'],
+                        datasets: [{
+                            data: [60, 40],
+                            backgroundColor: ['#07c160', '#1677ff'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            updateCharts(data) {
+                if (!data) {
+                    data = this.generateMockData();
+                }
+                
+                // 更新收入圖表
+                const revenueData = data.trends.revenue.slice(-this.currentPeriod);
+                this.charts.revenue.data.labels = revenueData.map(d => d.date);
+                this.charts.revenue.data.datasets[0].data = revenueData.map(d => d.value);
+                this.charts.revenue.update();
+                
+                // 更新支付方式圖表
+                const paymentData = data.trends.payments;
+                const total = paymentData.reduce((sum, p) => sum + p.count, 0);
+                paymentData.forEach(p => p.percentage = ((p.count / total) * 100).toFixed(1));
+                
+                this.charts.payment.data.datasets[0].data = paymentData.map(p => p.count);
+                this.charts.payment.update();
+            }
+            
+            updateRiskPanel(data) {
+                const { risk } = data;
+                
+                document.getElementById('largeTransactions').textContent = risk.largeTransactions;
+                document.getElementById('abnormalLogins').textContent = risk.abnormalLogins;
+                document.getElementById('paymentFailureRate').textContent = `${risk.paymentFailureRate}%`;
+                document.getElementById('systemHealth').textContent = `${risk.systemHealth}%`;
+                
+                // 更新風險狀態
+                const riskStatus = document.getElementById('riskStatus');
+                let riskLevel = 'safe';
+                let statusText = '安全';
+                
+                if (risk.largeTransactions > 3 || risk.abnormalLogins > 2 || risk.paymentFailureRate > 3) {
+                    riskLevel = 'warning';
+                    statusText = '注意';
+                }
+                
+                if (risk.largeTransactions > 5 || risk.abnormalLogins > 5 || risk.paymentFailureRate > 5) {
+                    riskLevel = 'danger';
+                    statusText = '危險';
+                }
+                
+                riskStatus.className = `risk-status ${riskLevel}`;
+                riskStatus.textContent = statusText;
+                
+                // 更新風險項目樣式
+                document.querySelectorAll('.risk-item').forEach((item, index) => {
+                    const values = [risk.largeTransactions, risk.abnormalLogins, risk.paymentFailureRate, risk.systemHealth];
+                    const value = values[index];
+                    
+                    let level = 'low';
+                    if (index === 3) { // 系統健康度
+                        if (value < 95) level = 'medium';
+                        if (value < 90) level = 'high';
+                    } else {
+                        if (value > 3) level = 'medium';
+                        if (value > 5) level = 'high';
+                    }
+                    
+                    item.className = `risk-item ${level}`;
+                });
+            }
+            
+            updateOrdersTable(orders) {
+                const tbody = document.getElementById('ordersTableBody');
+                tbody.innerHTML = '';
+                
+                orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${order.orderId}</td>
+                        <td>${order.userPhone}</td>
+                        <td>¥${order.amount}</td>
+                        <td>${order.method}</td>
+                        <td><span class="order-status ${order.status}">${this.getStatusText(order.status)}</span></td>
+                        <td>${new Date(order.time).toLocaleString()}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            getStatusText(status) {
+                const statusMap = {
+                    'success': '成功',
+                    'pending': '處理中',
+                    'failed': '失敗'
+                };
+                return statusMap[status] || status;
+            }
+            
+            filterOrders(searchTerm) {
+                const rows = document.querySelectorAll('#ordersTableBody tr');
+                rows.forEach(row => {
+                    const orderId = row.cells[0].textContent.toLowerCase();
+                    const userPhone = row.cells[1].textContent.toLowerCase();
+                    
+                    if (orderId.includes(searchTerm.toLowerCase()) || userPhone.includes(searchTerm.toLowerCase())) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+            
+            async refreshData() {
+                await this.loadData();
+            }
+            
+            exportData() {
+                const data = this.generateMockData();
+                const csvContent = this.convertToCSV(data);
+                this.downloadCSV(csvContent, 'dashboard_data.csv');
+            }
+            
+            exportOrders() {
+                const orders = this.generateOrdersData();
+                const csvContent = this.convertOrdersToCSV(orders);
+                this.downloadCSV(csvContent, 'orders_data.csv');
+            }
+            
+            convertToCSV(data) {
+                const headers = ['日期', '總用戶數', '付費用戶數', '收入', '轉化率'];
+                const rows = [headers];
+                
+                // 添加統計數據
+                rows.push([
+                    new Date().toLocaleDateString(),
+                    data.stats.totalUsers,
+                    data.stats.paidUsers,
+                    data.stats.todayRevenue,
+                    `${data.stats.conversionRate}%`
+                ]);
+                
+                return rows.map(row => row.join(',')).join('\n');
+            }
+            
+            convertOrdersToCSV(orders) {
+                const headers = ['訂單號', '用戶', '金額', '支付方式', '狀態', '時間'];
+                const rows = [headers];
+                
+                orders.forEach(order => {
+                    rows.push([
+                        order.orderId,
+                        order.userPhone,
+                        order.amount,
+                        order.method,
+                        this.getStatusText(order.status),
+                        new Date(order.time).toLocaleString()
+                    ]);
+                });
+                
+                return rows.map(row => row.join(',')).join('\n');
+            }
+            
+            downloadCSV(content, filename) {
+                const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            logout() {
+                if (confirm('確定要退出登錄嗎？')) {
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userPhone');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'login.html';
+                }
+            }
+            
+            showLoading(show) {
+                this.isLoading = show;
+                document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+            }
+            
+            startAutoRefresh() {
+                // 每5分鐘自動刷新數據
+                setInterval(() => {
+                    if (!this.isLoading) {
+                        this.loadData();
+                    }
+                }, 5 * 60 * 1000);
+            }
+        }
+        
+        // 初始化管理員儀表板
+        let adminDashboard;
+        document.addEventListener('DOMContentLoaded', () => {
+            adminDashboard = new AdminDashboard();
+        });
+    </script>
+</body>
+</html> 

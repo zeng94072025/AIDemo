@@ -20,6 +20,10 @@
                 <h1>AI圖片優化助手</h1>
             </div>
             <div class="header-actions">
+                <div class="user-info" id="userInfo" style="display: none;">
+                    <span id="userPhone"></span>
+                    <span class="plan-badge" id="planBadge">免費版</span>
+                </div>
                 <button class="btn btn-secondary" id="helpBtn">
                     <i class="fas fa-question-circle"></i>
                     幫助
@@ -27,6 +31,10 @@
                 <button class="btn btn-primary" id="settingsBtn">
                     <i class="fas fa-cog"></i>
                     設置
+                </button>
+                <button class="btn btn-danger" id="logoutBtn" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i>
+                    登出
                 </button>
             </div>
         </div>
@@ -219,7 +227,19 @@
                 
                 <!-- AI處理工具 -->
                 <div class="tab-content" id="ai">
-                    <div class="tool-group">
+                    <div class="tool-group" id="aiLockedMessage" style="display: none;">
+                        <div class="ai-locked-message">
+                            <i class="fas fa-lock" style="font-size: 48px; color: #ffa502; margin-bottom: 20px;"></i>
+                            <h3>AI功能已鎖定</h3>
+                            <p>您需要升級到專業版才能使用AI智能處理功能</p>
+                            <button class="btn btn-primary" id="upgradeBtn">
+                                <i class="fas fa-crown"></i>
+                                立即升級
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="tool-group" id="aiTools" style="display: none;">
                         <h3>畫質修復</h3>
                         <div class="ai-tools">
                             <button class="ai-btn" data-ai="repair-old-photo">
@@ -233,7 +253,7 @@
                         </div>
                     </div>
                     
-                    <div class="tool-group">
+                    <div class="tool-group" id="aiTools2" style="display: none;">
                         <h3>智能一鍵修復</h3>
                         <div class="ai-tools">
                             <button class="ai-btn" data-ai="select-and-repair">
@@ -247,7 +267,7 @@
                         </div>
                     </div>
                     
-                    <div class="tool-group">
+                    <div class="tool-group" id="aiTools3" style="display: none;">
                         <h3>智能摳圖</h3>
                         <div class="ai-tools">
                             <button class="ai-btn" data-ai="extract-portrait">
@@ -261,7 +281,7 @@
                         </div>
                     </div>
                     
-                    <div class="tool-group">
+                    <div class="tool-group" id="aiTools4" style="display: none;">
                         <h3>風格化生成</h3>
                         <div class="ai-tools">
                             <button class="ai-btn" data-ai="artistic-oil">
@@ -291,7 +311,7 @@
                         </div>
                     </div>
                     
-                    <div class="tool-group">
+                    <div class="tool-group" id="aiStatus" style="display: none;">
                         <h3>AI處理狀態</h3>
                         <div class="ai-status">
                             <div class="status-indicator" id="aiStatusIndicator">
@@ -511,8 +531,117 @@
     <!-- 塗鴉標註Canvas -->
     <canvas id="drawingCanvas" style="display: none; position: absolute; top: 0; left: 0; z-index: 1000;"></canvas>
     
-    <!-- 調試腳本 -->
+    <!-- 認證和權限控制腳本 -->
     <script>
+        class AuthManager {
+            constructor() {
+                this.checkAuth();
+                this.initElements();
+                this.bindEvents();
+            }
+            
+            checkAuth() {
+                const userRole = localStorage.getItem('userRole');
+                const userPhone = localStorage.getItem('userPhone');
+                
+                if (!userRole || !userPhone) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // 如果是管理員，跳轉到管理員儀表板
+                if (userRole === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                    return;
+                }
+                
+                this.userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                
+                // 檢查是否需要選擇套餐（測試用戶和已付費用戶跳過）
+                if (!this.userInfo.isPaid && !this.userInfo.isTestUser) {
+                    window.location.href = 'payment.html';
+                    return;
+                }
+                
+                // 認證通過，允許繼續使用
+                console.log('認證檢查通過，用戶信息:', this.userInfo);
+            }
+            
+            initElements() {
+                this.userInfoDiv = document.getElementById('userInfo');
+                this.userPhoneSpan = document.getElementById('userPhone');
+                this.planBadge = document.getElementById('planBadge');
+                this.logoutBtn = document.getElementById('logoutBtn');
+                this.upgradeBtn = document.getElementById('upgradeBtn');
+                
+                this.aiLockedMessage = document.getElementById('aiLockedMessage');
+                this.aiTools = document.getElementById('aiTools');
+                this.aiTools2 = document.getElementById('aiTools2');
+                this.aiTools3 = document.getElementById('aiTools3');
+                this.aiTools4 = document.getElementById('aiTools4');
+                this.aiStatus = document.getElementById('aiStatus');
+            }
+            
+            bindEvents() {
+                this.logoutBtn.addEventListener('click', () => this.logout());
+                this.upgradeBtn.addEventListener('click', () => this.upgrade());
+                
+                // 顯示用戶信息
+                this.showUserInfo();
+                
+                // 控制AI功能權限
+                this.controlAIAccess();
+            }
+            
+            showUserInfo() {
+                this.userInfoDiv.style.display = 'flex';
+                this.userPhoneSpan.textContent = this.userInfo.phone || localStorage.getItem('userPhone');
+                
+                if (this.userInfo.isPaid || this.userInfo.isTestUser) {
+                    this.planBadge.textContent = this.userInfo.isTestUser ? '測試版' : '專業版';
+                    this.planBadge.style.background = this.userInfo.isTestUser ? '#9c27b0' : '#2ed573';
+                } else {
+                    this.planBadge.textContent = '免費版';
+                    this.planBadge.style.background = '#ffa502';
+                }
+                
+                this.logoutBtn.style.display = 'block';
+            }
+            
+            controlAIAccess() {
+                if (this.userInfo.isPaid || this.userInfo.isTestUser) {
+                    // 付費用戶和測試用戶可以訪問所有AI功能
+                    this.aiLockedMessage.style.display = 'none';
+                    this.aiTools.style.display = 'block';
+                    this.aiTools2.style.display = 'block';
+                    this.aiTools3.style.display = 'block';
+                    this.aiTools4.style.display = 'block';
+                    this.aiStatus.style.display = 'block';
+                } else {
+                    // 免費用戶只能看到升級提示
+                    this.aiLockedMessage.style.display = 'block';
+                    this.aiTools.style.display = 'none';
+                    this.aiTools2.style.display = 'none';
+                    this.aiTools3.style.display = 'none';
+                    this.aiTools4.style.display = 'none';
+                    this.aiStatus.style.display = 'none';
+                }
+            }
+            
+            logout() {
+                if (confirm('確定要登出嗎？')) {
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userPhone');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'login.html';
+                }
+            }
+            
+            upgrade() {
+                window.location.href = 'payment.html';
+            }
+        }
+        
         // 全局錯誤處理
         window.addEventListener('error', function(event) {
             console.error('JavaScript錯誤:', event.error);
@@ -579,6 +708,37 @@
             aiButtons.forEach((btn, index) => {
                 console.log(`AI按鈕 ${index + 1}:`, btn.textContent.trim(), btn.dataset.ai);
             });
+        });
+        
+        // 初始化認證管理器和圖片處理功能
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化認證管理器
+            const authManager = new AuthManager();
+            
+            // 等待認證檢查完成後初始化圖片處理功能
+            setTimeout(() => {
+                // 檢查是否已登錄
+                const userRole = localStorage.getItem('userRole');
+                const userPhone = localStorage.getItem('userPhone');
+                
+                if (userRole && userPhone) {
+                    // 用戶已登錄，初始化圖片處理功能
+                    if (typeof AIImageOptimizer !== 'undefined') {
+                        console.log('初始化圖片處理功能...');
+                        // 初始化主應用程序
+                        window.app = new AIImageOptimizer();
+                        
+                        // 確保UIController正確初始化
+                        if (window.app && window.app.uiController) {
+                            console.log('UIController 已初始化:', window.app.uiController);
+                        } else {
+                            console.error('UIController 初始化失敗');
+                        }
+                    } else {
+                        console.error('AIImageOptimizer 類未載入');
+                    }
+                }
+            }, 300);
         });
     </script>
     

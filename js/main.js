@@ -544,22 +544,32 @@ class AIImageOptimizer {
     }
 }
 
-// 當DOM加載完成後初始化應用程序
+// 當DOM加載完成後初始化應用程序（僅在沒有認證系統時執行）
 document.addEventListener('DOMContentLoaded', () => {
-    // 創建全局應用程序實例
-    window.app = new AIImageOptimizer();
+    // 檢查是否已經有認證管理器
+    const userRole = localStorage.getItem('userRole');
+    const userPhone = localStorage.getItem('userPhone');
     
-    // 添加全局錯誤處理
-    window.addEventListener('error', (event) => {
-        console.error('全局錯誤:', event.error);
-    });
-    
-    // 添加未處理的Promise拒絕處理
-    window.addEventListener('unhandledrejection', (event) => {
-        console.error('未處理的Promise拒絕:', event.reason);
-    });
-    
-    console.log('AI圖片優化器應用程序已啟動');
+    // 如果沒有認證信息，直接初始化（用於開發測試）
+    if (!userRole || !userPhone) {
+        console.log('未檢測到認證信息，直接初始化應用程序...');
+        // 創建全局應用程序實例
+        window.app = new AIImageOptimizer();
+        
+        // 添加全局錯誤處理
+        window.addEventListener('error', (event) => {
+            console.error('全局錯誤:', event.error);
+        });
+        
+        // 添加未處理的Promise拒絕處理
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('未處理的Promise拒絕:', event.reason);
+        });
+        
+        console.log('AI圖片優化器應用程序已啟動（無認證模式）');
+    } else {
+        console.log('檢測到認證信息，等待認證管理器初始化完成...');
+    }
 });
 
 // 導出應用程序類

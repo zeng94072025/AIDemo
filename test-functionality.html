@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>功能測試 - AI圖片優化助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+        }
+        
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #5a6fd8;
+        }
+        
+        .test-result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .test-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>功能測試頁面</h1>
+        <p>此頁面用於測試圖片處理功能是否正常工作</p>
+        
+        <div class="test-section">
+            <div class="test-title">1. 認證系統測試</div>
+            <button class="test-button" onclick="testAuth()">測試認證系統</button>
+            <div id="authResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 圖片處理器測試</div>
+            <button class="test-button" onclick="testImageProcessor()">測試圖片處理器</button>
+            <div id="processorResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. UI控制器測試</div>
+            <button class="test-button" onclick="testUIController()">測試UI控制器</button>
+            <div id="uiResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">4. 完整功能測試</div>
+            <button class="test-button" onclick="testFullFunctionality()">測試完整功能</button>
+            <div id="fullResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">5. 快速登錄測試</div>
+            <button class="test-button" onclick="loginAsTest()">以測試用戶登錄</button>
+            <button class="test-button" onclick="loginAsAdmin()">以管理員登錄</button>
+            <div id="loginResult" class="test-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `test-result test-${type}`;
+            element.style.display = 'block';
+        }
+        
+        function testAuth() {
+            const userRole = localStorage.getItem('userRole');
+            const userPhone = localStorage.getItem('userPhone');
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            
+            if (userRole && userPhone) {
+                showResult('authResult', 
+                    `✅ 認證系統正常\n用戶角色: ${userRole}\n手機號: ${userPhone}\n套餐: ${userInfo.isPaid ? '專業版' : '免費版'}`, 
+                    'success');
+            } else {
+                showResult('authResult', '❌ 未檢測到認證信息', 'error');
+            }
+        }
+        
+        function testImageProcessor() {
+            if (typeof ReliableImageProcessor !== 'undefined') {
+                showResult('processorResult', '✅ 圖片處理器已載入', 'success');
+            } else {
+                showResult('processorResult', '❌ 圖片處理器未載入', 'error');
+            }
+        }
+        
+        function testUIController() {
+            if (typeof UIController !== 'undefined') {
+                showResult('uiResult', '✅ UI控制器已載入', 'success');
+            } else {
+                showResult('uiResult', '❌ UI控制器未載入', 'error');
+            }
+        }
+        
+        function testFullFunctionality() {
+            let results = [];
+            
+            // 檢查認證
+            const userRole = localStorage.getItem('userRole');
+            const userPhone = localStorage.getItem('userPhone');
+            if (userRole && userPhone) {
+                results.push('✅ 認證系統正常');
+            } else {
+                results.push('❌ 認證系統異常');
+            }
+            
+            // 檢查圖片處理器
+            if (typeof ReliableImageProcessor !== 'undefined') {
+                results.push('✅ 圖片處理器正常');
+            } else {
+                results.push('❌ 圖片處理器異常');
+            }
+            
+            // 檢查UI控制器
+            if (typeof UIController !== 'undefined') {
+                results.push('✅ UI控制器正常');
+            } else {
+                results.push('❌ UI控制器異常');
+            }
+            
+            // 檢查主應用程序
+            if (typeof AIImageOptimizer !== 'undefined') {
+                results.push('✅ 主應用程序正常');
+            } else {
+                results.push('❌ 主應用程序異常');
+            }
+            
+            const successCount = results.filter(r => r.includes('✅')).length;
+            const totalCount = results.length;
+            
+            showResult('fullResult', 
+                `完整功能測試結果 (${successCount}/${totalCount}):\n${results.join('\n')}`, 
+                successCount === totalCount ? 'success' : 'error');
+        }
+        
+        function loginAsTest() {
+            // 模擬測試用戶登錄
+            const testUser = {
+                phone: '18606198505',
+                password: 'admin123',
+                registerTime: new Date().toISOString(),
+                isPaid: true,
+                planType: 'paid',
+                isTestUser: true
+            };
+            
+            localStorage.setItem('userRole', 'user');
+            localStorage.setItem('userPhone', '18606198505');
+            localStorage.setItem('userInfo', JSON.stringify(testUser));
+            
+            showResult('loginResult', '✅ 已以測試用戶身份登錄，正在跳轉...', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+        
+        function loginAsAdmin() {
+            localStorage.setItem('userRole', 'admin');
+            localStorage.setItem('userPhone', '18551689698');
+            
+            showResult('loginResult', '✅ 已以管理員身份登錄，正在跳轉...', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'admin-dashboard.html';
+            }, 1000);
+        }
+        
+        // 頁面加載時自動運行基本測試
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('功能測試頁面已加載');
+            testAuth();
+            testImageProcessor();
+            testUIController();
+        });
+    </script>
+    
+    <!-- 載入必要的JavaScript文件 -->
+    <script src="js/utils.js"></script>
+    <script src="js/reliableImageProcessor.js"></script>
+    <script src="js/aiImageProcessor.js"></script>
+    <script src="js/drawingProcessor.js"></script>
+    <script src="js/uiController.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 

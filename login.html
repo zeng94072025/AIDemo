@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登錄 - AI圖片優化助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .login-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .login-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-radius: 10px;
+            background: #f5f5f5;
+            padding: 4px;
+        }
+        
+        .login-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .login-tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .login-form {
+            display: none;
+        }
+        
+        .login-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-input.error {
+            border-color: #e74c3c;
+        }
+        
+        .form-input.success {
+            border-color: #2ed573;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-group .form-input {
+            padding-right: 50px;
+        }
+        
+        .input-group .btn-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .captcha-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .captcha-container .form-input {
+            flex: 1;
+        }
+        
+        .captcha-image {
+            width: 100px;
+            height: 44px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            user-select: none;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .third-party-login {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .third-party-title {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .third-party-title::before,
+        .third-party-title::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 30%;
+            height: 1px;
+            background: #e1e5e9;
+        }
+        
+        .third-party-title::before {
+            left: 0;
+        }
+        
+        .third-party-title::after {
+            right: 0;
+        }
+        
+        .third-party-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .third-party-btn {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #e1e5e9;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .third-party-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .third-party-btn.wechat {
+            color: #07c160;
+        }
+        
+        .third-party-btn.wechat:hover {
+            border-color: #07c160;
+            background: #07c160;
+            color: white;
+        }
+        
+        .third-party-btn.alipay {
+            color: #1677ff;
+        }
+        
+        .third-party-btn.alipay:hover {
+            border-color: #1677ff;
+            background: #1677ff;
+            color: white;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .success-message {
+            color: #2ed573;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .password-strength {
+            margin-top: 5px;
+            font-size: 12px;
+        }
+        
+        .strength-bar {
+            height: 4px;
+            background: #e1e5e9;
+            border-radius: 2px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+        
+        .strength-weak {
+            background: #e74c3c;
+            width: 25%;
+        }
+        
+        .strength-medium {
+            background: #f39c12;
+            width: 50%;
+        }
+        
+        .strength-strong {
+            background: #2ed573;
+            width: 75%;
+        }
+        
+        .strength-very-strong {
+            background: #2ed573;
+            width: 100%;
+        }
+        
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .login-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .security-notice {
+            background: #f8f9fa;
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .security-notice i {
+            color: #667eea;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-magic"></i>
+                </div>
+                <h1 class="login-title">AI圖片優化助手</h1>
+                <p class="login-subtitle">安全無憂的智能圖片處理平台</p>
+            </div>
+            
+            <div class="login-tabs">
+                <div class="login-tab active" data-tab="password">密碼登錄</div>
+                <div class="login-tab" data-tab="sms">驗證碼登錄</div>
+            </div>
+            
+            <!-- 密碼登錄表單 -->
+            <form class="login-form active" id="passwordForm">
+                <div class="form-group">
+                    <label class="form-label">手機號碼</label>
+                    <input type="tel" class="form-input" id="passwordPhone" placeholder="請輸入手機號碼" maxlength="11">
+                    <div class="error-message" id="passwordPhoneError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">密碼</label>
+                    <div class="input-group">
+                        <input type="password" class="form-input" id="passwordInput" placeholder="請輸入密碼">
+                        <button type="button" class="btn-icon" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <div class="password-strength" id="passwordStrength" style="display: none;">
+                        <span id="strengthText">密碼強度：</span>
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                    </div>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+                
+                <button type="submit" class="login-btn" id="passwordLoginBtn">
+                    <span class="btn-text">登錄</span>
+                    <span class="loading-spinner" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <!-- 驗證碼登錄表單 -->
+            <form class="login-form" id="smsForm">
+                <div class="form-group">
+                    <label class="form-label">手機號碼</label>
+                    <input type="tel" class="form-input" id="smsPhone" placeholder="請輸入手機號碼" maxlength="11">
+                    <div class="error-message" id="smsPhoneError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">圖形驗證碼</label>
+                    <div class="captcha-container">
+                        <input type="text" class="form-input" id="captchaInput" placeholder="請輸入驗證碼" maxlength="4">
+                        <div class="captcha-image" id="captchaImage">1234</div>
+                    </div>
+                    <div class="error-message" id="captchaError"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">短信驗證碼</label>
+                    <div class="input-group">
+                        <input type="text" class="form-input" id="smsCode" placeholder="請輸入驗證碼" maxlength="6">
+                        <button type="button" class="btn-icon" id="sendSmsBtn">
+                            發送
+                        </button>
+                    </div>
+                    <div class="error-message" id="smsCodeError"></div>
+                </div>
+                
+                <button type="submit" class="login-btn" id="smsLoginBtn">
+                    <span class="btn-text">登錄</span>
+                    <span class="loading-spinner" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <!-- 第三方登錄 -->
+            <div class="third-party-login">
+                <div class="third-party-title">一鍵登錄</div>
+                <div class="third-party-buttons">
+                    <button class="third-party-btn wechat" id="wechatLogin">
+                        <i class="fab fa-weixin"></i>
+                    </button>
+                    <button class="third-party-btn alipay" id="alipayLogin">
+                        <i class="fab fa-alipay"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 安全提示 -->
+            <div class="security-notice">
+                <i class="fas fa-shield-alt"></i>
+                我們採用銀行級安全標準，保護您的賬戶安全
+            </div>
+            
+            <div class="login-footer">
+                <p>登錄即表示同意 <a href="#">服務條款</a> 和 <a href="#">隱私政策</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LoginManager {
+            constructor() {
+                this.currentTab = 'password';
+                this.loginAttempts = 0;
+                this.maxLoginAttempts = 5;
+                this.lockoutTime = 15 * 60 * 1000; // 15分鐘
+                this.captchaCode = '';
+                this.smsCountdown = 0;
+                
+                this.init();
+            }
+            
+            init() {
+                this.initTabs();
+                this.initFormValidation();
+                this.initPasswordStrength();
+                this.initCaptcha();
+                this.initSmsCountdown();
+                this.initThirdPartyLogin();
+                this.checkLockoutStatus();
+            }
+            
+            initTabs() {
+                const tabs = document.querySelectorAll('.login-tab');
+                const forms = document.querySelectorAll('.login-form');
+                
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        const tabName = tab.dataset.tab;
+                        this.switchTab(tabName);
+                    });
+                });
+            }
+            
+            switchTab(tabName) {
+                // 更新標籤狀態
+                document.querySelectorAll('.login-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+                
+                // 更新表單狀態
+                document.querySelectorAll('.login-form').forEach(form => {
+                    form.classList.remove('active');
+                });
+                document.getElementById(`${tabName}Form`).classList.add('active');
+                
+                this.currentTab = tabName;
+                
+                // 重置錯誤信息
+                this.clearErrors();
+            }
+            
+            initFormValidation() {
+                // 密碼登錄表單
+                const passwordForm = document.getElementById('passwordForm');
+                passwordForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handlePasswordLogin();
+                });
+                
+                // 驗證碼登錄表單
+                const smsForm = document.getElementById('smsForm');
+                smsForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleSmsLogin();
+                });
+                
+                // 密碼顯示切換
+                const togglePassword = document.getElementById('togglePassword');
+                togglePassword.addEventListener('click', () => {
+                    const passwordInput = document.getElementById('passwordInput');
+                    const icon = togglePassword.querySelector('i');
+                    
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        icon.className = 'fas fa-eye-slash';
+                    } else {
+                        passwordInput.type = 'password';
+                        icon.className = 'fas fa-eye';
+                    }
+                });
+                
+                // 發送短信驗證碼
+                const sendSmsBtn = document.getElementById('sendSmsBtn');
+                sendSmsBtn.addEventListener('click', () => {
+                    this.sendSmsCode();
+                });
+            }
+            
+            initPasswordStrength() {
+                const passwordInput = document.getElementById('passwordInput');
+                passwordInput.addEventListener('input', () => {
+                    this.checkPasswordStrength(passwordInput.value);
+                });
+            }
+            
+            checkPasswordStrength(password) {
+                const strengthDiv = document.getElementById('passwordStrength');
+                const strengthText = document.getElementById('strengthText');
+                const strengthFill = document.getElementById('strengthFill');
+                
+                if (password.length === 0) {
+                    strengthDiv.style.display = 'none';
+                    return;
+                }
+                
+                strengthDiv.style.display = 'block';
+                
+                let score = 0;
+                let feedback = '';
+                
+                // 長度檢查
+                if (password.length >= 8) score += 1;
+                if (password.length >= 12) score += 1;
+                
+                // 字符類型檢查
+                if (/[a-z]/.test(password)) score += 1;
+                if (/[A-Z]/.test(password)) score += 1;
+                if (/[0-9]/.test(password)) score += 1;
+                if (/[^A-Za-z0-9]/.test(password)) score += 1;
+                
+                // 設置強度等級
+                let strength = 'weak';
+                let width = '25%';
+                
+                if (score >= 5) {
+                    strength = 'very-strong';
+                    width = '100%';
+                    feedback = '非常強';
+                } else if (score >= 4) {
+                    strength = 'strong';
+                    width = '75%';
+                    feedback = '強';
+                } else if (score >= 3) {
+                    strength = 'medium';
+                    width = '50%';
+                    feedback = '中等';
+                } else {
+                    strength = 'weak';
+                    width = '25%';
+                    feedback = '弱';
+                }
+                
+                strengthText.textContent = `密碼強度：${feedback}`;
+                strengthFill.className = `strength-fill strength-${strength}`;
+                strengthFill.style.width = width;
+            }
+            
+            initCaptcha() {
+                this.generateCaptcha();
+                
+                const captchaImage = document.getElementById('captchaImage');
+                captchaImage.addEventListener('click', () => {
+                    this.generateCaptcha();
+                });
+            }
+            
+            generateCaptcha() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 4; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                
+                this.captchaCode = code;
+                document.getElementById('captchaImage').textContent = code;
+            }
+            
+            initSmsCountdown() {
+                const sendSmsBtn = document.getElementById('sendSmsBtn');
+                
+                const updateCountdown = () => {
+                    if (this.smsCountdown > 0) {
+                        sendSmsBtn.textContent = `${this.smsCountdown}s`;
+                        sendSmsBtn.disabled = true;
+                        this.smsCountdown--;
+                        setTimeout(updateCountdown, 1000);
+                    } else {
+                        sendSmsBtn.textContent = '發送';
+                        sendSmsBtn.disabled = false;
+                    }
+                };
+            }
+            
+            initThirdPartyLogin() {
+                // 微信登錄
+                document.getElementById('wechatLogin').addEventListener('click', () => {
+                    this.handleThirdPartyLogin('wechat');
+                });
+                
+                // 支付寶登錄
+                document.getElementById('alipayLogin').addEventListener('click', () => {
+                    this.handleThirdPartyLogin('alipay');
+                });
+            }
+            
+            checkLockoutStatus() {
+                const lockoutTime = localStorage.getItem('loginLockoutTime');
+                if (lockoutTime) {
+                    const now = Date.now();
+                    const lockoutEnd = parseInt(lockoutTime) + this.lockoutTime;
+                    
+                    if (now < lockoutEnd) {
+                        const remainingTime = Math.ceil((lockoutEnd - now) / 1000 / 60);
+                        this.showError('passwordError', `賬戶已鎖定，請 ${remainingTime} 分鐘後重試`);
+                        this.disableLoginButtons();
+                    } else {
+                        localStorage.removeItem('loginLockoutTime');
+                        this.loginAttempts = 0;
+                    }
+                }
+            }
+            
+            async handlePasswordLogin() {
+                const phone = document.getElementById('passwordPhone').value.trim();
+                const password = document.getElementById('passwordInput').value;
+                
+                // 驗證輸入
+                if (!this.validatePhone(phone)) {
+                    this.showError('passwordPhoneError', '請輸入正確的手機號碼');
+                    return;
+                }
+                
+                if (!password) {
+                    this.showError('passwordError', '請輸入密碼');
+                    return;
+                }
+                
+                // 檢查鎖定狀態
+                if (this.isLocked()) {
+                    return;
+                }
+                
+                this.setLoading('passwordLoginBtn', true);
+                
+                try {
+                    // 模擬API調用
+                    const result = await this.loginWithPassword(phone, password);
+                    
+                    if (result.success) {
+                        this.loginAttempts = 0;
+                        localStorage.removeItem('loginLockoutTime');
+                        this.redirectUser(result.role);
+                    } else {
+                        this.loginAttempts++;
+                        this.showError('passwordError', result.message);
+                        
+                        if (this.loginAttempts >= this.maxLoginAttempts) {
+                            this.lockAccount();
+                        }
+                    }
+                } catch (error) {
+                    this.showError('passwordError', '登錄失敗，請重試');
+                } finally {
+                    this.setLoading('passwordLoginBtn', false);
+                }
+            }
+            
+            async handleSmsLogin() {
+                const phone = document.getElementById('smsPhone').value.trim();
+                const captcha = document.getElementById('captchaInput').value.trim();
+                const smsCode = document.getElementById('smsCode').value.trim();
+                
+                // 驗證輸入
+                if (!this.validatePhone(phone)) {
+                    this.showError('smsPhoneError', '請輸入正確的手機號碼');
+                    return;
+                }
+                
+                if (captcha.toUpperCase() !== this.captchaCode) {
+                    this.showError('captchaError', '圖形驗證碼錯誤');
+                    this.generateCaptcha();
+                    return;
+                }
+                
+                if (!smsCode) {
+                    this.showError('smsCodeError', '請輸入短信驗證碼');
+                    return;
+                }
+                
+                this.setLoading('smsLoginBtn', true);
+                
+                try {
+                    const result = await this.loginWithSms(phone, smsCode);
+                    
+                    if (result.success) {
+                        this.redirectUser(result.role);
+                    } else {
+                        this.showError('smsCodeError', result.message);
+                    }
+                } catch (error) {
+                    this.showError('smsCodeError', '登錄失敗，請重試');
+                } finally {
+                    this.setLoading('smsLoginBtn', false);
+                }
+            }
+            
+            async sendSmsCode() {
+                const phone = document.getElementById('smsPhone').value.trim();
+                const captcha = document.getElementById('captchaInput').value.trim();
+                
+                if (!this.validatePhone(phone)) {
+                    this.showError('smsPhoneError', '請輸入正確的手機號碼');
+                    return;
+                }
+                
+                if (captcha.toUpperCase() !== this.captchaCode) {
+                    this.showError('captchaError', '圖形驗證碼錯誤');
+                    this.generateCaptcha();
+                    return;
+                }
+                
+                const sendSmsBtn = document.getElementById('sendSmsBtn');
+                sendSmsBtn.disabled = true;
+                sendSmsBtn.textContent = '發送中...';
+                
+                try {
+                    // 模擬發送短信
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    this.smsCountdown = 60;
+                    const updateCountdown = () => {
+                        if (this.smsCountdown > 0) {
+                            sendSmsBtn.textContent = `${this.smsCountdown}s`;
+                            this.smsCountdown--;
+                            setTimeout(updateCountdown, 1000);
+                        } else {
+                            sendSmsBtn.textContent = '發送';
+                            sendSmsBtn.disabled = false;
+                        }
+                    };
+                    updateCountdown();
+                    
+                    this.showSuccess('smsCodeError', '驗證碼已發送');
+                } catch (error) {
+                    this.showError('smsCodeError', '發送失敗，請重試');
+                    sendSmsBtn.textContent = '發送';
+                    sendSmsBtn.disabled = false;
+                }
+            }
+            
+            async handleThirdPartyLogin(type) {
+                try {
+                    // 模擬第三方登錄
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                    let userInfo;
+                    if (type === 'wechat') {
+                        userInfo = {
+                            phone: '13800138000',
+                            nickname: '微信用戶',
+                            avatar: '',
+                            loginType: 'wechat'
+                        };
+                    } else if (type === 'alipay') {
+                        userInfo = {
+                            phone: '13900139000',
+                            nickname: '支付寶用戶',
+                            avatar: '',
+                            loginType: 'alipay'
+                        };
+                    }
+                    
+                    // 保存用戶信息
+                    localStorage.setItem('userRole', 'user');
+                    localStorage.setItem('userPhone', userInfo.phone);
+                    localStorage.setItem('userInfo', JSON.stringify({
+                        ...userInfo,
+                        registerTime: new Date().toISOString(),
+                        isPaid: false,
+                        planType: 'free'
+                    }));
+                    
+                    this.redirectUser('user');
+                } catch (error) {
+                    this.showError('passwordError', '第三方登錄失敗，請重試');
+                }
+            }
+            
+            validatePhone(phone) {
+                return /^1[3-9]\d{9}$/.test(phone);
+            }
+            
+            async loginWithPassword(phone, password) {
+                // 模擬API調用
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 檢查管理員
+                if (phone === '18551689698' && password === 'admin123') {
+                    return { success: true, role: 'admin' };
+                }
+                
+                // 檢查測試用戶
+                if (phone === '18606198505' && password === 'admin123') {
+                    const testUser = {
+                        phone: '18606198505',
+                        password: 'admin123',
+                        registerTime: new Date().toISOString(),
+                        isPaid: true,
+                        planType: 'paid',
+                        isTestUser: true
+                    };
+                    
+                    localStorage.setItem('userInfo', JSON.stringify(testUser));
+                    return { success: true, role: 'user' };
+                }
+                
+                // 檢查其他用戶
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                const user = users.find(u => u.phone === phone && u.password === password);
+                
+                if (user) {
+                    localStorage.setItem('userInfo', JSON.stringify(user));
+                    return { success: true, role: 'user' };
+                }
+                
+                return { success: false, message: '手機號或密碼錯誤' };
+            }
+            
+            async loginWithSms(phone, code) {
+                // 模擬API調用
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 檢查管理員
+                if (phone === '18551689698' && code === '123456') {
+                    return { success: true, role: 'admin' };
+                }
+                
+                // 檢查測試用戶
+                if (phone === '18606198505' && code === '123456') {
+                    const testUser = {
+                        phone: '18606198505',
+                        password: 'admin123',
+                        registerTime: new Date().toISOString(),
+                        isPaid: true,
+                        planType: 'paid',
+                        isTestUser: true
+                    };
+                    
+                    localStorage.setItem('userInfo', JSON.stringify(testUser));
+                    return { success: true, role: 'user' };
+                }
+                
+                // 檢查驗證碼
+                if (code === '123456') {
+                    // 創建新用戶或更新現有用戶
+                    const userInfo = {
+                        phone: phone,
+                        registerTime: new Date().toISOString(),
+                        isPaid: false,
+                        planType: 'free'
+                    };
+                    
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    return { success: true, role: 'user' };
+                }
+                
+                return { success: false, message: '驗證碼錯誤' };
+            }
+            
+            redirectUser(role) {
+                if (role === 'admin') {
+                    window.location.href = 'admin-dashboard.html';
+                } else {
+                    window.location.href = 'index.html';
+                }
+            }
+            
+            isLocked() {
+                const lockoutTime = localStorage.getItem('loginLockoutTime');
+                if (lockoutTime) {
+                    const now = Date.now();
+                    const lockoutEnd = parseInt(lockoutTime) + this.lockoutTime;
+                    return now < lockoutEnd;
+                }
+                return false;
+            }
+            
+            lockAccount() {
+                localStorage.setItem('loginLockoutTime', Date.now().toString());
+                this.showError('passwordError', '賬戶已鎖定，請15分鐘後重試');
+                this.disableLoginButtons();
+            }
+            
+            disableLoginButtons() {
+                document.getElementById('passwordLoginBtn').disabled = true;
+                document.getElementById('smsLoginBtn').disabled = true;
+            }
+            
+            showError(elementId, message) {
+                const element = document.getElementById(elementId);
+                element.textContent = message;
+                element.style.display = 'block';
+            }
+            
+            showSuccess(elementId, message) {
+                const element = document.getElementById(elementId);
+                element.textContent = message;
+                element.style.display = 'block';
+                element.style.color = '#2ed573';
+            }
+            
+            clearErrors() {
+                document.querySelectorAll('.error-message').forEach(element => {
+                    element.style.display = 'none';
+                });
+            }
+            
+            setLoading(buttonId, loading) {
+                const button = document.getElementById(buttonId);
+                const btnText = button.querySelector('.btn-text');
+                const spinner = button.querySelector('.loading-spinner');
+                
+                if (loading) {
+                    btnText.style.display = 'none';
+                    spinner.style.display = 'inline-block';
+                    button.disabled = true;
+                } else {
+                    btnText.style.display = 'inline';
+                    spinner.style.display = 'none';
+                    button.disabled = false;
+                }
+            }
+        }
+        
+        // 初始化登錄管理器
+        document.addEventListener('DOMContentLoaded', () => {
+            new LoginManager();
+        });
+    </script>
+</body>
+</html> 
