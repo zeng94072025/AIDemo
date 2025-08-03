@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下載功能測試 - AI圖片優化助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+        
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .test-result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .test-result.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .test-result.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .canvas-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>下載功能測試</h1>
+        
+        <div class="test-section">
+            <div class="test-title">1. 基本下載功能測試</div>
+            <button class="test-button" id="testBasicDownload">
+                <i class="fas fa-download"></i> 測試基本下載
+            </button>
+            <button class="test-button" id="testBlobDownload">
+                <i class="fas fa-file"></i> 測試Blob下載
+            </button>
+            <div id="basicResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">2. 圖片處理下載測試</div>
+            <div class="canvas-container">
+                <canvas id="testCanvas" width="400" height="300"></canvas>
+            </div>
+            <button class="test-button" id="testCanvasDownload">
+                <i class="fas fa-image"></i> 下載Canvas圖片
+            </button>
+            <button class="test-button" id="testDataURLDownload">
+                <i class="fas fa-code"></i> 下載DataURL圖片
+            </button>
+            <div id="canvasResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">3. 批量下載測試</div>
+            <button class="test-button" id="testBatchDownload">
+                <i class="fas fa-archive"></i> 測試批量下載
+            </button>
+            <button class="test-button" id="testZipDownload">
+                <i class="fas fa-file-archive"></i> 測試ZIP下載
+            </button>
+            <div id="batchResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">4. 錯誤處理測試</div>
+            <button class="test-button" id="testInvalidBlob">
+                <i class="fas fa-exclamation-triangle"></i> 測試無效Blob
+            </button>
+            <button class="test-button" id="testInvalidFilename">
+                <i class="fas fa-file-exclamation"></i> 測試無效文件名
+            </button>
+            <div id="errorResult" class="test-result" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <div class="test-title">5. 工具函數測試</div>
+            <button class="test-button" id="testUtils">
+                <i class="fas fa-tools"></i> 測試工具函數
+            </button>
+            <div id="utilsResult" class="test-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        class DownloadTester {
+            constructor() {
+                this.initCanvas();
+                this.initEventListeners();
+            }
+            
+            initCanvas() {
+                const canvas = document.getElementById('testCanvas');
+                const ctx = canvas.getContext('2d');
+                
+                // 繪製測試圖片
+                ctx.fillStyle = '#667eea';
+                ctx.fillRect(0, 0, 400, 300);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('測試圖片', 200, 150);
+                
+                ctx.font = '16px Arial';
+                ctx.fillText('用於下載功能測試', 200, 180);
+                
+                // 添加一些圖形
+                ctx.fillStyle = '#ff6b6b';
+                ctx.beginPath();
+                ctx.arc(100, 100, 30, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                ctx.fillStyle = '#4ecdc4';
+                ctx.fillRect(300, 200, 60, 40);
+            }
+            
+            initEventListeners() {
+                document.getElementById('testBasicDownload').addEventListener('click', () => this.testBasicDownload());
+                document.getElementById('testBlobDownload').addEventListener('click', () => this.testBlobDownload());
+                document.getElementById('testCanvasDownload').addEventListener('click', () => this.testCanvasDownload());
+                document.getElementById('testDataURLDownload').addEventListener('click', () => this.testDataURLDownload());
+                document.getElementById('testBatchDownload').addEventListener('click', () => this.testBatchDownload());
+                document.getElementById('testZipDownload').addEventListener('click', () => this.testZipDownload());
+                document.getElementById('testInvalidBlob').addEventListener('click', () => this.testInvalidBlob());
+                document.getElementById('testInvalidFilename').addEventListener('click', () => this.testInvalidFilename());
+                document.getElementById('testUtils').addEventListener('click', () => this.testUtils());
+            }
+            
+            showResult(elementId, message, type = 'info') {
+                const element = document.getElementById(elementId);
+                element.textContent = message;
+                element.className = `test-result ${type}`;
+                element.style.display = 'block';
+            }
+            
+            async testBasicDownload() {
+                try {
+                    const text = '這是一個測試文件\n包含一些測試內容\n時間：' + new Date().toISOString();
+                    const blob = new Blob([text], { type: 'text/plain' });
+                    
+                    Utils.downloadFile(blob, 'test_file.txt');
+                    this.showResult('basicResult', '基本下載測試成功', 'success');
+                } catch (error) {
+                    this.showResult('basicResult', `基本下載測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async testBlobDownload() {
+                try {
+                    const canvas = document.getElementById('testCanvas');
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    
+                    Utils.downloadFile(blob, 'test_image.png');
+                    this.showResult('basicResult', 'Blob下載測試成功', 'success');
+                } catch (error) {
+                    this.showResult('basicResult', `Blob下載測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async testCanvasDownload() {
+                try {
+                    const canvas = document.getElementById('testCanvas');
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+                    
+                    Utils.downloadFile(blob, 'canvas_test.jpg');
+                    this.showResult('canvasResult', 'Canvas下載測試成功', 'success');
+                } catch (error) {
+                    this.showResult('canvasResult', `Canvas下載測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async testDataURLDownload() {
+                try {
+                    const canvas = document.getElementById('testCanvas');
+                    const dataURL = canvas.toDataURL('image/png');
+                    
+                    // 測試DataURL轉Blob
+                    const blob = await this.dataURLToBlob(dataURL);
+                    Utils.downloadFile(blob, 'dataurl_test.png');
+                    this.showResult('canvasResult', 'DataURL下載測試成功', 'success');
+                } catch (error) {
+                    this.showResult('canvasResult', `DataURL下載測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async testBatchDownload() {
+                try {
+                    const canvas = document.getElementById('testCanvas');
+                    const blobs = [];
+                    
+                    // 生成多個測試圖片
+                    for (let i = 1; i <= 3; i++) {
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        blobs.push({ blob, filename: `test_image_${i}.png` });
+                    }
+                    
+                    // 逐一下載
+                    for (const { blob, filename } of blobs) {
+                        Utils.downloadFile(blob, filename);
+                    }
+                    
+                    this.showResult('batchResult', '批量下載測試成功', 'success');
+                } catch (error) {
+                    this.showResult('batchResult', `批量下載測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async testZipDownload() {
+                try {
+                    if (typeof JSZip === 'undefined') {
+                        throw new Error('JSZip庫未載入');
+                    }
+                    
+                    const zip = new JSZip();
+                    const canvas = document.getElementById('testCanvas');
+                    
+                    // 添加多個文件到ZIP
+                    for (let i = 1; i <= 3; i++) {
+                        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                        zip.file(`test_image_${i}.png`, blob);
+                    }
+                    
+                    // 添加文本文件
+                    const textContent = '這是ZIP包中的文本文件\n測試時間：' + new Date().toISOString();
+                    zip.file('readme.txt', textContent);
+                    
+                    const zipBlob = await zip.generateAsync({ type: 'blob' });
+                    Utils.downloadFile(zipBlob, 'test_batch.zip');
+                    
+                    this.showResult('batchResult', 'ZIP下載測試成功', 'success');
+                } catch (error) {
+                    this.showResult('batchResult', `ZIP下載測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async testInvalidBlob() {
+                try {
+                    // 測試無效的Blob
+                    Utils.downloadFile(null, 'test.txt');
+                    this.showResult('errorResult', '無效Blob測試應該失敗但沒有', 'error');
+                } catch (error) {
+                    this.showResult('errorResult', `無效Blob測試正確捕獲錯誤: ${error.message}`, 'success');
+                }
+            }
+            
+            async testInvalidFilename() {
+                try {
+                    const blob = new Blob(['test'], { type: 'text/plain' });
+                    Utils.downloadFile(blob, '');
+                    this.showResult('errorResult', '無效文件名測試應該失敗但沒有', 'error');
+                } catch (error) {
+                    this.showResult('errorResult', `無效文件名測試正確捕獲錯誤: ${error.message}`, 'success');
+                }
+            }
+            
+            async testUtils() {
+                try {
+                    // 測試工具函數
+                    const testDataURL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+                    const blob = await this.dataURLToBlob(testDataURL);
+                    
+                    if (blob && blob.size > 0) {
+                        this.showResult('utilsResult', '工具函數測試成功', 'success');
+                    } else {
+                        this.showResult('utilsResult', '工具函數測試失敗：生成的Blob無效', 'error');
+                    }
+                } catch (error) {
+                    this.showResult('utilsResult', `工具函數測試失敗: ${error.message}`, 'error');
+                }
+            }
+            
+            async dataURLToBlob(dataURL) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        if (!dataURL || typeof dataURL !== 'string') {
+                            throw new Error('DataURL 無效');
+                        }
+                        
+                        if (!dataURL.startsWith('data:')) {
+                            throw new Error('DataURL 格式錯誤');
+                        }
+                        
+                        const arr = dataURL.split(',');
+                        if (arr.length !== 2) {
+                            throw new Error('DataURL 格式錯誤');
+                        }
+                        
+                        const mimeMatch = arr[0].match(/:(.*?);/);
+                        if (!mimeMatch) {
+                            throw new Error('無法解析 MIME 類型');
+                        }
+                        
+                        const mime = mimeMatch[1];
+                        const bstr = atob(arr[1]);
+                        let n = bstr.length;
+                        const u8arr = new Uint8Array(n);
+                        
+                        while (n--) {
+                            u8arr[n] = bstr.charCodeAt(n);
+                        }
+                        
+                        const blob = new Blob([u8arr], { type: mime });
+                        
+                        if (!blob || blob.size === 0) {
+                            throw new Error('生成的 Blob 無效');
+                        }
+                        
+                        resolve(blob);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+        }
+        
+        // 初始化測試器
+        document.addEventListener('DOMContentLoaded', () => {
+            new DownloadTester();
+        });
+    </script>
+</body>
+</html> 

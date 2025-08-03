@@ -715,22 +715,9 @@ class UIController {
                 console.log(`操作結果: ${success ? '成功' : '失敗'}`);
                 
                 if (success) {
-                    // 更新圖片的處理後數據
-                    try {
-                        const processedBase64 = processor.toBase64('image/jpeg', 0.9);
-                        if (processedBase64 && processedBase64 !== '') {
-                            // 確保 processedData 對象存在
-                            if (!image.processedData) {
-                                image.processedData = {};
-                            }
-                            image.processedData.base64 = processedBase64;
-                            console.log(`圖片 ${image.file.name} 處理完成，數據已保存`);
-                        } else {
-                            console.warn(`圖片 ${image.file.name} 處理後數據為空`);
-                        }
-                    } catch (error) {
-                        console.error('更新處理後數據失敗:', error);
-                    }
+                    // 自動保存處理後的圖片
+                    const operationName = this.getOperationName(action);
+                    await this.autoSaveProcessedImage(image, processor, operationName);
                 } else {
                     console.error(`圖片 ${image.file.name} 處理失敗`);
                 }
@@ -790,22 +777,8 @@ class UIController {
                 const success = processor.applyFilter(filter);
                 
                 if (success) {
-                    // 更新圖片的處理後數據
-                    try {
-                        const processedBase64 = processor.toBase64('image/jpeg', 0.9);
-                        if (processedBase64 && processedBase64 !== '') {
-                            // 確保 processedData 對象存在
-                            if (!image.processedData) {
-                                image.processedData = {};
-                            }
-                            image.processedData.base64 = processedBase64;
-                            console.log(`圖片 ${image.file.name} 濾鏡處理完成，數據已保存`);
-                        } else {
-                            console.warn(`圖片 ${image.file.name} 濾鏡處理後數據為空`);
-                        }
-                    } catch (error) {
-                        console.error('更新濾鏡處理後數據失敗:', error);
-                    }
+                    // 自動保存處理後的圖片
+                    await this.autoSaveProcessedImage(image, processor, filter);
                 } else {
                     console.error(`圖片 ${image.file.name} 濾鏡處理失敗`);
                 }
@@ -864,22 +837,8 @@ class UIController {
                 const success = processor.applyFrame(frame);
                 
                 if (success) {
-                    // 更新圖片的處理後數據
-                    try {
-                        const processedBase64 = processor.toBase64('image/jpeg', 0.9);
-                        if (processedBase64 && processedBase64 !== '') {
-                            // 確保 processedData 對象存在
-                            if (!image.processedData) {
-                                image.processedData = {};
-                            }
-                            image.processedData.base64 = processedBase64;
-                            console.log(`圖片 ${image.file.name} 相框處理完成，數據已保存`);
-                        } else {
-                            console.warn(`圖片 ${image.file.name} 相框處理後數據為空`);
-                        }
-                    } catch (error) {
-                        console.error('更新相框處理後數據失敗:', error);
-                    }
+                    // 自動保存處理後的圖片
+                    await this.autoSaveProcessedImage(image, processor, frame);
                 } else {
                     console.error(`圖片 ${image.file.name} 相框處理失敗`);
                 }
@@ -1073,7 +1032,7 @@ class UIController {
                     const success = this.drawingProcessor.undo();
                     if (success) {
                         Utils.showNotification('已撤銷上一步操作', 'success');
-                        // 自動保存塗鴉標註結果
+                        // 保存塗鴉標註結果
                         this.saveDrawingResult();
                     } else {
                         Utils.showNotification('沒有可撤銷的操作', 'warning');
@@ -1088,7 +1047,7 @@ class UIController {
                     const success = this.drawingProcessor.redo();
                     if (success) {
                         Utils.showNotification('已重做上一步操作', 'success');
-                        // 自動保存塗鴉標註結果
+                        // 保存塗鴉標註結果
                         this.saveDrawingResult();
                     } else {
                         Utils.showNotification('沒有可重做的操作', 'warning');
@@ -1102,7 +1061,7 @@ class UIController {
                 if (this.drawingProcessor) {
                     this.drawingProcessor.clear();
                     Utils.showNotification('已清空畫布', 'success');
-                    // 自動保存塗鴉標註結果
+                    // 保存塗鴉標註結果
                     this.saveDrawingResult();
                 }
             });
@@ -1149,7 +1108,7 @@ class UIController {
                 break;
         }
         
-        // 自動保存塗鴉標註結果
+        // 保存塗鴉標註結果
         this.saveDrawingResult();
     }
 
@@ -1313,15 +1272,17 @@ class UIController {
                     // 處理完成後保存結果
                     if (success) {
                         const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
-                        if (processedBase64) {
+                        if (processedBase64 && processedBase64.startsWith('data:')) {
                             // 更新預覽圖片
                             const previewImg = document.querySelector('.preview-container img');
                             if (previewImg) {
                                 previewImg.src = processedBase64;
                             }
                             
-                            // 保存處理結果到圖片列表
-                            this.saveProcessedImage(processedBase64);
+                            // 保存處理結果
+                            await this.autoSaveProcessedImage(currentImage, this.aiProcessor, '一鍵修復');
+                        } else {
+                            console.error('AI處理器返回的Base64無效:', processedBase64);
                         }
                     }
                     break;
@@ -1343,20 +1304,23 @@ class UIController {
             console.log(`AI處理結果: ${success ? '成功' : '失敗'}`);
             
             if (success) {
-                // 更新圖片的處理後數據
+                // 自動保存AI處理結果
                 try {
                     const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
-                    if (processedBase64 && processedBase64 !== '') {
-                        // 直接保存處理後的Base64數據
-                        this.saveProcessedImage(processedBase64);
+                    if (processedBase64 && processedBase64.startsWith('data:')) {
+                        // 獲取AI操作名稱
+                        const aiOperationName = this.getAIOperationName(aiAction);
+                        
+                        // 保存處理結果
+                        await this.autoSaveProcessedImage(currentImage, this.aiProcessor, aiOperationName);
                         
                         // 更新預覽
                         this.updatePreview();
                         
-                        Utils.showNotification('AI處理完成', 'success');
+                        Utils.showNotification('AI處理完成，可點擊下載按鈕保存', 'success');
                     } else {
-                        console.warn('AI處理後數據為空');
-                        Utils.showNotification('AI處理失敗', 'error');
+                        console.warn('AI處理後數據無效:', processedBase64);
+                        Utils.showNotification('AI處理失敗：無效的結果數據', 'error');
                     }
                 } catch (error) {
                     console.error('更新AI處理後數據失敗:', error);
@@ -1507,30 +1471,79 @@ class UIController {
                 format: format,
                 quality: quality,
                 imageName: currentImage.file.name,
-                hasProcessedData: !!currentImage.processedData
+                hasProcessedData: !!currentImage.processedData,
+                hasProcessor: !!currentImage.processor,
+                hasOriginalData: !!currentImage.data.base64
             });
             
             let blob;
             let filename;
             
-            // 檢查是否有處理後的數據（AI處理或塗鴉標註結果）
+            // 優先使用處理後的數據（AI處理或塗鴉標註結果）
             if (currentImage.processedData) {
-                // 使用處理後的數據
-                blob = await this.dataURLToBlob(currentImage.processedData);
-                filename = this.generateFilename(currentImage.file.name, format);
-                console.log('使用處理後的數據下載');
-            } else if (currentImage.processor) {
+                try {
+                    // 驗證處理後數據的格式
+                    console.log('處理後數據類型:', typeof currentImage.processedData);
+                    console.log('處理後數據長度:', currentImage.processedData.length);
+                    console.log('處理後數據前50字符:', currentImage.processedData.substring(0, 50));
+                    
+                    // 檢查是否為有效的DataURL
+                    if (!currentImage.processedData.startsWith('data:')) {
+                        console.warn('處理後數據不是DataURL格式，嘗試使用原始數據');
+                        if (currentImage.data.base64) {
+                            blob = await this.dataURLToBlob(currentImage.data.base64);
+                            filename = this.generateFilename(currentImage.file.name, format);
+                            console.log('使用原始數據下載（處理後數據格式無效）');
+                        } else {
+                            throw new Error('處理後數據格式無效且無原始數據');
+                        }
+                    } else {
+                        blob = await this.dataURLToBlob(currentImage.processedData);
+                        filename = this.generateFilename(currentImage.file.name, format);
+                        console.log('使用處理後的數據下載');
+                    }
+                } catch (error) {
+                    console.error('處理後數據轉換失敗:', error);
+                    // 如果處理後數據失敗，嘗試使用原始數據
+                    if (currentImage.data.base64) {
+                        try {
+                            console.log('處理後數據失敗，嘗試使用原始數據');
+                            blob = await this.dataURLToBlob(currentImage.data.base64);
+                            filename = this.generateFilename(currentImage.file.name, format);
+                            console.log('使用原始數據下載（備用方案）');
+                        } catch (originalError) {
+                            console.error('原始數據也失敗:', originalError);
+                            throw new Error('所有數據轉換都失敗: ' + error.message);
+                        }
+                    } else {
+                        throw new Error('處理後數據轉換失敗且無原始數據: ' + error.message);
+                    }
+                }
+            } else if (currentImage.processor && typeof currentImage.processor.toBlob === 'function') {
                 // 使用傳統處理器的數據
                 const processor = currentImage.processor;
                 
-                // 驗證處理器是否有效
-                if (!processor) {
-                    throw new Error('圖片處理器無效');
+                try {
+                    blob = await processor.toBlob(`image/${format}`, quality);
+                    filename = this.generateFilename(currentImage.file.name, format);
+                    console.log('使用傳統處理器數據下載');
+                } catch (error) {
+                    console.error('處理器toBlob失敗:', error);
+                    // 如果處理器失敗，嘗試使用原始數據
+                    console.log('處理器失敗，嘗試使用原始數據');
+                    blob = await this.dataURLToBlob(currentImage.data.base64);
+                    filename = this.generateFilename(currentImage.file.name, format);
                 }
-                
-                blob = await processor.toBlob(`image/${format}`, quality);
-                filename = this.generateFilename(currentImage.file.name, format);
-                console.log('使用傳統處理器數據下載');
+            } else if (currentImage.data.base64) {
+                // 使用原始圖片數據
+                try {
+                    blob = await this.dataURLToBlob(currentImage.data.base64);
+                    filename = this.generateFilename(currentImage.file.name, format);
+                    console.log('使用原始圖片數據下載');
+                } catch (error) {
+                    console.error('原始數據轉換失敗:', error);
+                    throw new Error('原始數據轉換失敗: ' + error.message);
+                }
             } else {
                 throw new Error('沒有可用的圖片數據');
             }
@@ -1563,7 +1576,7 @@ class UIController {
             }
             
             Utils.downloadFile(blob, filename);
-            Utils.showTopCenterNotification('圖片下載成功，請選擇保存位置', 'success');
+            Utils.showTopCenterNotification('圖片下載成功', 'success');
             
         } catch (error) {
             console.error('下載失敗:', error);
@@ -1575,9 +1588,35 @@ class UIController {
     async dataURLToBlob(dataURL) {
         return new Promise((resolve, reject) => {
             try {
+                // 驗證dataURL格式
+                if (!dataURL || typeof dataURL !== 'string') {
+                    throw new Error('DataURL 無效');
+                }
+                
+                if (!dataURL.startsWith('data:')) {
+                    throw new Error('DataURL 格式錯誤');
+                }
+                
                 const arr = dataURL.split(',');
-                const mime = arr[0].match(/:(.*?);/)[1];
-                const bstr = atob(arr[1]);
+                if (arr.length !== 2) {
+                    throw new Error('DataURL 格式錯誤');
+                }
+                
+                const mimeMatch = arr[0].match(/:(.*?);/);
+                if (!mimeMatch) {
+                    throw new Error('無法解析 MIME 類型');
+                }
+                
+                const mime = mimeMatch[1];
+                
+                // 處理base64解碼
+                let bstr;
+                try {
+                    bstr = atob(arr[1]);
+                } catch (decodeError) {
+                    throw new Error('Base64 解碼失敗');
+                }
+                
                 let n = bstr.length;
                 const u8arr = new Uint8Array(n);
                 
@@ -1585,8 +1624,22 @@ class UIController {
                     u8arr[n] = bstr.charCodeAt(n);
                 }
                 
-                resolve(new Blob([u8arr], { type: mime }));
+                const blob = new Blob([u8arr], { type: mime });
+                
+                // 驗證生成的blob
+                if (!blob || blob.size === 0) {
+                    throw new Error('生成的 Blob 無效或為空');
+                }
+                
+                console.log('DataURL轉Blob成功:', {
+                    originalSize: dataURL.length,
+                    blobSize: blob.size,
+                    mimeType: mime
+                });
+                
+                resolve(blob);
             } catch (error) {
+                console.error('DataURL轉Blob失敗:', error);
                 reject(error);
             }
         });
@@ -1644,12 +1697,71 @@ class UIController {
                     
                     // 優先使用處理後的數據（AI處理或塗鴉標註結果）
                     if (image.processedData) {
-                        blob = await this.dataURLToBlob(image.processedData);
-                        console.log(`使用處理後的數據處理圖片 ${image.file.name}`);
-                    } else if (processor) {
+                        try {
+                            // 檢查是否為有效的DataURL
+                            if (!image.processedData.startsWith('data:')) {
+                                console.warn(`處理後數據不是DataURL格式 ${image.file.name}，嘗試使用原始數據`);
+                                if (image.data.base64) {
+                                    blob = await this.dataURLToBlob(image.data.base64);
+                                    console.log(`使用原始數據處理圖片 ${image.file.name}（處理後數據格式無效）`);
+                                } else {
+                                    console.error(`處理後數據格式無效且無原始數據 ${image.file.name}`);
+                                    errorCount++;
+                                    continue;
+                                }
+                            } else {
+                                blob = await this.dataURLToBlob(image.processedData);
+                                console.log(`使用處理後的數據處理圖片 ${image.file.name}`);
+                            }
+                        } catch (error) {
+                            console.error(`處理後數據轉換失敗 ${image.file.name}:`, error);
+                            // 如果處理後數據失敗，嘗試使用原始數據
+                            if (image.data.base64) {
+                                try {
+                                    blob = await this.dataURLToBlob(image.data.base64);
+                                    console.log(`使用原始數據處理圖片 ${image.file.name}（備用方案）`);
+                                } catch (originalError) {
+                                    console.error(`原始數據轉換失敗 ${image.file.name}:`, originalError);
+                                    errorCount++;
+                                    continue;
+                                }
+                            } else {
+                                errorCount++;
+                                continue;
+                            }
+                        }
+                    } else if (processor && typeof processor.toBlob === 'function') {
                         // 使用傳統處理器的數據
-                        blob = await processor.toBlob(`image/${format}`, quality);
-                        console.log(`使用傳統處理器處理圖片 ${image.file.name}`);
+                        try {
+                            blob = await processor.toBlob(`image/${format}`, quality);
+                            console.log(`使用傳統處理器處理圖片 ${image.file.name}`);
+                        } catch (error) {
+                            console.error(`處理器toBlob失敗 ${image.file.name}:`, error);
+                            // 如果處理器失敗，嘗試使用原始數據
+                            if (image.data.base64) {
+                                try {
+                                    blob = await this.dataURLToBlob(image.data.base64);
+                                    console.log(`使用原始數據處理圖片 ${image.file.name}`);
+                                } catch (originalError) {
+                                    console.error(`原始數據轉換失敗 ${image.file.name}:`, originalError);
+                                    errorCount++;
+                                    continue;
+                                }
+                            } else {
+                                errorCount++;
+                                continue;
+                            }
+                        }
+                    } else if (image.data.base64) {
+                        // 使用原始圖片數據
+                        try {
+                            blob = await this.dataURLToBlob(image.data.base64);
+                            console.log(`使用原始數據處理圖片 ${image.file.name}`);
+                        } catch (error) {
+                            console.error(`原始數據轉換失敗 ${image.file.name}:`, error);
+                            errorCount++;
+                            continue;
+                        }
                     } else {
                         console.error(`圖片 ${image.file.name} 沒有可用的處理數據`);
                         errorCount++;
@@ -1750,9 +1862,49 @@ class UIController {
 
     // 生成文件名
     generateFilename(originalName, format) {
-        const prefix = document.getElementById('filenamePrefix')?.value || 'processed_';
-        const nameWithoutExt = originalName.replace(/\.[^/.]+$/, '');
-        return `${prefix}${nameWithoutExt}.${format}`;
+        try {
+            // 驗證輸入參數
+            if (!originalName || typeof originalName !== 'string') {
+                throw new Error('原始文件名無效');
+            }
+            
+            if (!format || typeof format !== 'string') {
+                throw new Error('格式參數無效');
+            }
+            
+            // 獲取文件名前綴
+            const prefix = document.getElementById('filenamePrefix')?.value || 'processed_';
+            
+            // 清理原始文件名（移除路徑和非法字符）
+            let cleanName = originalName.replace(/^.*[\\\/]/, ''); // 移除路徑
+            cleanName = cleanName.replace(/[<>:"/\\|?*]/g, '_'); // 移除非法字符
+            
+            // 移除原始擴展名
+            const nameWithoutExt = cleanName.replace(/\.[^/.]+$/, '');
+            
+            // 確保文件名不為空
+            if (!nameWithoutExt || nameWithoutExt.trim() === '') {
+                return `${prefix}image.${format}`;
+            }
+            
+            // 生成最終文件名
+            const filename = `${prefix}${nameWithoutExt}.${format}`;
+            
+            console.log('生成文件名:', {
+                originalName: originalName,
+                cleanName: cleanName,
+                nameWithoutExt: nameWithoutExt,
+                format: format,
+                finalFilename: filename
+            });
+            
+            return filename;
+            
+        } catch (error) {
+            console.error('生成文件名失敗:', error);
+            // 返回默認文件名
+            return `processed_image_${Date.now()}.${format}`;
+        }
     }
 
     // 更新圖片列表
@@ -1949,7 +2101,7 @@ class UIController {
             return;
         }
         
-        // 否則顯示當前圖片的預覽
+        // 顯示當前圖片的預覽（優先顯示處理後的效果）
         const currentImage = this.images[this.currentImageIndex];
         const processor = currentImage.processor;
         
@@ -1960,37 +2112,39 @@ class UIController {
             hasProcessedData: !!(currentImage.processedData && currentImage.processedData.base64)
         });
         
-        // 優先使用處理後的圖片數據
-        let imageSrc = null;
+        // 優先獲取處理後的圖片數據
+        let processedImageSrc = null;
+        let originalImageSrc = currentImage.data.base64;
         
-        if (currentImage.processedData && currentImage.processedData.base64) {
-            imageSrc = currentImage.processedData.base64;
-            console.log('使用緩存的處理後圖片數據');
-        } else {
-            try {
-                // 從處理器獲取當前圖片數據
-                imageSrc = processor.toBase64('image/jpeg', 0.9);
-                if (imageSrc && imageSrc !== '') {
-                    console.log('從處理器獲取圖片數據');
-                    // 保存到處理後數據中
-                    if (!currentImage.processedData) {
-                        currentImage.processedData = {};
-                    }
-                    currentImage.processedData.base64 = imageSrc;
-                } else {
-                    console.warn('處理器返回的圖片數據為空');
-                    imageSrc = currentImage.data.base64;
-                    console.log('回退到原始圖片數據');
+        try {
+            // 首先嘗試從處理器獲取最新的處理後圖片數據
+            if (processor && processor.isImageLoaded()) {
+                processedImageSrc = processor.toBase64('image/jpeg', 0.9);
+                console.log('從處理器獲取最新處理後圖片數據');
+                
+                // 保存到處理後數據中
+                if (!currentImage.processedData) {
+                    currentImage.processedData = {};
                 }
-            } catch (error) {
-                console.error('從處理器獲取圖片數據失敗:', error);
-                // 回退到原始數據
-                imageSrc = currentImage.data.base64;
-                console.log('回退到原始圖片數據');
+                currentImage.processedData.base64 = processedImageSrc;
+            }
+        } catch (error) {
+            console.error('從處理器獲取圖片數據失敗:', error);
+        }
+        
+        // 如果處理器沒有數據，嘗試使用緩存的處理後數據
+        if (!processedImageSrc || processedImageSrc === '') {
+            if (currentImage.processedData && currentImage.processedData.base64) {
+                processedImageSrc = currentImage.processedData.base64;
+                console.log('使用緩存的處理後圖片數據');
+            } else {
+                // 如果沒有處理後數據，使用原始數據
+                processedImageSrc = originalImageSrc;
+                console.log('使用原始圖片數據');
             }
         }
         
-        if (!imageSrc || imageSrc === '') {
+        if (!processedImageSrc || processedImageSrc === '') {
             console.error('無法獲取圖片數據');
             previewContainer.innerHTML = `
                 <div class="preview-placeholder">
@@ -2002,12 +2156,46 @@ class UIController {
         }
         
         console.log('設置預覽圖片:', {
-            hasImageSrc: !!imageSrc,
-            srcLength: imageSrc.length,
-            srcPrefix: imageSrc.substring(0, 50)
+            hasProcessedImageSrc: !!processedImageSrc,
+            srcLength: processedImageSrc.length,
+            srcPrefix: processedImageSrc.substring(0, 50),
+            isProcessed: processedImageSrc !== originalImageSrc
         });
         
-        previewContainer.innerHTML = `<img src="${imageSrc}" alt="預覽圖片" style="max-width: 100%; max-height: 100%; object-fit: contain;">`;
+        // 檢查是否有處理效果（處理後圖片與原圖不同）
+        const hasProcessingEffect = processedImageSrc !== originalImageSrc;
+        
+        if (hasProcessingEffect) {
+            // 顯示對比視圖：原圖 vs 處理後效果
+            previewContainer.innerHTML = `
+                <div class="comparison-container" style="display: flex; gap: 20px; height: 100%; align-items: center; justify-content: center;">
+                    <div class="original-image" style="flex: 1; text-align: center; position: relative;">
+                        <h4 style="margin: 0 0 10px 0; color: #666; font-size: 14px;">原圖</h4>
+                        <img src="${originalImageSrc}" alt="原圖" style="max-width: 100%; max-height: 80%; object-fit: contain; border: 2px solid #ddd; border-radius: 8px;">
+                    </div>
+                    <div class="comparison-arrow" style="display: flex; align-items: center; color: #667eea; font-size: 24px; font-weight: bold;">
+                        →
+                    </div>
+                    <div class="processed-image" style="flex: 1; text-align: center; position: relative;">
+                        <h4 style="margin: 0 0 10px 0; color: #28a745; font-size: 14px;">處理後效果</h4>
+                        <img src="${processedImageSrc}" alt="處理後圖片" style="max-width: 100%; max-height: 80%; object-fit: contain; border: 2px solid #28a745; border-radius: 8px; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);">
+                        <div style="position: absolute; top: 5px; right: 5px; background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">
+                            ✨ 已處理
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // 顯示單一圖片（處理後效果）
+            previewContainer.innerHTML = `
+                <div style="text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <img src="${processedImageSrc}" alt="預覽圖片" style="max-width: 100%; max-height: 90%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="margin-top: 10px; color: #666; font-size: 14px;">
+                        <i class="fas fa-eye"></i> 圖片預覽（處理後效果）
+                    </div>
+                </div>
+            `;
+        }
         
         // 如果在繪製模式下，更新繪製畫布位置
         if (this.isDrawingMode && this.drawingProcessor) {
@@ -2043,71 +2231,85 @@ class UIController {
         // 為每個選中的圖片創建預覽元素
         selectedImages.forEach((image, index) => {
             const processor = image.processor;
-            let imageSrc = null;
+            let processedImageSrc = null;
+            let originalImageSrc = image.data.base64;
             
-            // 優先使用處理後的圖片數據
-            if (image.processedData && image.processedData.base64) {
-                imageSrc = image.processedData.base64;
-                console.log(`圖片 ${image.file.name} 使用緩存的處理後數據`);
-            } else {
-                try {
-                    // 使用新的簡化方法獲取圖片數據
-                    imageSrc = processor.toBase64('image/jpeg', 0.9);
-                    if (imageSrc && imageSrc !== '') {
-                        console.log(`圖片 ${image.file.name} 使用處理後數據`);
-                        // 保存到處理後數據中
-                        if (!image.processedData) {
-                            image.processedData = {};
-                        }
-                        image.processedData.base64 = imageSrc;
-                    } else {
-                        console.warn(`圖片 ${image.file.name} 處理後數據為空`);
-                        // 回退到原始數據
-                        if (image.data && image.data.base64) {
-                            imageSrc = image.data.base64;
-                            console.log(`圖片 ${image.file.name} 使用原始數據`);
-                        }
+            // 優先獲取處理後的圖片數據
+            try {
+                // 首先嘗試從處理器獲取最新的處理後圖片數據
+                if (processor && processor.isImageLoaded()) {
+                    processedImageSrc = processor.toBase64('image/jpeg', 0.9);
+                    console.log(`圖片 ${image.file.name} 從處理器獲取最新處理後數據`);
+                    
+                    // 保存到處理後數據中
+                    if (!image.processedData) {
+                        image.processedData = {};
                     }
-                } catch (error) {
-                    console.error('獲取處理後圖片失敗:', error);
-                    // 回退到原始數據
-                    if (image.data && image.data.base64) {
-                        imageSrc = image.data.base64;
-                        console.log(`圖片 ${image.file.name} 使用原始數據`);
-                    }
+                    image.processedData.base64 = processedImageSrc;
+                }
+            } catch (error) {
+                console.error(`獲取圖片 ${image.file.name} 處理後數據失敗:`, error);
+            }
+            
+            // 如果處理器沒有數據，嘗試使用緩存的處理後數據
+            if (!processedImageSrc || processedImageSrc === '') {
+                if (image.processedData && image.processedData.base64) {
+                    processedImageSrc = image.processedData.base64;
+                    console.log(`圖片 ${image.file.name} 使用緩存的處理後數據`);
+                } else {
+                    // 如果沒有處理後數據，使用原始數據
+                    processedImageSrc = originalImageSrc;
+                    console.log(`圖片 ${image.file.name} 使用原始數據`);
                 }
             }
             
-            // 如果沒有處理後的數據，使用原始數據
-            if (!imageSrc && image.data && image.data.base64) {
-                imageSrc = image.data.base64;
-                console.log(`圖片 ${image.file.name} 使用原始數據`);
-            }
-            
-            if (imageSrc) {
+            if (processedImageSrc) {
                 displayedCount++;
+                
+                // 檢查是否有處理效果（處理後圖片與原圖不同）
+                const hasProcessingEffect = processedImageSrc !== originalImageSrc;
                 
                 // 創建圖片容器
                 const imageContainer = document.createElement('div');
-                imageContainer.style.cssText = 'text-align: center; max-width: 200px; min-width: 150px; flex-shrink: 0;';
+                imageContainer.style.cssText = 'text-align: center; max-width: 200px; min-width: 150px; flex-shrink: 0; position: relative;';
                 
                 // 創建圖片元素
                 const img = document.createElement('img');
-                img.src = imageSrc;
+                img.src = processedImageSrc;
                 img.alt = image.file.name;
-                img.style.cssText = 'max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
+                
+                // 根據是否有處理效果設置不同的樣式
+                if (hasProcessingEffect) {
+                    img.style.cssText = 'max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3); border: 2px solid #28a745;';
+                    
+                    // 添加已處理標籤
+                    const processedLabel = document.createElement('div');
+                    processedLabel.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #28a745; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold; z-index: 10;';
+                    processedLabel.textContent = '✨ 已處理';
+                    imageContainer.appendChild(processedLabel);
+                } else {
+                    img.style.cssText = 'max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #ddd;';
+                }
                 
                 // 創建文件名標籤
                 const fileName = document.createElement('div');
                 fileName.style.cssText = 'font-size: 12px; color: var(--text-secondary); margin-top: 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;';
                 fileName.textContent = image.file.name;
                 
+                // 如果有處理效果，添加處理狀態標籤
+                if (hasProcessingEffect) {
+                    const statusLabel = document.createElement('div');
+                    statusLabel.style.cssText = 'font-size: 10px; color: #28a745; margin-top: 4px; font-weight: bold;';
+                    statusLabel.textContent = '處理後效果';
+                    imageContainer.appendChild(statusLabel);
+                }
+                
                 // 組裝元素
                 imageContainer.appendChild(img);
                 imageContainer.appendChild(fileName);
                 previewWrapper.appendChild(imageContainer);
                 
-                console.log(`成功添加圖片預覽: ${image.file.name}`);
+                console.log(`成功添加圖片預覽: ${image.file.name}, 已處理: ${hasProcessingEffect}`);
             } else {
                 console.error('無法獲取圖片數據:', image.file.name);
             }
@@ -2499,7 +2701,7 @@ class UIController {
                 if (success) {
                     // 更新預覽圖片
                     const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
-                    if (processedBase64) {
+                    if (processedBase64 && processedBase64.startsWith('data:')) {
                         previewImg.src = processedBase64;
                         
                         // 保存處理結果到圖片列表
@@ -2507,7 +2709,8 @@ class UIController {
                         
                         Utils.showNotification('區域一鍵修復完成！', 'success');
                     } else {
-                        throw new Error('結果生成失敗');
+                        console.error('AI處理器返回的Base64無效:', processedBase64);
+                        throw new Error('結果生成失敗：無效的Base64數據');
                     }
                 } else {
                     throw new Error('一鍵修復執行失敗');
@@ -2535,6 +2738,77 @@ class UIController {
             this.updateDownloadButtons();
             
             console.log('處理結果已保存到圖片列表');
+        }
+    }
+
+    // 獲取操作名稱
+    getOperationName(action) {
+        const operationNames = {
+            'brighten': '提亮',
+            'contrast': '對比度',
+            'grayscale': '黑白',
+            'sepia': '復古',
+            'invert': '反轉',
+            'blur': '模糊',
+            'sharpen': '銳化',
+            'emboss': '浮雕',
+            'edge': '邊緣檢測',
+            'noise': '噪點',
+            'vintage': '復古',
+            'cartoon': '卡通',
+            'sketch': '素描',
+            'watercolor': '水彩'
+        };
+        return operationNames[action] || '處理';
+    }
+
+    // 獲取AI操作名稱
+    getAIOperationName(aiAction) {
+        const aiOperationNames = {
+            'repair-old-photo': '老照片修復',
+            'upscale-8k': '8K超分辨率',
+            'extract-portrait': '人像摳圖',
+            'extract-object': '物體摳圖',
+            'artistic-oil': '油畫風格',
+            'artistic-watercolor': '水彩風格',
+            'artistic-sketch': '素描風格',
+            'artistic-cartoon': '卡通風格',
+            'artistic-vintage': '復古風格',
+            'cartoonize': '卡通化',
+            'one-click-repair': '一鍵修復'
+        };
+        return aiOperationNames[aiAction] || 'AI處理';
+    }
+
+    // 保存處理後的圖片數據（不自動下載）
+    async autoSaveProcessedImage(image, processor, operationName = '處理') {
+        try {
+            // 獲取處理後的數據
+            let processedData = null;
+            
+            if (processor && typeof processor.toBase64 === 'function') {
+                processedData = processor.toBase64('image/jpeg', 0.9);
+            }
+            
+            if (processedData && processedData.startsWith('data:')) {
+                // 保存到圖片對象
+                image.processedData = processedData;
+                image.isProcessed = true;
+                
+                console.log(`圖片 ${image.file.name} 處理完成，數據已保存（等待手動下載）`);
+                Utils.showTopCenterNotification(`圖片處理完成，可點擊下載按鈕保存`, 'success');
+                
+                // 更新預覽以顯示處理後效果
+                this.updatePreview();
+                
+                return true;
+            } else {
+                console.warn('處理後數據無效，跳過保存');
+                return false;
+            }
+        } catch (error) {
+            console.error('保存處理後數據失敗:', error);
+            return false;
         }
     }
 

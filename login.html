@@ -876,6 +876,16 @@
                 
                 // 檢查管理員
                 if (phone === '18551689698' && password === 'admin123') {
+                    // 設置管理員信息到localStorage
+                    localStorage.setItem('userRole', 'admin');
+                    localStorage.setItem('userPhone', phone);
+                    localStorage.setItem('userInfo', JSON.stringify({
+                        phone: phone,
+                        role: 'admin',
+                        registerTime: new Date().toISOString(),
+                        isPaid: true,
+                        planType: 'admin'
+                    }));
                     return { success: true, role: 'admin' };
                 }
                 
@@ -890,6 +900,8 @@
                         isTestUser: true
                     };
                     
+                    localStorage.setItem('userRole', 'user');
+                    localStorage.setItem('userPhone', phone);
                     localStorage.setItem('userInfo', JSON.stringify(testUser));
                     return { success: true, role: 'user' };
                 }
@@ -899,6 +911,8 @@
                 const user = users.find(u => u.phone === phone && u.password === password);
                 
                 if (user) {
+                    localStorage.setItem('userRole', 'user');
+                    localStorage.setItem('userPhone', phone);
                     localStorage.setItem('userInfo', JSON.stringify(user));
                     return { success: true, role: 'user' };
                 }
@@ -912,6 +926,16 @@
                 
                 // 檢查管理員
                 if (phone === '18551689698' && code === '123456') {
+                    // 設置管理員信息到localStorage
+                    localStorage.setItem('userRole', 'admin');
+                    localStorage.setItem('userPhone', phone);
+                    localStorage.setItem('userInfo', JSON.stringify({
+                        phone: phone,
+                        role: 'admin',
+                        registerTime: new Date().toISOString(),
+                        isPaid: true,
+                        planType: 'admin'
+                    }));
                     return { success: true, role: 'admin' };
                 }
                 
@@ -926,6 +950,8 @@
                         isTestUser: true
                     };
                     
+                    localStorage.setItem('userRole', 'user');
+                    localStorage.setItem('userPhone', phone);
                     localStorage.setItem('userInfo', JSON.stringify(testUser));
                     return { success: true, role: 'user' };
                 }
@@ -940,6 +966,8 @@
                         planType: 'free'
                     };
                     
+                    localStorage.setItem('userRole', 'user');
+                    localStorage.setItem('userPhone', phone);
                     localStorage.setItem('userInfo', JSON.stringify(userInfo));
                     return { success: true, role: 'user' };
                 }

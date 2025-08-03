@@ -136,29 +136,56 @@ function base64ToBlob(base64, mimeType) {
 // 下載文件
 // 下載文件（支持選擇保存位置）
 function downloadFile(blob, filename) {
-    // 檢查是否支持 showSaveFilePicker API
-    if ('showSaveFilePicker' in window) {
-        // 使用現代瀏覽器的文件選擇器
-        window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [{
-                description: '圖片文件',
-                accept: {
-                    'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
-                }
-            }]
-        }).then(handle => {
-            const writable = handle.createWritable();
-            writable.write(blob);
-            writable.close();
-        }).catch(err => {
-            console.log('用戶取消了文件保存或瀏覽器不支持，使用傳統下載方式');
-            // 回退到傳統下載方式
-            downloadFileLegacy(blob, filename);
-        });
-    } else {
-        // 回退到傳統下載方式
-        downloadFileLegacy(blob, filename);
+    // 驗證輸入參數
+    if (!blob || blob.size === 0) {
+        console.error('下載失敗：Blob 無效或為空');
+        showNotification('下載失敗：文件數據無效', 'error');
+        return;
+    }
+    
+    if (!filename || filename.trim() === '') {
+        console.error('下載失敗：文件名無效');
+        showNotification('下載失敗：文件名無效', 'error');
+        return;
+    }
+    
+    // 清理文件名（移除非法字符）
+    const cleanFilename = filename.replace(/[<>:"/\\|?*]/g, '_');
+    
+    console.log('開始下載文件:', {
+        filename: cleanFilename,
+        blobSize: blob.size,
+        blobType: blob.type
+    });
+    
+    // 優先使用傳統下載方式（更穩定）
+    try {
+        downloadFileLegacy(blob, cleanFilename);
+    } catch (error) {
+        console.error('傳統下載方式失敗，嘗試現代API:', error);
+        
+        // 如果傳統方式失敗，嘗試現代API
+        if ('showSaveFilePicker' in window) {
+            window.showSaveFilePicker({
+                suggestedName: cleanFilename,
+                types: [{
+                    description: '圖片文件',
+                    accept: {
+                        'image/*': ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+                    }
+                }]
+            }).then(handle => {
+                const writable = handle.createWritable();
+                writable.write(blob);
+                writable.close();
+                showNotification('文件保存成功', 'success');
+            }).catch(err => {
+                console.error('現代API下載失敗:', err);
+                showNotification('下載失敗，請重試', 'error');
+            });
+        } else {
+            showNotification('下載失敗，請重試', 'error');
+        }
     }
 }
 
@@ -169,6 +196,12 @@ function downloadFileLegacy(blob, filename) {
         if (!blob || blob.size === 0) {
             console.error('Blob 無效或為空:', blob);
             throw new Error('Blob 無效或為空');
+        }
+        
+        // 驗證文件名
+        if (!filename || filename.trim() === '') {
+            console.error('文件名無效:', filename);
+            throw new Error('文件名無效');
         }
         
         console.log('開始下載文件:', {
@@ -183,20 +216,23 @@ function downloadFileLegacy(blob, filename) {
         a.download = filename;
         a.style.display = 'none';
         
+        // 添加到DOM並觸發下載
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
         
-        // 延遲釋放 URL 對象
+        // 清理DOM
         setTimeout(() => {
+            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-        }, 1000);
+        }, 100);
         
         console.log('文件下載成功:', filename);
+        showNotification('文件下載成功', 'success');
         
     } catch (error) {
         console.error('下載文件失敗:', error);
-        throw error;
+        showNotification('下載失敗：' + error.message, 'error');
+        // 不拋出異常，讓調用者處理
     }
 }
 

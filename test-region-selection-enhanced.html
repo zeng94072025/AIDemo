@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>增強區域選擇測試 - AI圖片優化助手</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            border: 1px solid #e1e5e9;
+            border-radius: 15px;
+            background: #fafbfc;
+        }
+        
+        .test-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .test-title i {
+            color: #007AFF;
+        }
+        
+        .upload-area {
+            border: 3px dashed #007AFF;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: #5856D6;
+            background: #f0f0f0;
+            transform: translateY(-2px);
+        }
+        
+        .upload-area.dragover {
+            border-color: #34C759;
+            background: #e8f5e8;
+        }
+        
+        .preview-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .preview-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        
+        .preview-box h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .preview-image-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        #selectionCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #34C759 0%, #30D158 100%);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 199, 89, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 1px solid #dee2e6;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .log-container {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px 0;
+        }
+        
+        .log-entry.success { color: #28a745; }
+        .log-entry.error { color: #dc3545; }
+        .log-entry.warning { color: #ffc107; }
+        .log-entry.info { color: #17a2b8; }
+        
+        .progress-container {
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007AFF 0%, #5856D6 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border-left: 4px solid #007AFF;
+        }
+        
+        .instructions h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .instructions ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 增強區域選擇測試</h1>
+            <p>測試區域選擇和一鍵修復功能的完整工作流程</p>
+        </div>
+        
+        <div class="content">
+            <div class="instructions">
+                <h3>📋 測試說明</h3>
+                <ol>
+                    <li><strong>上傳圖片</strong>：點擊上傳區域選擇一張圖片</li>
+                    <li><strong>選擇區域</strong>：在圖片上拖拽選擇要處理的區域</li>
+                    <li><strong>一鍵修復</strong>：系統會自動對選定區域進行AI智能修復</li>
+                    <li><strong>下載結果</strong>：處理完成後可以下載修復後的圖片</li>
+                </ol>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-title">
+                    <i class="fas fa-upload"></i>
+                    圖片上傳
+                </div>
+                
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 48px; color: #007AFF; margin-bottom: 15px;"></i>
+                    <h3>點擊或拖拽上傳圖片</h3>
+                    <p>支持 JPG、PNG、GIF、WEBP 格式</p>
+                    <input type="file" id="fileInput" accept="image/*">
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-secondary" id="clearBtn">
+                        <i class="fas fa-trash"></i>
+                        清除圖片
+                    </button>
+                    <button class="btn btn-secondary" id="resetBtn">
+                        <i class="fas fa-redo"></i>
+                        重置測試
+                    </button>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-title">
+                    <i class="fas fa-eye"></i>
+                    圖片預覽
+                </div>
+                
+                <div class="preview-container">
+                    <div class="preview-box">
+                        <h3>原始圖片</h3>
+                        <div class="preview-image-container">
+                            <img id="originalImage" class="preview-image" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuekuuS+i+WbvueJhzwvdGV4dD48L3N2Zz4=" alt="原始圖片">
+                            <canvas id="selectionCanvas"></canvas>
+                        </div>
+                        <p id="originalInfo">請上傳圖片</p>
+                    </div>
+                    
+                    <div class="preview-box">
+                        <h3>處理後圖片</h3>
+                        <img id="processedImage" class="preview-image" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuekuuS+i+WbvueJhzwvdGV4dD48L3N2Zz4=" alt="處理後圖片">
+                        <p id="processedInfo">等待處理...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-title">
+                    <i class="fas fa-magic"></i>
+                    區域選擇與修復
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-primary" id="selectAndRepairBtn">
+                        <i class="fas fa-mouse-pointer"></i>
+                        開始區域選擇
+                    </button>
+                    <button class="btn btn-success" id="downloadBtn" disabled>
+                        <i class="fas fa-download"></i>
+                        下載結果
+                    </button>
+                </div>
+                
+                <div id="status" class="status info">
+                    等待開始測試...
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">準備中...</div>
+                </div>
+            </div>
+            
+            <div class="test-section">
+                <div class="test-title">
+                    <i class="fas fa-terminal"></i>
+                    處理日誌
+                </div>
+                
+                <div class="log-container" id="logContainer">
+                    <div class="log-entry info">系統初始化完成...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/aiImageProcessor.js"></script>
+    <script>
+        class EnhancedRegionSelectionTest {
+            constructor() {
+                this.aiProcessor = null;
+                this.selectedRegion = null;
+                this.isSelecting = false;
+                this.setupEvents();
+                this.log('增強區域選擇測試系統初始化完成', 'success');
+            }
+            
+            setupEvents() {
+                // 文件上傳事件
+                document.getElementById('uploadArea').addEventListener('click', () => {
+                    document.getElementById('fileInput').click();
+                });
+                
+                document.getElementById('fileInput').addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        this.handleFile(e.target.files[0]);
+                    }
+                });
+                
+                // 拖拽上傳
+                const uploadArea = document.getElementById('uploadArea');
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.add('dragover');
+                });
+                
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.classList.remove('dragover');
+                });
+                
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.classList.remove('dragover');
+                    if (e.dataTransfer.files.length > 0) {
+                        this.handleFile(e.dataTransfer.files[0]);
+                    }
+                });
+                
+                // 按鈕事件
+                document.getElementById('selectAndRepairBtn').addEventListener('click', () => {
+                    this.startRegionSelection();
+                });
+                
+                document.getElementById('downloadBtn').addEventListener('click', () => {
+                    this.downloadResult();
+                });
+                
+                document.getElementById('clearBtn').addEventListener('click', () => {
+                    this.clearImage();
+                });
+                
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetTest();
+                });
+            }
+            
+            handleFile(file) {
+                this.log(`選擇文件: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'info');
+                
+                if (!file.type.startsWith('image/')) {
+                    this.log('錯誤：請選擇圖片文件', 'error');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        document.getElementById('originalImage').src = e.target.result;
+                        document.getElementById('originalInfo').textContent = 
+                            `${img.naturalWidth} × ${img.naturalHeight} 像素`;
+                        this.log('圖片載入成功', 'success');
+                        this.updateStatus('圖片已載入，可以開始區域選擇', 'success');
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            startRegionSelection() {
+                const originalImage = document.getElementById('originalImage');
+                
+                if (originalImage.src.includes('data:image/svg+xml')) {
+                    this.log('請先上傳圖片', 'error');
+                    this.updateStatus('請先上傳圖片', 'error');
+                    return;
+                }
+                
+                this.log('開始區域選擇模式...', 'info');
+                this.updateStatus('請在圖片上拖拽選擇要處理的區域', 'info');
+                
+                const selectionCanvas = document.getElementById('selectionCanvas');
+                const imgRect = originalImage.getBoundingClientRect();
+                
+                // 設置畫布大小
+                selectionCanvas.width = imgRect.width;
+                selectionCanvas.height = imgRect.height;
+                selectionCanvas.style.display = 'block';
+                selectionCanvas.style.pointerEvents = 'auto';
+                
+                const ctx = selectionCanvas.getContext('2d');
+                let selectionStart = null;
+                let selectionEnd = null;
+                
+                // 添加事件監聽器
+                const handleMouseDown = (e) => {
+                    const rect = selectionCanvas.getBoundingClientRect();
+                    selectionStart = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                    this.log('開始選擇區域', 'info');
+                };
+                
+                const handleMouseMove = (e) => {
+                    if (!selectionStart) return;
+                    
+                    const rect = selectionCanvas.getBoundingClientRect();
+                    selectionEnd = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                    
+                    // 清除畫布並重繪選擇框
+                    ctx.clearRect(0, 0, selectionCanvas.width, selectionCanvas.height);
+                    this.drawSelectionBox(ctx, selectionStart, selectionEnd);
+                };
+                
+                const handleMouseUp = async (e) => {
+                    if (!selectionStart || !selectionEnd) return;
+                    
+                    // 計算選擇區域
+                    const x = Math.min(selectionStart.x, selectionEnd.x);
+                    const y = Math.min(selectionStart.y, selectionEnd.y);
+                    const width = Math.abs(selectionEnd.x - selectionStart.x);
+                    const height = Math.abs(selectionEnd.y - selectionStart.y);
+                    
+                    // 轉換為圖片坐標
+                    const scaleX = originalImage.naturalWidth / imgRect.width;
+                    const scaleY = originalImage.naturalHeight / imgRect.height;
+                    
+                    this.selectedRegion = {
+                        x: Math.round(x * scaleX),
+                        y: Math.round(y * scaleY),
+                        width: Math.round(width * scaleX),
+                        height: Math.round(height * scaleY)
+                    };
+                    
+                    this.log(`選擇區域: x=${this.selectedRegion.x}, y=${this.selectedRegion.y}, width=${this.selectedRegion.width}, height=${this.selectedRegion.height}`, 'success');
+                    
+                    // 隱藏選擇畫布
+                    selectionCanvas.style.display = 'none';
+                    selectionCanvas.style.pointerEvents = 'none';
+                    
+                    // 移除事件監聽器
+                    selectionCanvas.removeEventListener('mousedown', handleMouseDown);
+                    selectionCanvas.removeEventListener('mousemove', handleMouseMove);
+                    selectionCanvas.removeEventListener('mouseup', handleMouseUp);
+                    
+                    // 自動執行一鍵修復
+                    await this.executeRepair();
+                };
+                
+                selectionCanvas.addEventListener('mousedown', handleMouseDown);
+                selectionCanvas.addEventListener('mousemove', handleMouseMove);
+                selectionCanvas.addEventListener('mouseup', handleMouseUp);
+            }
+            
+            drawSelectionBox(ctx, start, end) {
+                if (!start || !end) return;
+                
+                const x = Math.min(start.x, end.x);
+                const y = Math.min(start.y, end.y);
+                const width = Math.abs(end.x - start.x);
+                const height = Math.abs(end.y - start.y);
+                
+                // 繪製半透明背景
+                ctx.fillStyle = 'rgba(0, 122, 255, 0.2)';
+                ctx.fillRect(x, y, width, height);
+                
+                // 繪製邊框
+                ctx.strokeStyle = '#007AFF';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeRect(x, y, width, height);
+                ctx.setLineDash([]);
+                
+                // 繪製尺寸標籤
+                ctx.fillStyle = '#007AFF';
+                ctx.font = '12px Arial';
+                ctx.fillText(`${Math.round(width)} × ${Math.round(height)}`, x + 5, y + 15);
+            }
+            
+            async executeRepair() {
+                this.log('開始執行區域一鍵修復...', 'info');
+                this.updateStatus('正在進行AI智能修復...', 'info');
+                this.showProgress();
+                
+                try {
+                    this.aiProcessor = new AIImageProcessor();
+                    this.log('✓ AI處理器創建成功', 'success');
+                    this.updateProgress(10);
+                    
+                    const originalImage = document.getElementById('originalImage');
+                    await this.aiProcessor.loadImageFromDataURL(originalImage.src);
+                    this.log('✓ 圖片載入成功', 'success');
+                    this.updateProgress(30);
+                    
+                    const success = await this.aiProcessor.oneClickRepair(this.selectedRegion);
+                    this.updateProgress(80);
+                    
+                    if (success) {
+                        this.log('✓ 一鍵修復執行成功', 'success');
+                        const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
+                        if (processedBase64) {
+                            document.getElementById('processedImage').src = processedBase64;
+                            document.getElementById('processedInfo').textContent = '修復完成';
+                            document.getElementById('downloadBtn').disabled = false;
+                            this.log('✓ 結果生成成功', 'success');
+                            this.updateStatus('區域一鍵修復完成！', 'success');
+                            this.updateProgress(100);
+                        } else {
+                            throw new Error('結果生成失敗');
+                        }
+                    } else {
+                        throw new Error('一鍵修復返回false');
+                    }
+                } catch (error) {
+                    this.log(`✗ 修復失敗: ${error.message}`, 'error');
+                    this.updateStatus(`修復失敗: ${error.message}`, 'error');
+                } finally {
+                    this.hideProgress();
+                }
+            }
+            
+            downloadResult() {
+                if (this.aiProcessor) {
+                    const link = document.createElement('a');
+                    link.href = this.aiProcessor.toBase64('image/png', 0.9);
+                    link.download = `region-repair-${Date.now()}.png`;
+                    link.click();
+                    this.log('結果已下載', 'success');
+                }
+            }
+            
+            clearImage() {
+                document.getElementById('originalImage').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuekuuS+i+WbvueJhzwvdGV4dD48L3N2Zz4=';
+                document.getElementById('processedImage').src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuekuuS+i+WbvueJhzwvdGV4dD48L3N2Zz4=';
+                document.getElementById('originalInfo').textContent = '請上傳圖片';
+                document.getElementById('processedInfo').textContent = '等待處理...';
+                document.getElementById('downloadBtn').disabled = true;
+                this.selectedRegion = null;
+                this.aiProcessor = null;
+                this.log('圖片已清除', 'info');
+                this.updateStatus('等待上傳圖片...', 'info');
+            }
+            
+            resetTest() {
+                this.clearImage();
+                document.getElementById('selectionCanvas').style.display = 'none';
+                this.log('測試已重置', 'info');
+            }
+            
+            showProgress() {
+                document.getElementById('progressContainer').style.display = 'block';
+            }
+            
+            hideProgress() {
+                document.getElementById('progressContainer').style.display = 'none';
+            }
+            
+            updateProgress(percentage) {
+                document.getElementById('progressFill').style.width = `${percentage}%`;
+                document.getElementById('progressText').textContent = `處理中... ${percentage}%`;
+            }
+            
+            log(message, type = 'info') {
+                const logContainer = document.getElementById('logContainer');
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                logContainer.appendChild(entry);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            updateStatus(message, type = 'info') {
+                const status = document.getElementById('status');
+                status.textContent = message;
+                status.className = `status ${type}`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            new EnhancedRegionSelectionTest();
+        });
+    </script>
+</body>
+</html> 

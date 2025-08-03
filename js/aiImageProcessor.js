@@ -433,6 +433,40 @@ class AIImageProcessor {
         }
     }
 
+    // 創建區域掩碼
+    createRegionMask(width, height, selectedRegion) {
+        const mask = new Array(width * height).fill(0);
+        
+        // 如果沒有選擇區域，則整個圖片都是處理區域
+        if (!selectedRegion) {
+            for (let i = 0; i < mask.length; i++) {
+                mask[i] = 1;
+            }
+            console.log('使用全圖區域掩碼');
+            return mask;
+        }
+        
+        // 創建選定區域的掩碼
+        const { x, y, width: regionWidth, height: regionHeight } = selectedRegion;
+        
+        // 確保區域在圖片範圍內
+        const startX = Math.max(0, Math.min(x, width - 1));
+        const startY = Math.max(0, Math.min(y, height - 1));
+        const endX = Math.min(width, startX + regionWidth);
+        const endY = Math.min(height, startY + regionHeight);
+        
+        // 填充選定區域
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const idx = y * width + x;
+                mask[idx] = 1;
+            }
+        }
+        
+        console.log(`區域掩碼創建完成: x=${startX}, y=${startY}, width=${endX-startX}, height=${endY-startY}`);
+        return mask;
+    }
+
     // 高級主要人物檢測算法
     detectMainSubjectAdvanced(data, width, height, regionMask) {
         const mask = new Array(width * height).fill(0);
