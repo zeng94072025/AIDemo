@@ -195,6 +195,11 @@
                             <button class="filter-btn" data-filter="grayscale">黑白</button>
                             <button class="filter-btn" data-filter="sepia">復古</button>
                             <button class="filter-btn" data-filter="invert">反轉</button>
+                            <button class="filter-btn" data-filter="blur">模糊</button>
+                            <button class="filter-btn" data-filter="sharpen">銳化</button>
+                            <button class="filter-btn" data-filter="vintage">懷舊</button>
+                            <button class="filter-btn" data-filter="warm">暖色調</button>
+                            <button class="filter-btn" data-filter="cool">冷色調</button>
                         </div>
                     </div>
                     
@@ -324,10 +329,14 @@
     <!-- 隱藏的Canvas元素 -->
     <canvas id="hiddenCanvas" style="display: none;"></canvas>
     
+    <!-- 塗鴉標註Canvas -->
+    <canvas id="drawingCanvas" style="display: none; position: absolute; top: 0; left: 0; z-index: 1000;"></canvas>
+    
     <!-- JavaScript文件 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/fixedImageProcessor.js"></script>
+    <script src="js/drawingProcessor.js"></script>
     <script src="js/uiController.js"></script>
     <script src="js/main.js"></script>
 </body>

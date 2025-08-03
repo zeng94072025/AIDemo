@@ -315,6 +315,26 @@ class FixedImageProcessor {
                     }
                     break;
                     
+                case 'blur':
+                    this.applyBlurFilter();
+                    break;
+                    
+                case 'sharpen':
+                    this.applySharpenFilter();
+                    break;
+                    
+                case 'vintage':
+                    this.applyVintageFilter();
+                    break;
+                    
+                case 'warm':
+                    this.applyWarmFilter();
+                    break;
+                    
+                case 'cool':
+                    this.applyCoolFilter();
+                    break;
+                    
                 default:
                     console.warn('不支持的濾鏡類型:', filterType);
                     return false;
@@ -333,6 +353,255 @@ class FixedImageProcessor {
             console.error('應用濾鏡失敗:', error);
             return false;
         }
+    }
+
+    // 應用模糊濾鏡
+    applyBlurFilter() {
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        const data = imageData.data;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        
+        // 簡單的模糊算法
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                const idx = (y * width + x) * 4;
+                let r = 0, g = 0, b = 0;
+                
+                // 3x3 模糊核
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const nIdx = ((y + dy) * width + (x + dx)) * 4;
+                        r += data[nIdx];
+                        g += data[nIdx + 1];
+                        b += data[nIdx + 2];
+                    }
+                }
+                
+                data[idx] = r / 9;
+                data[idx + 1] = g / 9;
+                data[idx + 2] = b / 9;
+            }
+        }
+        
+        this.ctx.putImageData(imageData, 0, 0);
+    }
+
+    // 應用銳化濾鏡
+    applySharpenFilter() {
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        const data = imageData.data;
+        const width = this.canvas.width;
+        const height = this.canvas.height;
+        
+        // 銳化算法
+        for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+                const idx = (y * width + x) * 4;
+                
+                // 銳化核
+                const r = data[idx] * 5 - data[idx - 4] - data[idx + 4] - data[idx - width * 4] - data[idx + width * 4];
+                const g = data[idx + 1] * 5 - data[idx - 3] - data[idx + 5] - data[idx - width * 4 + 1] - data[idx + width * 4 + 1];
+                const b = data[idx + 2] * 5 - data[idx - 2] - data[idx + 6] - data[idx - width * 4 + 2] - data[idx + width * 4 + 2];
+                
+                data[idx] = Math.min(255, Math.max(0, r));
+                data[idx + 1] = Math.min(255, Math.max(0, g));
+                data[idx + 2] = Math.min(255, Math.max(0, b));
+            }
+        }
+        
+        this.ctx.putImageData(imageData, 0, 0);
+    }
+
+    // 應用復古濾鏡
+    applyVintageFilter() {
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            // 復古色調調整
+            data[i] = Math.min(255, r * 0.8 + g * 0.2 + b * 0.1);     // R
+            data[i + 1] = Math.min(255, r * 0.1 + g * 0.7 + b * 0.2); // G
+            data[i + 2] = Math.min(255, r * 0.1 + g * 0.2 + b * 0.6); // B
+        }
+        
+        this.ctx.putImageData(imageData, 0, 0);
+    }
+
+    // 應用暖色調濾鏡
+    applyWarmFilter() {
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = Math.min(255, data[i] * 1.2);     // 增強紅色
+            data[i + 1] = Math.min(255, data[i + 1] * 1.1); // 輕微增強綠色
+            data[i + 2] = Math.min(255, data[i + 2] * 0.9); // 減少藍色
+        }
+        
+        this.ctx.putImageData(imageData, 0, 0);
+    }
+
+    // 應用冷色調濾鏡
+    applyCoolFilter() {
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        const data = imageData.data;
+        
+        for (let i = 0; i < data.length; i += 4) {
+            data[i] = Math.min(255, data[i] * 0.9);     // 減少紅色
+            data[i + 1] = Math.min(255, data[i + 1] * 1.1); // 輕微增強綠色
+            data[i + 2] = Math.min(255, data[i + 2] * 1.2); // 增強藍色
+        }
+        
+        this.ctx.putImageData(imageData, 0, 0);
+    }
+
+    // 應用相框效果
+    applyFrame(frameType) {
+        try {
+            if (!this.isLoaded || !this.originalImage) {
+                console.error('沒有載入的圖片');
+                return false;
+            }
+            
+            // 重新繪製原始圖片
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
+            
+            const width = this.canvas.width;
+            const height = this.canvas.height;
+            const frameWidth = Math.min(width, height) * 0.1; // 相框寬度為圖片最小邊的10%
+            
+            switch (frameType) {
+                case 'classic':
+                    this.drawClassicFrame(width, height, frameWidth);
+                    break;
+                case 'modern':
+                    this.drawModernFrame(width, height, frameWidth);
+                    break;
+                case 'vintage':
+                    this.drawVintageFrame(width, height, frameWidth);
+                    break;
+                case 'elegant':
+                    this.drawElegantFrame(width, height, frameWidth);
+                    break;
+                case 'minimal':
+                    this.drawMinimalFrame(width, height, frameWidth);
+                    break;
+                case 'artistic':
+                    this.drawArtisticFrame(width, height, frameWidth);
+                    break;
+                default:
+                    console.warn('不支持的相框類型:', frameType);
+                    return false;
+            }
+            
+            // 保存當前圖片數據
+            this.currentImageData = this.ctx.getImageData(0, 0, width, height);
+            
+            console.log('相框應用完成:', frameType);
+            return true;
+            
+        } catch (error) {
+            console.error('應用相框失敗:', error);
+            return false;
+        }
+    }
+
+    // 繪製經典相框
+    drawClassicFrame(width, height, frameWidth) {
+        this.ctx.fillStyle = '#8B4513';
+        this.ctx.fillRect(0, 0, width, height);
+        
+        this.ctx.fillStyle = '#D2691E';
+        this.ctx.fillRect(frameWidth, frameWidth, width - frameWidth * 2, height - frameWidth * 2);
+        
+        this.ctx.drawImage(this.originalImage, frameWidth * 2, frameWidth * 2, 
+                          width - frameWidth * 4, height - frameWidth * 4);
+    }
+
+    // 繪製現代相框
+    drawModernFrame(width, height, frameWidth) {
+        this.ctx.fillStyle = '#2C3E50';
+        this.ctx.fillRect(0, 0, width, height);
+        
+        this.ctx.fillStyle = '#34495E';
+        this.ctx.fillRect(frameWidth, frameWidth, width - frameWidth * 2, height - frameWidth * 2);
+        
+        this.ctx.drawImage(this.originalImage, frameWidth * 2, frameWidth * 2, 
+                          width - frameWidth * 4, height - frameWidth * 4);
+    }
+
+    // 繪製復古相框
+    drawVintageFrame(width, height, frameWidth) {
+        this.ctx.fillStyle = '#8B7355';
+        this.ctx.fillRect(0, 0, width, height);
+        
+        // 添加紋理效果
+        for (let i = 0; i < width; i += 10) {
+            for (let j = 0; j < height; j += 10) {
+                this.ctx.fillStyle = `rgba(139, 115, 85, ${Math.random() * 0.3})`;
+                this.ctx.fillRect(i, j, 5, 5);
+            }
+        }
+        
+        this.ctx.drawImage(this.originalImage, frameWidth, frameWidth, 
+                          width - frameWidth * 2, height - frameWidth * 2);
+    }
+
+    // 繪製優雅相框
+    drawElegantFrame(width, height, frameWidth) {
+        this.ctx.fillStyle = '#2C3E50';
+        this.ctx.fillRect(0, 0, width, height);
+        
+        // 內邊框
+        this.ctx.strokeStyle = '#ECF0F1';
+        this.ctx.lineWidth = 3;
+        this.ctx.strokeRect(frameWidth, frameWidth, width - frameWidth * 2, height - frameWidth * 2);
+        
+        this.ctx.drawImage(this.originalImage, frameWidth * 2, frameWidth * 2, 
+                          width - frameWidth * 4, height - frameWidth * 4);
+    }
+
+    // 繪製極簡相框
+    drawMinimalFrame(width, height, frameWidth) {
+        this.ctx.fillStyle = '#FFFFFF';
+        this.ctx.fillRect(0, 0, width, height);
+        
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 2;
+        this.ctx.strokeRect(frameWidth, frameWidth, width - frameWidth * 2, height - frameWidth * 2);
+        
+        this.ctx.drawImage(this.originalImage, frameWidth * 2, frameWidth * 2, 
+                          width - frameWidth * 4, height - frameWidth * 4);
+    }
+
+    // 繪製藝術相框
+    drawArtisticFrame(width, height, frameWidth) {
+        // 漸變背景
+        const gradient = this.ctx.createLinearGradient(0, 0, width, height);
+        gradient.addColorStop(0, '#FF6B6B');
+        gradient.addColorStop(0.5, '#4ECDC4');
+        gradient.addColorStop(1, '#45B7D1');
+        
+        this.ctx.fillStyle = gradient;
+        this.ctx.fillRect(0, 0, width, height);
+        
+        // 添加裝飾性圖案
+        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
+            this.ctx.beginPath();
+            this.ctx.arc(frameWidth + i * 20, frameWidth + i * 20, 10, 0, Math.PI * 2);
+            this.ctx.stroke();
+        }
+        
+        this.ctx.drawImage(this.originalImage, frameWidth * 2, frameWidth * 2, 
+                          width - frameWidth * 4, height - frameWidth * 4);
     }
 
     // 重置到原始圖片

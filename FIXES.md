@@ -93,7 +93,39 @@
 
 ## 📝 更新日誌
 
-### v2.5.0 (最新修復版本)
+### v2.6.0 (特效濾鏡和塗鴉標註版本)
+- ✨ **新增特效濾鏡功能**:
+  - 模糊濾鏡 (blur)
+  - 銳化濾鏡 (sharpen)
+  - 懷舊濾鏡 (vintage)
+  - 暖色調濾鏡 (warm)
+  - 冷色調濾鏡 (cool)
+- 🖼️ **新增相框效果功能**:
+  - 經典相框 (classic)
+  - 現代相框 (modern)
+  - 復古相框 (vintage)
+  - 優雅相框 (elegant)
+  - 極簡相框 (minimal)
+  - 藝術相框 (artistic)
+- 🎨 **新增塗鴉標註功能**:
+  - 畫筆工具 (brush)
+  - 橡皮擦工具 (eraser)
+  - 直線工具 (line)
+  - 矩形工具 (rectangle)
+  - 圓形工具 (circle)
+  - 文字工具 (text)
+  - 箭頭標註 (arrow)
+  - 高亮標註 (highlight)
+  - 印章標註 (stamp)
+  - 測量標註 (measure)
+- 🛠️ **技術改進**:
+  - 創建 `DrawingProcessor` 類處理塗鴉標註
+  - 增強 `FixedImageProcessor` 支持更多濾鏡和相框
+  - 改進 UI 控制器支持繪製模式
+  - 添加撤銷/重做功能
+  - 支持觸控設備繪製
+
+### v2.5.0 (修復版本)
 - 🔧 **完全修復圖片處理功能**:
   - 創建 `FixedImageProcessor` 類解決所有已知問題
   - 修復 Base64 轉換和 Blob 生成問題

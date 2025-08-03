@@ -89,7 +89,26 @@
         </div>
         
         <div class="test-section">
-            <h3>4. 錯誤處理測試</h3>
+            <h3>4. 特效濾鏡測試</h3>
+            <button class="test-button" onclick="testAdvancedFilters()">測試特效濾鏡</button>
+            <div id="filterTestResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>5. 相框效果測試</h3>
+            <button class="test-button" onclick="testFrameEffects()">測試相框效果</button>
+            <div id="frameTestResult"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>6. 塗鴉標註測試</h3>
+            <button class="test-button" onclick="testDrawingTools()">測試塗鴉標註</button>
+            <div id="drawingTestResult"></div>
+            <canvas id="testDrawingCanvas" width="300" height="200" style="border: 1px solid #ccc; margin: 10px 0;"></canvas>
+        </div>
+        
+        <div class="test-section">
+            <h3>7. 錯誤處理測試</h3>
             <button class="test-button" onclick="testErrorHandling()">測試錯誤處理</button>
             <div id="errorTestResult"></div>
         </div>
@@ -98,6 +117,7 @@
     <!-- 引入必要的JavaScript文件 -->
     <script src="js/utils.js"></script>
     <script src="js/fixedImageProcessor.js"></script>
+    <script src="js/drawingProcessor.js"></script>
     <script src="js/uiController.js"></script>
     <script src="js/main.js"></script>
     
@@ -114,6 +134,7 @@
                 const tests = [
                     { name: 'Utils', obj: window.Utils, expected: 'object' },
                     { name: 'FixedImageProcessor', obj: window.FixedImageProcessor, expected: 'function' },
+                    { name: 'DrawingProcessor', obj: window.DrawingProcessor, expected: 'function' },
                     { name: 'UIController', obj: window.UIController, expected: 'function' },
                     { name: 'AIImageOptimizer', obj: window.AIImageOptimizer, expected: 'function' }
                 ];
@@ -241,6 +262,132 @@
                 
             } catch (error) {
                 result.innerHTML = `<div class="test-result error">工具函數測試失敗: ${error.message}</div>`;
+            }
+        }
+        
+        // 特效濾鏡測試
+        function testAdvancedFilters() {
+            const result = document.getElementById('filterTestResult');
+            result.innerHTML = '';
+            
+            if (!testImage) {
+                result.innerHTML = '<div class="test-result error">請先選擇測試圖片</div>';
+                return;
+            }
+            
+            const processor = new FixedImageProcessor();
+            const filters = ['blur', 'sharpen', 'vintage', 'warm', 'cool'];
+            let successCount = 0;
+            
+            processor.loadImage(testImage)
+                .then(imageData => {
+                    result.innerHTML += `<div class="test-result success">✓ 圖片載入成功，開始測試特效濾鏡</div>`;
+                    
+                    filters.forEach(filter => {
+                        try {
+                            const success = processor.applyFilter(filter);
+                            if (success) {
+                                result.innerHTML += `<div class="test-result success">✓ ${filter} 濾鏡測試成功</div>`;
+                                successCount++;
+                            } else {
+                                result.innerHTML += `<div class="test-result error">✗ ${filter} 濾鏡測試失敗</div>`;
+                            }
+                        } catch (error) {
+                            result.innerHTML += `<div class="test-result error">✗ ${filter} 濾鏡測試異常: ${error.message}</div>`;
+                        }
+                    });
+                    
+                    result.innerHTML += `<div class="test-result info">特效濾鏡測試完成: ${successCount}/${filters.length} 通過</div>`;
+                })
+                .catch(error => {
+                    result.innerHTML = `<div class="test-result error">特效濾鏡測試失敗: ${error.message}</div>`;
+                });
+        }
+        
+        // 相框效果測試
+        function testFrameEffects() {
+            const result = document.getElementById('frameTestResult');
+            result.innerHTML = '';
+            
+            if (!testImage) {
+                result.innerHTML = '<div class="test-result error">請先選擇測試圖片</div>';
+                return;
+            }
+            
+            const processor = new FixedImageProcessor();
+            const frames = ['classic', 'modern', 'vintage', 'elegant', 'minimal', 'artistic'];
+            let successCount = 0;
+            
+            processor.loadImage(testImage)
+                .then(imageData => {
+                    result.innerHTML += `<div class="test-result success">✓ 圖片載入成功，開始測試相框效果</div>`;
+                    
+                    frames.forEach(frame => {
+                        try {
+                            const success = processor.applyFrame(frame);
+                            if (success) {
+                                result.innerHTML += `<div class="test-result success">✓ ${frame} 相框測試成功</div>`;
+                                successCount++;
+                            } else {
+                                result.innerHTML += `<div class="test-result error">✗ ${frame} 相框測試失敗</div>`;
+                            }
+                        } catch (error) {
+                            result.innerHTML += `<div class="test-result error">✗ ${frame} 相框測試異常: ${error.message}</div>`;
+                        }
+                    });
+                    
+                    result.innerHTML += `<div class="test-result info">相框效果測試完成: ${successCount}/${frames.length} 通過</div>`;
+                })
+                .catch(error => {
+                    result.innerHTML = `<div class="test-result error">相框效果測試失敗: ${error.message}</div>`;
+                });
+        }
+        
+        // 塗鴉標註測試
+        function testDrawingTools() {
+            const result = document.getElementById('drawingTestResult');
+            const canvas = document.getElementById('testDrawingCanvas');
+            result.innerHTML = '';
+            
+            try {
+                const drawingProcessor = new DrawingProcessor(canvas);
+                result.innerHTML += `<div class="test-result success">✓ 塗鴉標註處理器初始化成功</div>`;
+                
+                // 測試工具切換
+                const tools = ['brush', 'eraser', 'line', 'rectangle', 'circle', 'text'];
+                tools.forEach(tool => {
+                    drawingProcessor.setTool(tool);
+                    result.innerHTML += `<div class="test-result success">✓ ${tool} 工具設置成功</div>`;
+                });
+                
+                // 測試顏色設置
+                drawingProcessor.setColor('#00ff00');
+                result.innerHTML += `<div class="test-result success">✓ 顏色設置成功</div>`;
+                
+                // 測試畫筆大小設置
+                drawingProcessor.setBrushSize(10);
+                result.innerHTML += `<div class="test-result success">✓ 畫筆大小設置成功</div>`;
+                
+                // 測試繪製功能
+                drawingProcessor.drawLine(50, 50, 250, 150);
+                drawingProcessor.drawRectangle(100, 100, 100, 50);
+                drawingProcessor.drawCircle(200, 100, 30);
+                drawingProcessor.addText('測試文字', 150, 180);
+                
+                result.innerHTML += `<div class="test-result success">✓ 基本繪製功能測試成功</div>`;
+                
+                // 測試撤銷重做
+                if (drawingProcessor.undo()) {
+                    result.innerHTML += `<div class="test-result success">✓ 撤銷功能正常</div>`;
+                }
+                if (drawingProcessor.redo()) {
+                    result.innerHTML += `<div class="test-result success">✓ 重做功能正常</div>`;
+                }
+                
+                result.innerHTML += `<div class="test-result info">塗鴉標註測試完成，請查看上方畫布</div>`;
+                
+            } catch (error) {
+                result.innerHTML = `<div class="test-result error">塗鴉標註測試失敗: ${error.message}</div>`;
             }
         }
         
