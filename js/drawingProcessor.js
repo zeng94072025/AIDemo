@@ -17,6 +17,15 @@ class DrawingProcessor {
         this.gradientColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']; // 新增：漸變色彩
         this.emojiList = ['😀', '😍', '👍', '🎉', '💯', '🔥', '⭐', '💖', '🎯', '🏆']; // 新增：表情符號
         
+        // 綁定事件處理函數，確保可以正確移除
+        this.boundHandleMouseDown = this.handleMouseDown.bind(this);
+        this.boundHandleMouseMove = this.handleMouseMove.bind(this);
+        this.boundHandleMouseUp = this.handleMouseUp.bind(this);
+        this.boundHandleMouseLeave = this.handleMouseLeave.bind(this);
+        this.boundHandleTouchStart = this.handleTouchStart.bind(this);
+        this.boundHandleTouchMove = this.handleTouchMove.bind(this);
+        this.boundHandleTouchEnd = this.handleTouchEnd.bind(this);
+        
         this.initCanvas();
         this.initEventListeners();
         
@@ -34,117 +43,244 @@ class DrawingProcessor {
         this.ctx.lineJoin = 'round';
         this.ctx.strokeStyle = this.brushColor;
         this.ctx.lineWidth = this.brushSize;
+        
+        console.log('Canvas初始化完成:', {
+            width: this.canvas.width,
+            height: this.canvas.height,
+            style: {
+                cursor: this.canvas.style.cursor,
+                border: this.canvas.style.border
+            }
+        });
+    }
+
+    // 重新設置Canvas（新增方法）
+    resetCanvas(newCanvas) {
+        try {
+            // 保存舊的Canvas引用
+            const oldCanvas = this.canvas;
+            
+            // 先移除舊Canvas的事件監聽器
+            if (oldCanvas) {
+                this.removeEventListeners();
+            }
+            
+            // 更新Canvas引用
+            this.canvas = newCanvas;
+            this.ctx = newCanvas.getContext('2d');
+            
+            // 重新初始化畫布
+            this.initCanvas();
+            
+            // 重新初始化事件監聽器
+            this.initEventListeners();
+            
+            console.log('Canvas重新設置成功:', {
+                oldSize: oldCanvas ? `${oldCanvas.width}x${oldCanvas.height}` : 'N/A',
+                newSize: `${this.canvas.width}x${this.canvas.height}`,
+                newPosition: `(${this.canvas.style.left}, ${this.canvas.style.top})`
+            });
+            
+        } catch (error) {
+            console.error('Canvas重新設置失敗:', error);
+            throw error;
+        }
     }
 
     // 初始化事件監聽器
     initEventListeners() {
+        // 先移除舊的事件監聽器（如果存在）
+        this.removeEventListeners();
+        
         // 滑鼠事件
-        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        this.canvas.addEventListener('mouseleave', this.handleMouseLeave.bind(this));
+        this.canvas.addEventListener('mousedown', this.boundHandleMouseDown);
+        this.canvas.addEventListener('mousemove', this.boundHandleMouseMove);
+        this.canvas.addEventListener('mouseup', this.boundHandleMouseUp);
+        this.canvas.addEventListener('mouseleave', this.boundHandleMouseLeave);
         
         // 觸控事件（移動端支持）
-        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
-        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
-        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
+        this.canvas.addEventListener('touchstart', this.boundHandleTouchStart);
+        this.canvas.addEventListener('touchmove', this.boundHandleTouchMove);
+        this.canvas.addEventListener('touchend', this.boundHandleTouchEnd);
+        
+        console.log('DrawingProcessor 事件監聽器初始化完成');
+    }
+
+    // 移除事件監聽器
+    removeEventListeners() {
+        try {
+            if (this.canvas) {
+                this.canvas.removeEventListener('mousedown', this.boundHandleMouseDown);
+                this.canvas.removeEventListener('mousemove', this.boundHandleMouseMove);
+                this.canvas.removeEventListener('mouseup', this.boundHandleMouseUp);
+                this.canvas.removeEventListener('mouseleave', this.boundHandleMouseLeave);
+                this.canvas.removeEventListener('touchstart', this.boundHandleTouchStart);
+                this.canvas.removeEventListener('touchmove', this.boundHandleTouchMove);
+                this.canvas.removeEventListener('touchend', this.boundHandleTouchEnd);
+            }
+        } catch (error) {
+            console.warn('移除事件監聽器時出現錯誤:', error);
+        }
     }
 
     // 處理滑鼠按下事件
     handleMouseDown(e) {
-        this.isDrawing = true;
-        const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        this.startDrawing(x, y);
+        try {
+            this.isDrawing = true;
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 檢查座標是否在畫布範圍內
+            if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
+                this.startDrawing(x, y);
+            }
+        } catch (error) {
+            console.error('滑鼠按下事件處理錯誤:', error);
+        }
     }
 
     // 處理滑鼠移動事件
     handleMouseMove(e) {
-        if (!this.isDrawing) return;
-        
-        const rect = this.canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        this.continueDrawing(x, y);
+        try {
+            if (!this.isDrawing) return;
+            
+            const rect = this.canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // 檢查座標是否在畫布範圍內
+            if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
+                this.continueDrawing(x, y);
+            }
+        } catch (error) {
+            console.error('滑鼠移動事件處理錯誤:', error);
+        }
     }
 
     // 處理滑鼠釋放事件
     handleMouseUp(e) {
-        this.isDrawing = false;
-        this.endDrawing();
+        try {
+            this.isDrawing = false;
+            this.endDrawing();
+        } catch (error) {
+            console.error('滑鼠釋放事件處理錯誤:', error);
+        }
     }
 
     // 處理滑鼠離開事件
     handleMouseLeave(e) {
-        this.isDrawing = false;
-        this.endDrawing();
+        try {
+            this.isDrawing = false;
+            this.endDrawing();
+        } catch (error) {
+            console.error('滑鼠離開事件處理錯誤:', error);
+        }
     }
 
     // 處理觸控開始事件
     handleTouchStart(e) {
-        e.preventDefault();
-        if (e.touches.length === 1) {
-            const touch = e.touches[0];
-            const rect = this.canvas.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            
-            this.isDrawing = true;
-            this.startDrawing(x, y);
+        try {
+            e.preventDefault();
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const rect = this.canvas.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                // 檢查座標是否在畫布範圍內
+                if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
+                    this.isDrawing = true;
+                    this.startDrawing(x, y);
+                }
+            }
+        } catch (error) {
+            console.error('觸控開始事件處理錯誤:', error);
         }
     }
 
     // 處理觸控移動事件
     handleTouchMove(e) {
-        e.preventDefault();
-        if (!this.isDrawing || e.touches.length !== 1) return;
-        
-        const touch = e.touches[0];
-        const rect = this.canvas.getBoundingClientRect();
-        const x = touch.clientX - rect.left;
-        const y = touch.clientY - rect.top;
-        
-        this.continueDrawing(x, y);
+        try {
+            e.preventDefault();
+            if (!this.isDrawing || e.touches.length !== 1) return;
+            
+            const touch = e.touches[0];
+            const rect = this.canvas.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+            
+            // 檢查座標是否在畫布範圍內
+            if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
+                this.continueDrawing(x, y);
+            }
+        } catch (error) {
+            console.error('觸控移動事件處理錯誤:', error);
+        }
     }
 
     // 處理觸控結束事件
     handleTouchEnd(e) {
-        e.preventDefault();
-        this.isDrawing = false;
-        this.endDrawing();
+        try {
+            e.preventDefault();
+            this.isDrawing = false;
+            this.endDrawing();
+        } catch (error) {
+            console.error('觸控結束事件處理錯誤:', error);
+        }
     }
 
     // 開始繪製
     startDrawing(x, y) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.lastX = x;
-        this.lastY = y;
+        try {
+            this.ctx.beginPath();
+            this.ctx.moveTo(x, y);
+            this.lastX = x;
+            this.lastY = y;
+        } catch (error) {
+            console.error('開始繪製錯誤:', error);
+        }
     }
 
     // 繼續繪製
     continueDrawing(x, y) {
-        if (this.currentTool === 'brush') {
-            this.applyBrushStyle(x, y);
-        } else if (this.currentTool === 'eraser') {
-            this.ctx.save();
-            this.ctx.globalCompositeOperation = 'destination-out';
-            this.ctx.lineTo(x, y);
-            this.ctx.stroke();
-            this.ctx.restore();
-        } else if (this.currentTool === 'spray') {
-            this.drawSprayEffect(x, y);
-        } else if (this.currentTool === 'neon') {
-            this.drawNeonEffect(x, y);
-        } else if (this.currentTool === 'sparkle') {
-            this.drawSparkleEffect(x, y);
+        try {
+            if (this.currentTool === 'brush') {
+                this.applyBrushStyle(x, y);
+            } else if (this.currentTool === 'eraser') {
+                this.ctx.save();
+                this.ctx.globalCompositeOperation = 'destination-out';
+                this.ctx.lineTo(x, y);
+                this.ctx.stroke();
+                this.ctx.restore();
+            } else if (this.currentTool === 'spray') {
+                this.drawSprayEffect(x, y);
+            } else if (this.currentTool === 'neon') {
+                this.drawNeonEffect(x, y);
+            } else if (this.currentTool === 'sparkle') {
+                this.drawSparkleEffect(x, y);
+            }
+            
+            this.lastX = x;
+            this.lastY = y;
+        } catch (error) {
+            console.error('繼續繪製錯誤:', error);
         }
-        
-        this.lastX = x;
-        this.lastY = y;
+    }
+
+    // 結束繪製
+    endDrawing() {
+        try {
+            this.ctx.closePath();
+            this.saveToHistory();
+            
+            // 通知UIController保存繪製結果
+            if (this.onDrawingComplete) {
+                this.onDrawingComplete(this.getCanvasData());
+            }
+        } catch (error) {
+            console.error('結束繪製錯誤:', error);
+        }
     }
 
     // 應用畫筆樣式
@@ -178,17 +314,6 @@ class DrawingProcessor {
             default:
                 this.ctx.lineTo(x, y);
                 this.ctx.stroke();
-        }
-    }
-
-    // 結束繪製
-    endDrawing() {
-        this.ctx.closePath();
-        this.saveToHistory();
-        
-        // 通知UIController保存繪製結果
-        if (this.onDrawingComplete) {
-            this.onDrawingComplete(this.getCanvasData());
         }
     }
 
@@ -826,13 +951,7 @@ class DrawingProcessor {
     // 銷毀處理器
     destroy() {
         // 移除事件監聽器
-        this.canvas.removeEventListener('mousedown', this.handleMouseDown);
-        this.canvas.removeEventListener('mousemove', this.handleMouseMove);
-        this.canvas.removeEventListener('mouseup', this.handleMouseUp);
-        this.canvas.removeEventListener('mouseleave', this.handleMouseLeave);
-        this.canvas.removeEventListener('touchstart', this.handleTouchStart);
-        this.canvas.removeEventListener('touchmove', this.handleTouchMove);
-        this.canvas.removeEventListener('touchend', this.handleTouchEnd);
+        this.removeEventListeners();
         
         // 清空數據
         this.drawingHistory = [];

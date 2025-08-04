@@ -13,6 +13,7 @@ class ReliableImageProcessor {
         this.history = []; // 操作歷史
         this.historyIndex = -1; // 當前歷史索引
         this.maxHistorySize = 20; // 最大歷史記錄數量
+        this.currentProcessedImage = null; // 當前處理後的圖片數據
         
         console.log('ReliableImageProcessor 初始化成功');
     }
@@ -41,6 +42,10 @@ class ReliableImageProcessor {
             // 清空並繪製圖片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(img, 0, 0);
+            
+            // 初始化當前處理後的圖片為原圖
+            this.currentProcessedImage = new Image();
+            this.currentProcessedImage.src = this.canvas.toDataURL('image/jpeg', 0.9);
             
             this.isLoaded = true;
             
@@ -99,202 +104,167 @@ class ReliableImageProcessor {
                     URL.revokeObjectURL(url);
                 }
                 
-                reject(new Error('圖片加載失敗'));
+                reject(error);
             };
             
-            // 創建 URL 並設置圖片源
+            // 創建 URL
             url = URL.createObjectURL(file);
             img.src = url;
         });
     }
 
-    // 保存當前狀態到歷史
+    // 保存到歷史
     saveToHistory() {
-        if (!this.isLoaded) return;
-        
         try {
-            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            this.history.push(imageData);
+            const currentState = this.canvas.toDataURL('image/jpeg', 0.9);
             
-            // 限制歷史記錄數量
-            if (this.history.length > this.maxHistorySize) {
+            // 如果歷史記錄已滿，移除最舊的記錄
+            if (this.history.length >= this.maxHistorySize) {
                 this.history.shift();
             }
             
+            // 添加當前狀態到歷史
+            this.history.push(currentState);
             this.historyIndex = this.history.length - 1;
+            
+            // 更新當前處理後的圖片
+            this.currentProcessedImage = new Image();
+            this.currentProcessedImage.src = currentState;
+            
+            console.log('狀態已保存到歷史，當前索引:', this.historyIndex);
+            
         } catch (error) {
-            console.error('保存歷史失敗:', error);
+            console.error('保存到歷史失敗:', error);
         }
     }
 
-    // 撤銷操作
+    // 撤銷
     undo() {
         if (this.historyIndex > 0) {
             this.historyIndex--;
-            this.ctx.putImageData(this.history[this.historyIndex], 0, 0);
+            this.loadStateFromHistory();
             return true;
         }
         return false;
     }
 
-    // 重做操作
+    // 重做
     redo() {
         if (this.historyIndex < this.history.length - 1) {
             this.historyIndex++;
-            this.ctx.putImageData(this.history[this.historyIndex], 0, 0);
+            this.loadStateFromHistory();
             return true;
         }
         return false;
     }
 
-    // 可靠的 Blob 生成方法
+    // 從歷史加載狀態
+    loadStateFromHistory() {
+        try {
+            const stateData = this.history[this.historyIndex];
+            const img = new Image();
+            
+            img.onload = () => {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.drawImage(img, 0, 0);
+                this.currentProcessedImage = img;
+                console.log('從歷史加載狀態成功，索引:', this.historyIndex);
+            };
+            
+            img.src = stateData;
+            
+        } catch (error) {
+            console.error('從歷史加載狀態失敗:', error);
+        }
+    }
+
+    // 轉換為 Blob
     toBlob(type = 'image/jpeg', quality = 0.9) {
         return new Promise((resolve, reject) => {
             try {
-                // 檢查是否已載入圖片
-                if (!this.isLoaded || !this.originalImage) {
-                    reject(new Error('沒有載入的圖片'));
-                    return;
-                }
-                
-                // 檢查 Canvas
-                if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                    reject(new Error('Canvas 無效'));
-                    return;
-                }
-                
-                // 重新繪製圖片確保數據完整
+                // 確保 Canvas 有內容
                 this.ensureCanvasContent();
                 
-                // 驗證 Canvas 內容
-                const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-                const hasData = imageData.data.some(pixel => pixel !== 0);
-                
-                if (!hasData) {
-                    reject(new Error('Canvas 沒有有效數據'));
-                    return;
-                }
-                
-                console.log('Canvas 驗證通過:', {
-                    width: this.canvas.width,
-                    height: this.canvas.height,
-                    dataSize: imageData.data.length,
-                    hasData: hasData
-                });
-                
-                // 生成 Blob
                 this.canvas.toBlob((blob) => {
-                    if (blob && blob.size > 0) {
-                        // 驗證 Blob 內容
-                        this.validateBlob(blob).then(isValid => {
-                            if (isValid) {
-                                console.log('Blob 生成成功:', {
-                                    size: blob.size,
-                                    type: blob.type
-                                });
-                                resolve(blob);
-                            } else {
-                                reject(new Error('生成的 Blob 內容無效'));
-                            }
-                        }).catch(error => {
-                            console.error('Blob 驗證失敗:', error);
-                            reject(error);
-                        });
+                    if (blob) {
+                        // 驗證 Blob
+                        if (this.validateBlob(blob)) {
+                            console.log('Blob 生成成功:', {
+                                size: blob.size,
+                                type: blob.type
+                            });
+                            resolve(blob);
+                        } else {
+                            reject(new Error('生成的 Blob 無效'));
+                        }
                     } else {
-                        console.error('生成的 Blob 無效:', blob);
-                        reject(new Error('生成的 Blob 無效或為空'));
+                        reject(new Error('Canvas 轉 Blob 失敗'));
                     }
                 }, type, quality);
                 
             } catch (error) {
-                console.error('生成 Blob 失敗:', error);
+                console.error('轉換為 Blob 失敗:', error);
                 reject(error);
             }
         });
     }
 
-    // 確保 Canvas 有正確的內容
+    // 確保 Canvas 有內容
     ensureCanvasContent() {
-        if (this.originalImage) {
-            // 檢查 Canvas 是否有內容
-            const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-            const hasData = imageData.data.some(pixel => pixel !== 0);
-            
-            // 只有在 Canvas 沒有內容時才重新繪製原始圖片
-            if (!hasData) {
-                console.log('Canvas 沒有內容，重新繪製原始圖片');
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-                this.ctx.drawImage(this.originalImage, 0, 0);
-            } else {
-                console.log('Canvas 已有內容，保持當前狀態');
+        if (!this.ctx) {
+            throw new Error('Canvas context 不存在');
+        }
+        
+        // 檢查 Canvas 是否有內容
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        const data = imageData.data;
+        
+        // 檢查是否所有像素都是透明的
+        let hasContent = false;
+        for (let i = 3; i < data.length; i += 4) {
+            if (data[i] > 0) {
+                hasContent = true;
+                break;
             }
+        }
+        
+        if (!hasContent) {
+            console.warn('Canvas 沒有內容，重新繪製原圖');
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.ctx.drawImage(this.originalImage, 0, 0);
         }
     }
 
-    // 驗證 Blob 內容
+    // 驗證 Blob
     validateBlob(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const arrayBuffer = e.target.result;
-                    const uint8Array = new Uint8Array(arrayBuffer);
-                    
-                    // 檢查文件頭
-                    const isJPEG = uint8Array[0] === 0xFF && uint8Array[1] === 0xD8;
-                    const isPNG = uint8Array[0] === 0x89 && uint8Array[1] === 0x50;
-                    const isWebP = uint8Array[0] === 0x52 && uint8Array[1] === 0x49;
-                    
-                    const isValid = isJPEG || isPNG || isWebP;
-                    
-                    console.log('Blob 驗證結果:', {
-                        size: blob.size,
-                        type: blob.type,
-                        isJPEG: isJPEG,
-                        isPNG: isPNG,
-                        isWebP: isWebP,
-                        isValid: isValid,
-                        header: uint8Array.slice(0, 4).map(b => b.toString(16).padStart(2, '0')).join(' ')
-                    });
-                    
-                    resolve(isValid);
-                } catch (error) {
-                    console.error('Blob 驗證過程出錯:', error);
-                    reject(error);
-                }
-            };
-            reader.onerror = function(error) {
-                console.error('Blob 讀取失敗:', error);
-                reject(error);
-            };
-            reader.readAsArrayBuffer(blob);
-        });
+        if (!blob) {
+            console.error('Blob 為空');
+            return false;
+        }
+        
+        if (blob.size === 0) {
+            console.error('Blob 大小為 0');
+            return false;
+        }
+        
+        if (!blob.type.startsWith('image/')) {
+            console.error('Blob 類型不是圖片:', blob.type);
+            return false;
+        }
+        
+        return true;
     }
 
-    // 可靠的 Base64 轉換方法
+    // 轉換為 Base64
     toBase64(type = 'image/jpeg', quality = 0.9) {
         try {
-            // 檢查是否已載入圖片
-            if (!this.isLoaded || !this.originalImage) {
-                console.error('沒有載入的圖片');
-                return null;
-            }
-            
-            // 檢查 Canvas
-            if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                console.error('Canvas 無效');
-                return null;
-            }
-            
-            // 確保 Canvas 有正確的內容
+            // 確保 Canvas 有內容
             this.ensureCanvasContent();
             
             const dataUrl = this.canvas.toDataURL(type, quality);
             
-            // 驗證生成的 data URL
-            if (!dataUrl || dataUrl === 'data:,' || dataUrl.length < 100) {
-                console.error('生成的 Data URL 無效:', dataUrl);
-                return null;
+            if (!dataUrl || dataUrl === 'data:,') {
+                throw new Error('生成的 Base64 數據無效');
             }
             
             console.log('Base64 生成成功:', {
@@ -309,17 +279,17 @@ class ReliableImageProcessor {
         }
     }
 
-    // 調整亮度
+    // 調整亮度 - 對當前處理後的圖片進行處理
     adjustBrightness(value) {
         try {
-            if (!this.isLoaded || !this.originalImage) {
-                console.error('沒有載入的圖片');
+            if (!this.isLoaded || !this.currentProcessedImage) {
+                console.error('沒有載入的圖片或當前處理後的圖片');
                 return false;
             }
             
-            // 重新繪製原始圖片
+            // 重新繪製當前處理後的圖片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.drawImage(this.originalImage, 0, 0);
+            this.ctx.drawImage(this.currentProcessedImage, 0, 0);
             
             // 獲取圖片數據
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -347,17 +317,17 @@ class ReliableImageProcessor {
         }
     }
 
-    // 調整對比度
+    // 調整對比度 - 對當前處理後的圖片進行處理
     adjustContrast(value) {
         try {
-            if (!this.isLoaded || !this.originalImage) {
-                console.error('沒有載入的圖片');
+            if (!this.isLoaded || !this.currentProcessedImage) {
+                console.error('沒有載入的圖片或當前處理後的圖片');
                 return false;
             }
             
-            // 重新繪製原始圖片
+            // 重新繪製當前處理後的圖片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.drawImage(this.originalImage, 0, 0);
+            this.ctx.drawImage(this.currentProcessedImage, 0, 0);
             
             // 獲取圖片數據
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -386,17 +356,17 @@ class ReliableImageProcessor {
         }
     }
 
-    // 應用濾鏡
+    // 應用濾鏡 - 對當前處理後的圖片進行處理
     applyFilter(filterType) {
         try {
-            if (!this.isLoaded || !this.originalImage) {
-                console.error('沒有載入的圖片');
+            if (!this.isLoaded || !this.currentProcessedImage) {
+                console.error('沒有載入的圖片或當前處理後的圖片');
                 return false;
             }
             
-            // 重新繪製原始圖片
+            // 重新繪製當前處理後的圖片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-            this.ctx.drawImage(this.originalImage, 0, 0);
+            this.ctx.drawImage(this.currentProcessedImage, 0, 0);
             
             // 獲取圖片數據
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
@@ -569,11 +539,11 @@ class ReliableImageProcessor {
         }
     }
 
-    // 應用相框
+    // 應用相框 - 對當前處理後的圖片進行處理
     applyFrame(frameType) {
         try {
-            if (!this.isLoaded || !this.originalImage) {
-                console.error('沒有載入的圖片');
+            if (!this.isLoaded || !this.currentProcessedImage) {
+                console.error('沒有載入的圖片或當前處理後的圖片');
                 return false;
             }
             
@@ -590,7 +560,7 @@ class ReliableImageProcessor {
             // 繪製相框背景
             this.drawFrameBackground(frameCtx, frameWidth, frameHeight, frameType);
             
-            // 在相框中央繪製圖片
+            // 在相框中央繪製當前處理後的圖片
             frameCtx.drawImage(this.canvas, 20, 20);
             
             // 更新主 Canvas

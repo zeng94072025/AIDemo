@@ -1,6 +1,6 @@
 /**
- * 主要應用程序
- * 初始化所有模組並協調它們的工作
+ * 主应用程序
+ * 初始化所有模块并协调它们的工作
  */
 
 class AIImageOptimizer {
@@ -11,36 +11,36 @@ class AIImageOptimizer {
         this.init();
     }
 
-    // 初始化應用程序
+    // 初始化应用程序
     async init() {
         try {
-            console.log('正在初始化AI圖片優化器...');
+            console.log('正在初始化AI图片优化器...');
             
-            // 檢查瀏覽器支持
+            // 检查浏览器支持
             this.checkBrowserSupport();
             
-            // 初始化各個模組
+            // 初始化各个模块
             await this.initModules();
             
-            // 設置事件監聽器
+            // 设置事件监听器
             this.setupEventListeners();
             
-            // 加載設置
+            // 加载设置
             this.loadSettings();
             
-            // 顯示歡迎信息
+            // 显示欢迎信息
             this.showWelcomeMessage();
             
             this.isInitialized = true;
-            console.log('AI圖片優化器初始化完成');
+            console.log('AI图片优化器初始化完成');
             
         } catch (error) {
-            console.error('初始化失敗:', error);
-            this.showErrorMessage('應用程序初始化失敗，請刷新頁面重試');
+            console.error('初始化失败:', error);
+            this.showErrorMessage('应用程序初始化失败，请刷新页面重试');
         }
     }
 
-    // 檢查瀏覽器支持
+    // 检查浏览器支持
     checkBrowserSupport() {
         const requirements = {
             canvas: !!document.createElement('canvas').getContext,
@@ -54,14 +54,14 @@ class AIImageOptimizer {
             .map(([feature]) => feature);
 
         if (unsupported.length > 0) {
-            console.warn('不支持的瀏覽器功能:', unsupported);
-            this.showWarningMessage(`您的瀏覽器不支持以下功能: ${unsupported.join(', ')}。某些功能可能無法正常工作。`);
+            console.warn('不支持的浏览器功能:', unsupported);
+            this.showWarningMessage(`您的浏览器不支持以下功能: ${unsupported.join(', ')}。某些功能可能无法正常工作。`);
         }
     }
 
-    // 初始化模組
+    // 初始化模块
     async initModules() {
-        // 等待DOM完全加載
+        // 等待DOM完全加载
         if (document.readyState === 'loading') {
             await new Promise(resolve => {
                 document.addEventListener('DOMContentLoaded', resolve);
@@ -72,37 +72,37 @@ class AIImageOptimizer {
         this.uiController = new UIController();
         window.uiController = this.uiController;
         
-        // 初始化塗鴉標註工具
+        // 初始化涂鸦标注工具
         if (this.uiController) {
             this.uiController.initDrawingTools();
         }
         
-        console.log('所有模組初始化完成');
+        console.log('所有模块初始化完成');
     }
 
-    // 設置事件監聽器
+    // 设置事件监听器
     setupEventListeners() {
-        // 頁面加載完成
+        // 页面加载完成
         window.addEventListener('load', () => {
             this.onPageLoad();
         });
 
-        // 頁面卸載
+        // 页面卸载
         window.addEventListener('beforeunload', () => {
             this.onPageUnload();
         });
 
-        // 鍵盤快捷鍵
+        // 键盘快捷键
         document.addEventListener('keydown', (e) => {
             this.handleKeyboardShortcuts(e);
         });
 
-        // 窗口大小變化
+        // 窗口大小变化
         window.addEventListener('resize', Utils.debounce(() => {
             this.handleWindowResize();
         }, 250));
 
-        // 在線狀態變化
+        // 在线状态变化
         window.addEventListener('online', () => {
             this.handleOnlineStatusChange(true);
         });
@@ -111,7 +111,7 @@ class AIImageOptimizer {
             this.handleOnlineStatusChange(false);
         });
 
-        // 錯誤處理
+        // 错误处理
         window.addEventListener('error', (e) => {
             this.handleGlobalError(e);
         });
@@ -123,43 +123,43 @@ class AIImageOptimizer {
 
 
 
-    // 頁面加載完成
+    // 页面加载完成
     onPageLoad() {
-        console.log('頁面加載完成');
+        console.log('页面加载完成');
         
-        // 更新狀態
-        Utils.updateProgress(100, '就緒');
+        // 更新状态
+        Utils.updateProgress(100, '就绪');
         
-        // 顯示使用提示
+        // 显示使用提示
         this.showUsageTips();
     }
 
-    // 頁面卸載
+    // 页面卸载
     onPageUnload() {
-        console.log('頁面即將卸載');
+        console.log('页面即将卸载');
         
-        // 保存設置
+        // 保存设置
         this.saveSettings();
         
-        // 清理資源
+        // 清理资源
         this.cleanup();
     }
 
-    // 處理鍵盤快捷鍵
+    // 处理键盘快捷键
     handleKeyboardShortcuts(e) {
-        // Ctrl/Cmd + O: 打開文件
+        // Ctrl/Cmd + O: 打开文件
         if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
             e.preventDefault();
             document.getElementById('fileInput').click();
         }
         
-        // Ctrl/Cmd + S: 下載當前圖片
+        // Ctrl/Cmd + S: 下载当前图片
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
             this.uiController.downloadCurrentImage();
         }
         
-        // Ctrl/Cmd + Z: 撤銷
+        // Ctrl/Cmd + Z: 撤销
         if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
             e.preventDefault();
             this.undo();
@@ -171,7 +171,7 @@ class AIImageOptimizer {
             this.redo();
         }
         
-        // 方向鍵: 切換圖片
+        // 方向键: 切换图片
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
             this.uiController.showPreviousImage();
@@ -183,45 +183,45 @@ class AIImageOptimizer {
         }
     }
 
-    // 處理窗口大小變化
+    // 处理窗口大小变化
     handleWindowResize() {
-        // 重新計算佈局
+        // 重新计算布局
         this.updateLayout();
     }
 
-    // 處理在線狀態變化
+    // 处理在线状态变化
     handleOnlineStatusChange(isOnline) {
         if (isOnline) {
-            Utils.showNotification('網絡連接已恢復', 'success');
+            Utils.showNotification('网络连接已恢复', 'success');
         } else {
-            Utils.showNotification('網絡連接已斷開', 'warning');
+            Utils.showNotification('网络连接已断开', 'warning');
         }
     }
 
-    // 處理全局錯誤
+    // 处理全局错误
     handleGlobalError(event) {
-        console.error('全局錯誤:', event.error);
-        Utils.showNotification('發生錯誤，請刷新頁面重試', 'error');
+        console.error('全局错误:', event.error);
+        Utils.showNotification('发生错误，请刷新页面重试', 'error');
     }
 
-    // 處理未處理的Promise拒絕
+    // 处理未处理的Promise拒绝
     handleUnhandledRejection(event) {
-        console.error('未處理的Promise拒絕:', event.reason);
-        Utils.showNotification('操作失敗，請重試', 'error');
+        console.error('未处理的Promise拒绝:', event.reason);
+        Utils.showNotification('操作失败，请重试', 'error');
     }
 
 
 
-    // 顯示使用提示
+    // 显示使用提示
     showUsageTips() {
         const tips = [
-            '💡 提示：您可以拖拽圖片到上傳區域',
-            '💡 提示：按 Ctrl+O 快速打開文件',
-            '💡 提示：按 Ctrl+S 快速下載圖片',
-            '💡 提示：使用方向鍵切換圖片'
+            '💡 提示：您可以拖拽图片到上传区域',
+            '💡 提示：按 Ctrl+O 快速打开文件',
+            '💡 提示：按 Ctrl+S 快速下载图片',
+            '💡 提示：使用方向键切换图片'
         ];
         
-        // 移除自動彈出的使用提示
+        // 移除自动弹出的使用提示
         // let tipIndex = 0;
         // const showNextTip = () => {
         //     if (tipIndex < tips.length) {
@@ -231,81 +231,81 @@ class AIImageOptimizer {
         //     }
         // };
         
-        // 延遲顯示第一個提示
+        // 延迟显示第一个提示
         // setTimeout(showNextTip, 3000);
     }
 
-    // 顯示歡迎信息
+    // 显示欢迎信息
     showWelcomeMessage() {
         const welcomeMessage = `
-            🎉 歡迎使用AI圖片優化助手！
+            🎉 欢迎使用AI图片优化助手！
             
             主要功能：
-            • 支持多種圖片格式上傳
-            • 智能圖片優化和處理
-            • 豐富的濾鏡和特效
-            • 批量處理和下載
+            • 支持多种图片格式上传
+            • 智能图片优化和处理
+            • 丰富的滤镜和特效
+            • 批量处理和下载
             
-            開始使用：
-            1. 上傳您的圖片
-            2. 選擇處理工具
-            3. 下載處理結果
+            开始使用：
+            1. 上传您的图片
+            2. 选择处理工具
+            3. 下载处理结果
         `;
         
         console.log(welcomeMessage);
-        // 移除自動彈出的歡迎通知
-        // Utils.showNotification('歡迎使用AI圖片優化助手！', 'success', 3000);
+        // 移除自动弹出的欢迎通知
+        // Utils.showNotification('欢迎使用AI图片优化助手！', 'success', 3000);
     }
 
-    // 顯示錯誤信息
+    // 显示错误信息
     showErrorMessage(message) {
         Utils.showNotification(message, 'error', 0);
     }
 
-    // 顯示警告信息
+    // 显示警告信息
     showWarningMessage(message) {
         Utils.showNotification(message, 'warning', 5000);
     }
 
-    // 更新佈局
+    // 更新布局
     updateLayout() {
-        // 根據窗口大小調整佈局
+        // 根据窗口大小调整布局
         const width = window.innerWidth;
         
         if (width < 600) {
-            // 移動端佈局
+            // 移动端布局
             this.enableMobileLayout();
         } else if (width < 900) {
-            // 平板佈局
+            // 平板布局
             this.enableTabletLayout();
         } else {
-            // 桌面佈局
+            // 桌面布局
             this.enableDesktopLayout();
         }
     }
 
-    // 啟用移動端佈局
+    // 启用移动端布局
     enableMobileLayout() {
         document.body.classList.add('mobile-layout');
         document.body.classList.remove('tablet-layout', 'desktop-layout');
     }
 
-    // 啟用平板佈局
+    // 启用平板布局
     enableTabletLayout() {
         document.body.classList.add('tablet-layout');
         document.body.classList.remove('mobile-layout', 'desktop-layout');
     }
 
-    // 啟用桌面佈局
+    // 启用桌面布局
     enableDesktopLayout() {
         document.body.classList.add('desktop-layout');
         document.body.classList.remove('mobile-layout', 'tablet-layout');
     }
 
-    // 撤銷操作
+    // 撤销操作
     undo() {
         if (this.uiController.images.length === 0) {
-            Utils.showNotification('沒有可撤銷的操作', 'warning');
+            Utils.showNotification('没有可撤销的操作', 'warning');
             return;
         }
         
@@ -314,16 +314,16 @@ class AIImageOptimizer {
         
         if (processor.undo()) {
             this.uiController.updatePreview();
-            Utils.showNotification('撤銷成功', 'success');
+            Utils.showNotification('撤销成功', 'success');
         } else {
-            Utils.showNotification('沒有可撤銷的操作', 'warning');
+            Utils.showNotification('没有可撤销的操作', 'warning');
         }
     }
 
     // 重做操作
     redo() {
         if (this.uiController.images.length === 0) {
-            Utils.showNotification('沒有可重做的操作', 'warning');
+            Utils.showNotification('没有可重做的操作', 'warning');
             return;
         }
         
@@ -334,16 +334,16 @@ class AIImageOptimizer {
             this.uiController.updatePreview();
             Utils.showNotification('重做成功', 'success');
         } else {
-            Utils.showNotification('沒有可重做的操作', 'warning');
+            Utils.showNotification('没有可重做的操作', 'warning');
         }
     }
 
-    // 加載設置
+    // 加载设置
     loadSettings() {
         try {
             const settings = Utils.Storage.get('aiImageOptimizerSettings', {});
             
-            // 應用設置
+            // 应用设置
             if (settings.maxFileSize) {
                 document.getElementById('maxFileSize').value = settings.maxFileSize;
             }
@@ -364,14 +364,14 @@ class AIImageOptimizer {
                 document.getElementById('filenamePrefix').value = settings.filenamePrefix;
             }
             
-            console.log('設置加載完成');
+            console.log('设置加载完成');
             
         } catch (error) {
-            console.error('加載設置失敗:', error);
+            console.error('加载设置失败:', error);
         }
     }
 
-    // 保存設置
+    // 保存设置
     saveSettings() {
         try {
             const settings = {
@@ -383,22 +383,22 @@ class AIImageOptimizer {
             };
             
             Utils.Storage.set('aiImageOptimizerSettings', settings);
-            console.log('設置保存完成');
+            console.log('设置保存完成');
             
         } catch (error) {
-            console.error('保存設置失敗:', error);
+            console.error('保存设置失败:', error);
         }
     }
 
-    // 清理資源
+    // 清理资源
     cleanup() {
         try {
-            // 停止語音識別
+            // 停止语音识别
             if (this.voiceControl) {
                 this.voiceControl.destroy();
             }
             
-            // 清理圖片處理器
+            // 清理图片处理器
             if (this.imageProcessor) {
                 this.imageProcessor = null;
             }
@@ -408,14 +408,14 @@ class AIImageOptimizer {
                 this.uiController = null;
             }
             
-            console.log('資源清理完成');
+            console.log('资源清理完成');
             
         } catch (error) {
-            console.error('清理資源失敗:', error);
+            console.error('清理资源失败:', error);
         }
     }
 
-    // 獲取應用程序狀態
+    // 获取应用程序状态
     getStatus() {
         return {
             isInitialized: this.isInitialized,
@@ -426,10 +426,10 @@ class AIImageOptimizer {
         };
     }
 
-    // 重置應用程序
+    // 重置应用程序
     reset() {
         try {
-            // 清空圖片
+            // 清空图片
             if (this.uiController) {
                 this.uiController.images = [];
                 this.uiController.currentImageIndex = 0;
@@ -438,40 +438,40 @@ class AIImageOptimizer {
                 this.uiController.updateDownloadButtons();
             }
             
-            // 重置圖片處理器
+            // 重置图片处理器
             if (this.imageProcessor) {
                 this.imageProcessor = new ImageProcessor();
             }
             
-            // 清空選中的圖片
+            // 清空选中的图片
             this.uiController.selectedImages.clear();
             
-            // 清空對話歷史
+            // 清空对话历史
             const chatMessages = document.getElementById('chatMessages');
             if (chatMessages) {
                 chatMessages.innerHTML = '';
             }
             
-            // 重置進度條
-            Utils.updateProgress(0, '就緒');
+            // 重置进度条
+            Utils.updateProgress(0, '就绪');
             
-            Utils.showNotification('應用程序已重置', 'success');
+            Utils.showNotification('应用程序已重置', 'success');
             
         } catch (error) {
-            console.error('重置失敗:', error);
-            Utils.showNotification('重置失敗', 'error');
+            console.error('重置失败:', error);
+            Utils.showNotification('重置失败', 'error');
         }
     }
 
-    // 導出處理後的圖片
+    // 导出处理后的图片
     async exportImages(format = 'jpeg', quality = 0.9) {
         if (this.uiController.images.length === 0) {
-            Utils.showNotification('沒有可導出的圖片', 'warning');
+            Utils.showNotification('没有可导出的图片', 'warning');
             return;
         }
         
         try {
-            Utils.updateProgress(0, '準備導出...');
+            Utils.updateProgress(0, '准备导出...');
             
             const images = [];
             let successCount = 0;
@@ -479,24 +479,24 @@ class AIImageOptimizer {
             
             for (let i = 0; i < this.uiController.images.length; i++) {
                 const progress = (i / this.uiController.images.length) * 100;
-                Utils.updateProgress(progress, `處理圖片 ${i + 1}/${this.uiController.images.length}`);
+                Utils.updateProgress(progress, `处理图片 ${i + 1}/${this.uiController.images.length}`);
                 
                 const image = this.uiController.images[i];
                 const processor = image.processor;
                 
                 try {
-                    // 驗證處理器
+                    // 验证处理器
                     if (!processor) {
-                        console.error(`圖片 ${image.file.name} 的處理器無效`);
+                        console.error(`图片 ${image.file.name} 的处理器无效`);
                         errorCount++;
                         continue;
                     }
                     
                     const blob = await processor.toBlob(`image/${format}`, quality);
                     
-                    // 驗證生成的 blob
+                    // 验证生成的 blob
                     if (!blob || blob.size === 0) {
-                        console.error(`圖片 ${image.file.name} 生成的 Blob 無效`);
+                        console.error(`图片 ${image.file.name} 生成的 Blob 无效`);
                         errorCount++;
                         continue;
                     }
@@ -507,39 +507,39 @@ class AIImageOptimizer {
                     });
                     successCount++;
                     
-                    console.log(`圖片 ${image.file.name} 處理成功:`, {
+                    console.log(`图片 ${image.file.name} 处理成功:`, {
                         blobSize: blob.size
                     });
                     
                 } catch (error) {
-                    console.error(`處理圖片 ${image.file.name} 失敗:`, error);
+                    console.error(`处理图片 ${image.file.name} 失败:`, error);
                     errorCount++;
                 }
             }
             
             if (successCount === 0) {
-                throw new Error('沒有成功處理的圖片');
+                throw new Error('没有成功处理的图片');
             }
             
-            Utils.updateProgress(100, '導出完成');
+            Utils.updateProgress(100, '导出完成');
             
-            // 下載所有圖片
+            // 下载所有图片
             for (const image of images) {
                 const filename = this.uiController.generateFilename(image.name, format);
                 Utils.downloadFile(image.blob, filename);
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
             
-            let message = `已導出 ${successCount} 張圖片`;
+            let message = `已导出 ${successCount} 张图片`;
             if (errorCount > 0) {
-                message += `，${errorCount} 張處理失敗`;
+                message += `，${errorCount} 张处理失败`;
             }
             
             Utils.showNotification(message, successCount > 0 ? 'success' : 'warning');
             
         } catch (error) {
-            console.error('導出失敗:', error);
-            Utils.showNotification(`導出失敗: ${error.message}`, 'error');
+            console.error('导出失败:', error);
+            Utils.showNotification(`导出失败: ${error.message}`, 'error');
         }
     }
 }

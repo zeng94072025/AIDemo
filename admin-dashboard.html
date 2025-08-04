@@ -447,6 +447,93 @@
         </div>
         
         <div class="dashboard-content">
+            <!-- 图片上传与预览区域 -->
+            <div class="image-process-section" style="margin: 40px 0; background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px; font-weight: 600;">
+                        <i class="fas fa-image"></i> 图片处理工具
+                    </h3>
+                    <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                        <input type="file" id="imageUploadInput" multiple accept="image/*" style="display: none;">
+                        <button class="header-btn primary" onclick="document.getElementById('imageUploadInput').click()">
+                            <i class="fas fa-upload"></i> 选择图片
+                        </button>
+                        <span id="uploadStatus" style="color: #666; font-size: 14px;">请选择要处理的图片（上传后将显示原图和处理后效果图）</span>
+                    </div>
+                </div>
+                
+                <div id="imagePreviewArea" style="display: none; gap: 40px; margin-bottom: 20px; flex-direction: row;">
+                    <!-- 原图方框 -->
+                    <div id="originalImageBox" style="flex: 1; text-align: center;">
+                        <h4 style="margin: 0 0 15px 0; color: #666; font-size: 16px; font-weight: 600;">
+                            <i class="fas fa-image"></i> 原图
+                        </h4>
+                        <div style="border: 2px solid #ddd; border-radius: 12px; padding: 20px; background: #f8f9fa; min-height: 300px; display: flex; align-items: center; justify-content: center;">
+                            <div id="originalImagePlaceholder" style="color: #999;">
+                                <i class="fas fa-image" style="font-size: 48px; margin-bottom: 10px;"></i>
+                                <p>原图预览</p>
+                            </div>
+                            <img id="originalImage" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px; display: none;">
+                        </div>
+                    </div>
+                    
+                    <!-- 处理后效果图方框 -->
+                    <div id="processedImageBox" style="flex: 1; text-align: center;">
+                        <h4 style="margin: 0 0 15px 0; color: #28a745; font-size: 16px; font-weight: 600;">
+                            <i class="fas fa-magic"></i> 处理后效果图
+                        </h4>
+                        <div style="border: 2px solid #28a745; border-radius: 12px; padding: 20px; background: rgba(40, 167, 69, 0.05); min-height: 300px; display: flex; align-items: center; justify-content: center; position: relative;">
+                            <div id="processedImagePlaceholder" style="color: #999;">
+                                <i class="fas fa-magic" style="font-size: 48px; margin-bottom: 10px;"></i>
+                                <p>处理后效果预览</p>
+                            </div>
+                            <img id="processedImage" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px; display: none;">
+                            <div id="processedBadge" style="position: absolute; top: 10px; right: 10px; background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; display: none;">
+                                ✨ 已处理
+                            </div>
+                        </div>
+                        <p style="margin-top: 10px; font-size: 12px; color: #666;">※ 仅此区域的图片可进行下载</p>
+                    </div>
+                </div>
+                
+                <!-- 处理工具按钮 -->
+                <div id="processingTools" style="display: none; margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="margin: 0 0 15px 0; color: #333; font-size: 16px;">
+                        <i class="fas fa-tools"></i> 处理工具（处理后效果图区域）
+                    </h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="header-btn secondary" onclick="adminDashboard.processImage('enhance')">
+                            <i class="fas fa-star"></i> 图片增强
+                        </button>
+                        <button class="header-btn secondary" onclick="adminDashboard.processImage('sharpen')">
+                            <i class="fas fa-cut"></i> 锐化处理
+                        </button>
+                        <button class="header-btn secondary" onclick="adminDashboard.processImage('smooth')">
+                            <i class="fas fa-feather"></i> 平滑处理
+                        </button>
+                        <button class="header-btn secondary" onclick="adminDashboard.processImage('brightness')">
+                            <i class="fas fa-sun"></i> 亮度调整
+                        </button>
+                        <button class="header-btn secondary" onclick="adminDashboard.processImage('contrast')">
+                            <i class="fas fa-adjust"></i> 对比度调整
+                        </button>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 12px; color: #666;">※ 处理效果将显示在右侧"处理后效果图"区域</p>
+                </div>
+                
+                <!-- 下载按钮 -->
+                <div id="downloadButtons" style="display: none; margin-top: 20px;">
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <button id="downloadProcessedBtn" class="header-btn primary">
+                            <i class="fas fa-download"></i> 下载处理后效果图
+                        </button>
+                        <button id="downloadAllProcessedBtn" class="header-btn secondary">
+                            <i class="fas fa-download"></i> 批量下载全部处理后效果图
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 統計卡片 -->
             <div class="stats-grid">
                 <div class="stat-card">
@@ -601,6 +688,11 @@
                 this.currentPeriod = 7;
                 this.isLoading = false;
                 
+                // 图片处理相关属性
+                this.uploadedImages = [];
+                this.currentImageIndex = 0;
+                this.imageProcessor = null;
+                
                 this.init();
             }
             
@@ -609,6 +701,7 @@
                 this.initCharts();
                 this.loadData();
                 this.initEventListeners();
+                this.initImageProcessing();
                 this.startAutoRefresh();
             }
             
@@ -637,6 +730,33 @@
                 document.getElementById('orderSearch').addEventListener('input', (e) => {
                     this.filterOrders(e.target.value);
                 });
+            }
+            
+            // 初始化图片处理功能
+            initImageProcessing() {
+                // 监听文件上传
+                const uploadInput = document.getElementById('imageUploadInput');
+                if (uploadInput) {
+                    uploadInput.addEventListener('change', (e) => {
+                        this.handleImageUpload(e.target.files);
+                    });
+                }
+                
+                // 监听下载按钮
+                const downloadBtn = document.getElementById('downloadProcessedBtn');
+                const downloadAllBtn = document.getElementById('downloadAllProcessedBtn');
+                
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', () => {
+                        this.downloadCurrentProcessedImage();
+                    });
+                }
+                
+                if (downloadAllBtn) {
+                    downloadAllBtn.addEventListener('click', () => {
+                        this.downloadAllProcessedImages();
+                    });
+                }
             }
             
             async loadData() {
@@ -1010,6 +1130,346 @@
                         this.loadData();
                     }
                 }, 5 * 60 * 1000);
+            }
+            
+            // 处理图片上传
+            async handleImageUpload(files) {
+                if (!files || files.length === 0) return;
+                
+                try {
+                    this.showLoading(true);
+                    
+                    // 清空之前的图片
+                    this.uploadedImages = [];
+                    this.currentImageIndex = 0;
+                    
+                    // 处理每张图片
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        if (file.type.startsWith('image/')) {
+                            const imageData = await this.loadImageFile(file);
+                            this.uploadedImages.push({
+                                file: file,
+                                originalData: imageData,
+                                processedData: null,
+                                isProcessed: false
+                            });
+                        }
+                    }
+                    
+                    if (this.uploadedImages.length > 0) {
+                        this.displayImages();
+                        this.updateUploadStatus();
+                    } else {
+                        alert('请选择有效的图片文件');
+                    }
+                    
+                } catch (error) {
+                    console.error('图片上传失败:', error);
+                    alert('图片上传失败，请重试');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+            
+            // 加载图片文件
+            loadImageFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve(e.target.result);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+            
+            // 显示图片
+            displayImages() {
+                const previewArea = document.getElementById('imagePreviewArea');
+                const processingTools = document.getElementById('processingTools');
+                const downloadButtons = document.getElementById('downloadButtons');
+                
+                if (this.uploadedImages.length > 0) {
+                    // 显示预览区域
+                    previewArea.style.display = 'flex';
+                    
+                    // 显示原图
+                    const originalImage = document.getElementById('originalImage');
+                    const originalPlaceholder = document.getElementById('originalImagePlaceholder');
+                    const currentImage = this.uploadedImages[this.currentImageIndex];
+                    
+                    originalImage.src = currentImage.originalData;
+                    originalImage.style.display = 'block';
+                    originalPlaceholder.style.display = 'none';
+                    
+                    // 初始化处理后图片为原图（用户上传后，处理后效果图区域显示原图）
+                    const processedImage = document.getElementById('processedImage');
+                    const processedPlaceholder = document.getElementById('processedImagePlaceholder');
+                    const processedBadge = document.getElementById('processedBadge');
+                    
+                    // 将原图显示在"处理后效果图"区域，作为初始状态
+                    processedImage.src = currentImage.originalData;
+                    processedImage.style.display = 'block';
+                    processedPlaceholder.style.display = 'none';
+                    processedBadge.style.display = 'none';
+                    
+                    // 更新当前图片的处理状态
+                    currentImage.processedData = currentImage.originalData;
+                    currentImage.isProcessed = true;
+                    
+                    // 显示处理工具和下载按钮
+                    processingTools.style.display = 'block';
+                    downloadButtons.style.display = 'block';
+                    
+                    // 初始化图片处理器
+                    this.initImageProcessor();
+                }
+            }
+            
+            // 初始化图片处理器
+            initImageProcessor() {
+                if (!this.imageProcessor) {
+                    this.imageProcessor = {
+                        canvas: document.createElement('canvas'),
+                        ctx: null
+                    };
+                    this.imageProcessor.ctx = this.imageProcessor.canvas.getContext('2d');
+                }
+            }
+            
+            // 处理图片
+            async processImage(action) {
+                if (this.uploadedImages.length === 0) return;
+                
+                try {
+                    this.showLoading(true);
+                    
+                    const currentImage = this.uploadedImages[this.currentImageIndex];
+                    const processedData = await this.applyImageEffect(currentImage.originalData, action);
+                    
+                    // 更新处理后数据
+                    currentImage.processedData = processedData;
+                    currentImage.isProcessed = true;
+                    
+                    // 只在"处理后效果图"区域显示处理后的图片
+                    const processedImage = document.getElementById('processedImage');
+                    const processedBadge = document.getElementById('processedBadge');
+                    
+                    processedImage.src = processedData;
+                    processedBadge.style.display = 'block';
+                    
+                    // 原图区域保持不变，仍然显示原始图片
+                    
+                    this.updateUploadStatus();
+                    
+                } catch (error) {
+                    console.error('图片处理失败:', error);
+                    alert('图片处理失败，请重试');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+            
+            // 应用图片效果
+            applyImageEffect(imageData, action) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = this.imageProcessor.canvas;
+                        const ctx = this.imageProcessor.ctx;
+                        
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        
+                        // 绘制原图
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // 获取图像数据
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+                        
+                        // 应用不同的效果
+                        switch (action) {
+                            case 'enhance':
+                                this.enhanceImage(data);
+                                break;
+                            case 'sharpen':
+                                this.sharpenImage(data, canvas.width, canvas.height);
+                                break;
+                            case 'smooth':
+                                this.smoothImage(data, canvas.width, canvas.height);
+                                break;
+                            case 'brightness':
+                                this.adjustBrightness(data, 1.2);
+                                break;
+                            case 'contrast':
+                                this.adjustContrast(data, 1.3);
+                                break;
+                        }
+                        
+                        // 将处理后的数据绘制回画布
+                        ctx.putImageData(imageData, 0, 0);
+                        
+                        // 返回处理后的图片数据
+                        resolve(canvas.toDataURL('image/jpeg', 0.9));
+                    };
+                    img.src = imageData;
+                });
+            }
+            
+            // 图片增强
+            enhanceImage(data) {
+                for (let i = 0; i < data.length; i += 4) {
+                    // 增强对比度和饱和度
+                    data[i] = Math.min(255, data[i] * 1.1);     // R
+                    data[i + 1] = Math.min(255, data[i + 1] * 1.1); // G
+                    data[i + 2] = Math.min(255, data[i + 2] * 1.1); // B
+                }
+            }
+            
+            // 锐化处理
+            sharpenImage(data, width, height) {
+                const kernel = [
+                    [0, -1, 0],
+                    [-1, 5, -1],
+                    [0, -1, 0]
+                ];
+                this.applyConvolution(data, width, height, kernel);
+            }
+            
+            // 平滑处理
+            smoothImage(data, width, height) {
+                const kernel = [
+                    [1, 1, 1],
+                    [1, 1, 1],
+                    [1, 1, 1]
+                ];
+                this.applyConvolution(data, width, height, kernel, 9);
+            }
+            
+            // 调整亮度
+            adjustBrightness(data, factor) {
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, data[i] * factor);     // R
+                    data[i + 1] = Math.min(255, data[i + 1] * factor); // G
+                    data[i + 2] = Math.min(255, data[i + 2] * factor); // B
+                }
+            }
+            
+            // 调整对比度
+            adjustContrast(data, factor) {
+                const factor2 = (259 * (factor + 255)) / (255 * (259 - factor));
+                for (let i = 0; i < data.length; i += 4) {
+                    data[i] = Math.min(255, Math.max(0, factor2 * (data[i] - 128) + 128));     // R
+                    data[i + 1] = Math.min(255, Math.max(0, factor2 * (data[i + 1] - 128) + 128)); // G
+                    data[i + 2] = Math.min(255, Math.max(0, factor2 * (data[i + 2] - 128) + 128)); // B
+                }
+            }
+            
+            // 应用卷积核
+            applyConvolution(data, width, height, kernel, divisor = 1) {
+                const newData = new Uint8ClampedArray(data);
+                const kernelSize = kernel.length;
+                const half = Math.floor(kernelSize / 2);
+                
+                for (let y = half; y < height - half; y++) {
+                    for (let x = half; x < width - half; x++) {
+                        let r = 0, g = 0, b = 0;
+                        
+                        for (let ky = 0; ky < kernelSize; ky++) {
+                            for (let kx = 0; kx < kernelSize; kx++) {
+                                const px = x + kx - half;
+                                const py = y + ky - half;
+                                const idx = (py * width + px) * 4;
+                                const weight = kernel[ky][kx];
+                                
+                                r += data[idx] * weight;
+                                g += data[idx + 1] * weight;
+                                b += data[idx + 2] * weight;
+                            }
+                        }
+                        
+                        const idx = (y * width + x) * 4;
+                        newData[idx] = Math.min(255, Math.max(0, r / divisor));
+                        newData[idx + 1] = Math.min(255, Math.max(0, g / divisor));
+                        newData[idx + 2] = Math.min(255, Math.max(0, b / divisor));
+                    }
+                }
+                
+                for (let i = 0; i < data.length; i++) {
+                    data[i] = newData[i];
+                }
+            }
+            
+            // 下载当前处理后的图片（仅下载"处理后效果图"区域的图片）
+            downloadCurrentProcessedImage() {
+                if (this.uploadedImages.length === 0) return;
+                
+                const currentImage = this.uploadedImages[this.currentImageIndex];
+                if (!currentImage.isProcessed) {
+                    alert('请先对图片进行处理');
+                    return;
+                }
+                
+                // 下载"处理后效果图"区域的图片
+                this.downloadImage(currentImage.processedData, `processed_${currentImage.file.name}`);
+            }
+            
+            // 批量下载所有处理后的图片（仅下载"处理后效果图"区域的图片）
+            downloadAllProcessedImages() {
+                const processedImages = this.uploadedImages.filter(img => img.isProcessed);
+                
+                if (processedImages.length === 0) {
+                    alert('没有可下载的处理后图片');
+                    return;
+                }
+                
+                if (processedImages.length === 1) {
+                    // 单张图片直接下载"处理后效果图"区域的图片
+                    this.downloadCurrentProcessedImage();
+                } else {
+                    // 多张图片创建ZIP下载（仅包含"处理后效果图"区域的图片）
+                    this.downloadImagesAsZip(processedImages);
+                }
+            }
+            
+            // 下载单张图片
+            downloadImage(dataUrl, filename) {
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+            
+            // 下载多张图片为ZIP（仅包含"处理后效果图"区域的图片）
+            async downloadImagesAsZip(images) {
+                try {
+                    this.showLoading(true);
+                    
+                    // 这里需要引入JSZip库，暂时使用简单的方式
+                    // 只下载"处理后效果图"区域的图片
+                    alert('批量下载功能需要JSZip库支持，请先下载单张图片');
+                    
+                } catch (error) {
+                    console.error('批量下载失败:', error);
+                    alert('批量下载失败，请重试');
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+            
+            // 更新上传状态
+            updateUploadStatus() {
+                const statusElement = document.getElementById('uploadStatus');
+                if (this.uploadedImages.length > 0) {
+                    const processedCount = this.uploadedImages.filter(img => img.isProcessed).length;
+                    statusElement.textContent = `已上传 ${this.uploadedImages.length} 张图片，原图和处理后效果图区域已准备就绪`;
+                } else {
+                    statusElement.textContent = '请选择要处理的图片（上传后将显示原图和处理后效果图）';
+                }
             }
         }
         
