@@ -580,49 +580,49 @@ class UIController {
         }
 
         try {
-            Utils.updateProgress(0, '正在載入圖片...');
+            Utils.updateProgress(0, '正在加载图片...');
             
             for (let i = 0; i < newFiles.length; i++) {
                 const file = newFiles[i];
                 const progress = (i / newFiles.length) * 100;
-                Utils.updateProgress(progress, `載入圖片 ${i + 1}/${newFiles.length}`);
+                Utils.updateProgress(progress, `加载图片 ${i + 1}/${newFiles.length}`);
                 
                 await this.loadImage(file);
             }
             
-            Utils.updateProgress(100, '圖片載入完成');
+            Utils.updateProgress(100, '图片加载完成');
             
             // 顯示最終結果
             const totalProcessed = newFiles.length;
             const totalSkipped = duplicateFiles.length;
             
             if (totalProcessed > 0) {
-                let successMessage = `成功載入 ${totalProcessed} 張圖片`;
+                let successMessage = `成功加载 ${totalProcessed} 张图片`;
                 if (totalSkipped > 0) {
-                    successMessage += `，跳過 ${totalSkipped} 張重複圖片`;
+                    successMessage += `，跳过 ${totalSkipped} 张重复图片`;
                 }
                 Utils.showTopCenterNotification(successMessage, 'success');
             }
             
         } catch (error) {
-            console.error('載入圖片失敗:', error);
-            Utils.showNotification('載入圖片失敗', 'error');
+            console.error('加载图片失败:', error);
+            Utils.showNotification('加载图片失败', 'error');
         }
     }
 
-    // 載入單張圖片
+    // 加载单张图片
     async loadImage(file) {
         try {
-            console.log('開始載入圖片:', file.name);
+            console.log('开始加载图片:', file.name);
             
-            // 使用可靠的圖片處理器
+            // 使用可靠的图片处理器
             const processor = new ReliableImageProcessor();
             const imageData = await processor.loadImage(file);
             
-            // 獲取圖片的 base64 數據
+            // 获取图片的 base64 数据
             const base64Data = processor.toBase64('image/jpeg', 0.9);
             
-            console.log('圖片載入成功:', {
+            console.log('图片加载成功:', {
                 fileName: file.name,
                 imageData: imageData,
                 hasBase64: !!(base64Data && base64Data !== '')
@@ -637,7 +637,7 @@ class UIController {
                 processor: processor
             });
             
-            console.log('圖片已添加到列表，總數:', this.images.length);
+            console.log('图片已添加到列表，总数:', this.images.length);
             
             this.updateImageList();
             this.updatePreview();
@@ -645,22 +645,22 @@ class UIController {
             this.updateDownloadButtons();
             
         } catch (error) {
-            console.error('載入圖片失敗:', error);
+            console.error('加载图片失败:', error);
             throw error;
         }
     }
 
-    // 處理圖片動作
+    // 处理图片动作
     async processImageWithAction(image, action) {
         try {
-            console.log('開始處理圖片動作:', {
+            console.log('开始处理图片动作:', {
                 imageName: image.file.name,
                 action: action
             });
             
             const processor = image.processor;
             if (!processor || !processor.isImageLoaded()) {
-                console.error('圖片處理器無效或圖片未載入');
+                console.error('图片处理器无效或图片未加载');
                 return false;
             }
             
@@ -713,37 +713,37 @@ class UIController {
             }
             
             if (success) {
-                console.log('圖片處理成功:', action);
+                console.log('图片处理成功:', action);
                 return true;
             } else {
-                console.error('圖片處理失敗:', action);
+                console.error('图片处理失败:', action);
                 return false;
             }
             
         } catch (error) {
-            console.error('處理圖片動作時出錯:', error);
+            console.error('处理图片动作时出错:', error);
             return false;
         }
     }
 
     // 處理工具動作
     async handleToolAction(action) {
-        console.log('handleToolAction 被調用:', action);
+        console.log('handleToolAction 被调用:', action);
         
         if (this.images.length === 0) {
-            console.log('沒有圖片，顯示警告');
-            Utils.showNotification('請先上傳圖片', 'warning');
+            console.log('没有图片，显示警告');
+            Utils.showNotification('请先上传图片', 'warning');
             return;
         }
         
         if (this.isProcessing) {
-            console.log('正在處理中，顯示警告');
-            Utils.showNotification('圖片正在處理中，請稍候', 'warning');
+            console.log('正在处理中，显示警告');
+            Utils.showNotification('图片正在处理中，请稍候', 'warning');
             return;
         }
         
         this.isProcessing = true;
-        console.log('開始處理工具動作:', action);
+        console.log('开始处理工具动作:', action);
         
         try {
             // 確定要處理的圖片：如果有選中的圖片則處理選中的，否則處理當前圖片
@@ -751,52 +751,52 @@ class UIController {
                 ? Array.from(this.selectedImages).map(index => this.images[index])
                 : [this.images[this.currentImageIndex]];
             
-            console.log('開始處理工具動作:', {
+            console.log('开始处理工具动作:', {
                 action: action,
                 imagesToProcess: imagesToProcess.length,
                 selectedCount: this.selectedImages.size,
                 currentIndex: this.currentImageIndex
             });
             
-            Utils.updateProgress(0, '正在處理圖片...');
+            Utils.updateProgress(0, '正在处理图片...');
             
             for (let i = 0; i < imagesToProcess.length; i++) {
                 const image = imagesToProcess[i];
                 const progress = (i / imagesToProcess.length) * 100;
-                Utils.updateProgress(progress, `處理圖片 ${i + 1}/${imagesToProcess.length}`);
+                Utils.updateProgress(progress, `处理图片 ${i + 1}/${imagesToProcess.length}`);
                 
-                console.log(`處理圖片 ${i + 1}:`, image.file.name);
+                console.log(`处理图片 ${i + 1}:`, image.file.name);
                 
-                // 對處理後的圖片進行處理
+                // 对处理后的图片进行处理
                 const success = await this.processImageWithAction(image, action);
                 
-                console.log(`操作結果: ${success ? '成功' : '失敗'}`);
+                console.log(`操作结果: ${success ? '成功' : '失败'}`);
                 
                 if (success) {
                     // 自動保存處理後的圖片
                     const operationName = this.getOperationName(action);
                     await this.autoSaveProcessedImage(image, null, operationName);
                 } else {
-                    console.error(`圖片 ${image.file.name} 處理失敗`);
+                    console.error(`图片 ${image.file.name} 处理失败`);
                 }
             }
             
-            Utils.updateProgress(100, '處理完成');
+            Utils.updateProgress(100, '处理完成');
             
             this.updatePreview();
             this.updateImageList();
-            Utils.showTopCenterNotification(`${action} 完成，處理了 ${imagesToProcess.length} 張圖片`, 'success');
+            Utils.showTopCenterNotification(`${action} 完成，处理了 ${imagesToProcess.length} 张图片`, 'success');
             
         } catch (error) {
-            console.error('處理失敗:', error);
-            Utils.showNotification('處理失敗', 'error');
+            console.error('处理失败:', error);
+            Utils.showNotification('处理失败', 'error');
         } finally {
             this.isProcessing = false;
-            console.log('處理完成，重置處理狀態');
+            console.log('处理完成，重置处理状态');
         }
     }
 
-    // 處理濾鏡動作 - 只對選中的圖片進行處理
+    // 处理滤镜动作 - 只对选中的图片进行处理
     async handleFilterAction(filter) {
         if (this.images.length === 0) {
             Utils.showNotification('請先上傳圖片', 'warning');
