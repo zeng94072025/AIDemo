@@ -1,7 +1,15 @@
+/*
+ * 文件名：uiController.js
+ * 作用：负责管理所有UI交互和事件处理，包括图片上传、处理、下载、批量操作等。
+ * 作者：AI进化论-花生
+ * 最后修改时间：2024-06-09
+ */
 /**
  * UI控制器
  * 负责管理所有UI交互和事件处理
  */
+
+// 简体中文版本V5.0
 
 class UIController {
     constructor() {
@@ -18,6 +26,15 @@ class UIController {
         this.isSelectingRegion = false; // 新增：是否正在选择区域
         this.selectionStart = null; // 新增：选择开始点
         this.selectionEnd = null; // 新增：选择结束点
+        
+        // 新增：涂鸦批注状态管理
+        this.drawingState = {
+            isActive: false,
+            currentTool: 'brush',
+            canvasData: null,
+            history: [],
+            historyIndex: -1
+        };
         
         console.log('UIController 开始初始化...');
         
@@ -65,13 +82,13 @@ class UIController {
         // 图片导航控制
         this.initImageNavigation();
         
-        // 窗口大小變化時，如果正在繪製模式，重新同步canvas位置
+        // 窗口大小变化时，如果正在绘制模式，重新同步canvas位置
         window.addEventListener('resize', () => {
             if (this.isDrawingMode && this.drawingProcessor) {
-                // 使用防抖，避免頻繁更新
+                // 使用防抖，避免频繁更新
                 clearTimeout(this.resizeTimeout);
                 this.resizeTimeout = setTimeout(() => {
-                    console.log('窗口大小變化，重新同步繪製畫布位置');
+                    console.log('窗口大小变化，重新同步绘制画布位置');
                     this.updateDrawingCanvasPosition();
                 }, 100);
             }
@@ -525,12 +542,12 @@ class UIController {
 
         const validFiles = Array.from(files).filter(file => {
             if (!Utils.isValidImageFile(file)) {
-                Utils.showNotification(`${file.name} 不是有效的图片文件`, 'error');
+                Utils.showTopCenterNotification(`${file.name} 不是有效的图片文件`, 'error');
                 return false;
             }
             
             if (!Utils.isValidFileSize(file, 10)) {
-                Utils.showNotification(`${file.name} 文件太大，最大支持10MB`, 'error');
+                Utils.showTopCenterNotification(`${file.name} 文件太大，最大支持10MB`, 'error');
                 return false;
             }
             
@@ -544,38 +561,38 @@ class UIController {
         const duplicateFiles = [];
         
         for (const file of validFiles) {
-            // 更精确的重複檢測：檢查文件名、大小、修改時間和內容哈希
+            // 更精确的重复检测：检查文件名、大小、修改时间和内容哈希
             const isDuplicate = this.images.some(image => {
                 const sameName = image.file.name === file.name;
                 const sameSize = image.file.size === file.size;
                 const sameTime = image.file.lastModified === file.lastModified;
                 
-                // 如果基本信息都相同，認為是重複文件
+                // 如果基本信息都相同，认为是重复文件
                 return sameName && sameSize && sameTime;
             });
             
             if (isDuplicate) {
                 duplicateFiles.push(file.name);
-                console.log(`跳過重複文件: ${file.name}`);
+                console.log(`跳过重复文件: ${file.name}`);
             } else {
                 newFiles.push(file);
             }
         }
         
-        // 顯示重複文件統計信息
+        // 显示重复文件统计信息
         if (duplicateFiles.length > 0) {
             const duplicateCount = duplicateFiles.length;
             const newCount = newFiles.length;
-            let message = `跳過 ${duplicateCount} 個重複文件`;
-            if (newCount > 0) {
-                message += `，繼續處理 ${newCount} 個新文件`;
-            }
+                    let message = `跳过 ${duplicateCount} 个重复文件`;
+        if (newCount > 0) {
+            message += `，继续处理 ${newCount} 个新文件`;
+        }
             Utils.showTopCenterNotification(message, 'info', 3000);
         }
         
-        // 如果沒有新文件，直接返回
+        // 如果没有新文件，直接返回
         if (newFiles.length === 0) {
-            Utils.showTopCenterNotification('所有文件都是重複的，已跳過', 'info', 2000);
+            Utils.showTopCenterNotification('所有文件都是重复的，已跳过', 'info', 2000);
             return;
         }
 
@@ -592,7 +609,7 @@ class UIController {
             
             Utils.updateProgress(100, '图片加载完成');
             
-            // 顯示最終結果
+            // 显示最终结果
             const totalProcessed = newFiles.length;
             const totalSkipped = duplicateFiles.length;
             
@@ -606,7 +623,7 @@ class UIController {
             
         } catch (error) {
             console.error('加载图片失败:', error);
-            Utils.showNotification('加载图片失败', 'error');
+            Utils.showTopCenterNotification('加载图片失败', 'error');
         }
     }
 
@@ -726,27 +743,30 @@ class UIController {
         }
     }
 
-    // 處理工具動作
+            // 处理工具动作
     async handleToolAction(action) {
         console.log('handleToolAction 被调用:', action);
         
         if (this.images.length === 0) {
             console.log('没有图片，显示警告');
-            Utils.showNotification('请先上传图片', 'warning');
+            Utils.showTopCenterNotification('请先上传图片', 'warning');
             return;
         }
         
         if (this.isProcessing) {
             console.log('正在处理中，显示警告');
-            Utils.showNotification('图片正在处理中，请稍候', 'warning');
+            Utils.showTopCenterNotification('图片正在处理中，请稍候', 'warning');
             return;
         }
+        
+        // 保存涂鸦批注状态
+        this.saveDrawingState();
         
         this.isProcessing = true;
         console.log('开始处理工具动作:', action);
         
         try {
-            // 確定要處理的圖片：如果有選中的圖片則處理選中的，否則處理當前圖片
+            // 确定要处理的图片：如果有选中的图片则处理选中的，否则处理当前图片
             const imagesToProcess = this.selectedImages.size > 0 
                 ? Array.from(this.selectedImages).map(index => this.images[index])
                 : [this.images[this.currentImageIndex]];
@@ -773,7 +793,7 @@ class UIController {
                 console.log(`操作结果: ${success ? '成功' : '失败'}`);
                 
                 if (success) {
-                    // 自動保存處理後的圖片
+                    // 自动保存处理后的图片
                     const operationName = this.getOperationName(action);
                     await this.autoSaveProcessedImage(image, null, operationName);
                 } else {
@@ -785,11 +805,20 @@ class UIController {
             
             this.updatePreview();
             this.updateImageList();
+            
+            // 如果当前处于绘制模式，重新进入绘制模式以保持功能
+            if (this.isDrawingMode && this.drawingProcessor) {
+                console.log('重新进入绘制模式以保持涂鸦标注功能');
+                this.enterDrawingMode();
+                // 恢复涂鸦批注状态
+                this.restoreDrawingState();
+            }
+            
             Utils.showTopCenterNotification(`${action} 完成，处理了 ${imagesToProcess.length} 张图片`, 'success');
             
         } catch (error) {
             console.error('处理失败:', error);
-            Utils.showNotification('处理失败', 'error');
+            Utils.showTopCenterNotification('处理失败', 'error');
         } finally {
             this.isProcessing = false;
             console.log('处理完成，重置处理状态');
@@ -799,118 +828,142 @@ class UIController {
     // 处理滤镜动作 - 只对选中的图片进行处理
     async handleFilterAction(filter) {
         if (this.images.length === 0) {
-            Utils.showNotification('請先上傳圖片', 'warning');
+            Utils.showTopCenterNotification('请先上传图片', 'warning');
             return;
         }
         
         if (this.isProcessing) {
-            Utils.showNotification('圖片正在處理中，請稍候', 'warning');
+            Utils.showTopCenterNotification('图片正在处理中，请稍候', 'warning');
             return;
         }
+        
+        // 保存涂鸦批注状态
+        this.saveDrawingState();
         
         this.isProcessing = true;
         
         try {
-            // 確定要處理的圖片：如果有選中的圖片則處理選中的，否則處理當前圖片
+            // 确定要处理的图片：如果有选中的图片则处理选中的，否则处理当前图片
             const imagesToProcess = this.selectedImages.size > 0 
                 ? Array.from(this.selectedImages).map(index => this.images[index])
                 : [this.images[this.currentImageIndex]];
             
-            console.log('開始應用濾鏡:', {
+            console.log('开始应用滤镜:', {
                 filter: filter,
                 imagesToProcess: imagesToProcess.length,
                 selectedCount: this.selectedImages.size
             });
             
-            Utils.updateProgress(0, '正在應用濾鏡...');
+            Utils.updateProgress(0, '正在应用滤镜...');
             
             for (let i = 0; i < imagesToProcess.length; i++) {
                 const image = imagesToProcess[i];
                 const processor = image.processor;
                 const progress = (i / imagesToProcess.length) * 100;
-                Utils.updateProgress(progress, `應用濾鏡 ${i + 1}/${imagesToProcess.length}`);
+                Utils.updateProgress(progress, `应用滤镜 ${i + 1}/${imagesToProcess.length}`);
                 
-                console.log(`應用濾鏡到圖片 ${i + 1}:`, image.file.name);
+                console.log(`应用滤镜到图片 ${i + 1}:`, image.file.name);
                 
                 const success = processor.applyFilter(filter);
                 
                 if (success) {
-                    // 自動保存處理後的圖片
+                    // 自动保存处理后的图片
                     await this.autoSaveProcessedImage(image, processor, filter);
                 } else {
-                    console.error(`圖片 ${image.file.name} 濾鏡處理失敗`);
+                    console.error(`图片 ${image.file.name} 滤镜处理失败`);
                 }
             }
             
-            Utils.updateProgress(100, '濾鏡應用完成');
+            Utils.updateProgress(100, '滤镜应用完成');
             
             this.updatePreview();
             this.updateImageList();
-            Utils.showTopCenterNotification(`${filter}濾鏡應用完成，處理了 ${imagesToProcess.length} 張圖片`, 'success');
+            
+            // 如果当前处于绘制模式，重新进入绘制模式以保持功能
+            if (this.isDrawingMode && this.drawingProcessor) {
+                console.log('重新进入绘制模式以保持涂鸦标注功能');
+                this.enterDrawingMode();
+                // 恢复涂鸦批注状态
+                this.restoreDrawingState();
+            }
+            
+            Utils.showTopCenterNotification(`${filter}滤镜应用完成，处理了 ${imagesToProcess.length} 张图片`, 'success');
             
         } catch (error) {
-            console.error('濾鏡應用失敗:', error);
-            Utils.showNotification('濾鏡應用失敗', 'error');
+            console.error('滤镜应用失败:', error);
+            Utils.showTopCenterNotification('滤镜应用失败', 'error');
         } finally {
             this.isProcessing = false;
         }
     }
 
-    // 處理相框動作
+    // 处理相框动作
     async handleFrameAction(frame) {
         if (this.images.length === 0) {
-            Utils.showNotification('請先上傳圖片', 'warning');
+            Utils.showTopCenterNotification('请先上传图片', 'warning');
             return;
         }
         
         if (this.isProcessing) {
-            Utils.showNotification('圖片正在處理中，請稍候', 'warning');
+            Utils.showTopCenterNotification('图片正在处理中，请稍候', 'warning');
             return;
         }
+        
+        // 保存涂鸦批注状态
+        this.saveDrawingState();
         
         this.isProcessing = true;
         
         try {
-            // 確定要處理的圖片：如果有選中的圖片則處理選中的，否則處理當前圖片
+            // 确定要处理的图片：如果有选中的图片则处理选中的，否则处理当前图片
             const imagesToProcess = this.selectedImages.size > 0 
                 ? Array.from(this.selectedImages).map(index => this.images[index])
                 : [this.images[this.currentImageIndex]];
             
-            console.log('開始應用相框:', {
+            console.log('开始应用相框:', {
                 frame: frame,
                 imagesToProcess: imagesToProcess.length,
                 selectedCount: this.selectedImages.size
             });
             
-            Utils.updateProgress(0, '正在應用相框...');
+            Utils.updateProgress(0, '正在应用相框...');
             
             for (let i = 0; i < imagesToProcess.length; i++) {
                 const image = imagesToProcess[i];
                 const processor = image.processor;
                 const progress = (i / imagesToProcess.length) * 100;
-                Utils.updateProgress(progress, `應用相框 ${i + 1}/${imagesToProcess.length}`);
+                Utils.updateProgress(progress, `应用相框 ${i + 1}/${imagesToProcess.length}`);
                 
-                console.log(`應用相框到圖片 ${i + 1}:`, image.file.name);
+                console.log(`应用相框到图片 ${i + 1}:`, image.file.name);
                 
                 const success = processor.applyFrame(frame);
                 
                 if (success) {
-                    // 自動保存處理後的圖片
+                    // 自动保存处理后的图片
                     await this.autoSaveProcessedImage(image, processor, frame);
                 } else {
-                    console.error(`圖片 ${image.file.name} 相框處理失敗`);
+                    console.error(`图片 ${image.file.name} 相框处理失败`);
                 }
             }
             
-            Utils.updateProgress(100, '相框應用完成');
+            Utils.updateProgress(100, '相框应用完成');
             
             this.updatePreview();
             this.updateImageList();
-            Utils.showTopCenterNotification(`${frame}相框應用完成，處理了 ${imagesToProcess.length} 張圖片`, 'success');
+            
+            // 如果当前处于绘制模式，重新进入绘制模式以保持功能
+            if (this.isDrawingMode && this.drawingProcessor) {
+                console.log('重新进入绘制模式以保持涂鸦标注功能');
+                this.enterDrawingMode();
+                // 恢复涂鸦批注状态
+                this.restoreDrawingState();
+            }
+            
+            Utils.showTopCenterNotification(`${frame}相框应用完成，处理了 ${imagesToProcess.length} 张图片`, 'success');
             
         } catch (error) {
-            console.error('相框應用失敗:', error);
-            Utils.showNotification('相框應用失敗', 'error');
+            console.error('相框应用失败:', error);
+            Utils.showTopCenterNotification('相框应用失败', 'error');
         } finally {
             this.isProcessing = false;
         }
@@ -918,26 +971,32 @@ class UIController {
 
     // 處理繪製工具
     handleDrawingTool(tool, event) {
-        // 檢查是否有圖片載入
+        // 检查是否有图片加载
         if (this.images.length === 0) {
-            Utils.showNotification('請先上傳圖片', 'warning');
+            Utils.showTopCenterNotification('请先上传图片', 'warning');
             return;
         }
 
-        // 移除所有活動狀態
+        // 移除所有活动状态
         document.querySelectorAll('.drawing-btn').forEach(btn => {
             btn.classList.remove('active');
         });
         
-        // 添加活動狀態
+        // 添加活动状态
         if (event && event.target) {
             event.target.classList.add('active');
         }
         
-        // 初始化繪製模式
+        // 保存当前涂鸦批注状态
+        this.saveDrawingState();
+        
+        // 初始化绘制模式
         this.initDrawingMode(tool);
         
-        Utils.showNotification(`${tool}工具已選擇`, 'info');
+        // 恢复涂鸦批注状态
+        this.restoreDrawingState();
+        
+        Utils.showTopCenterNotification(`${tool}工具已选择`, 'info');
     }
 
     // 初始化繪製模式
@@ -951,26 +1010,26 @@ class UIController {
         }
     }
 
-    // 進入繪製模式
+    // 进入绘制模式
     enterDrawingMode() {
         const previewContainer = document.getElementById('previewContainer');
         
-        console.log('進入繪製模式 - 檢查元素:', {
+        console.log('进入绘制模式 - 检查元素:', {
             previewContainer: !!previewContainer,
             previewContainerHTML: previewContainer ? previewContainer.innerHTML.substring(0, 200) + '...' : 'N/A'
         });
         
         if (!previewContainer) {
-            console.error('找不到預覽容器');
+            console.error('找不到预览容器');
             return;
         }
 
         try {
-            // 查找"處理後效果圖"區域的圖片
+            // 查找"处理后效果图"区域的图片
             const processedImageSection = previewContainer.querySelector('.processed-image-section');
             const processedImage = processedImageSection ? processedImageSection.querySelector('img') : null;
             
-            console.log('查找"處理後效果圖"區域:', {
+            console.log('查找"处理后效果图"区域:', {
                 processedImageSection: !!processedImageSection,
                 processedImage: !!processedImage,
                 processedImageComplete: processedImage ? processedImage.complete : 'N/A',
@@ -978,35 +1037,35 @@ class UIController {
             });
             
             if (!processedImage || !processedImage.complete || processedImage.naturalWidth === 0) {
-                console.error('找不到"處理後效果圖"區域的圖片');
-                Utils.showNotification('找不到"處理後效果圖"區域，無法進入繪製模式', 'error');
+                console.error('找不到"处理后效果图"区域的图片');
+                Utils.showTopCenterNotification('找不到"处理后效果图"区域，无法进入绘制模式', 'error');
                 return;
             }
             
-            // 獲取圖片容器（包含圖片的div）
+            // 获取图片容器（包含图片的div）
             const imageContainer = processedImage.parentElement;
             if (!imageContainer) {
-                console.error('找不到圖片容器');
-                Utils.showNotification('找不到圖片容器，無法進入繪製模式', 'error');
+                console.error('找不到图片容器');
+                Utils.showTopCenterNotification('找不到图片容器，无法进入绘制模式', 'error');
                 return;
             }
             
-            // 確保圖片容器為相對定位
+            // 确保图片容器为相对定位
             imageContainer.style.position = 'relative';
             
-            // 檢查圖片顯示尺寸
+            // 检查图片显示尺寸
             if (processedImage.clientWidth === 0 || processedImage.clientHeight === 0) {
-                console.error('圖片顯示尺寸為0:', {
+                console.error('图片显示尺寸为0:', {
                     clientWidth: processedImage.clientWidth,
                     clientHeight: processedImage.clientHeight,
                     offsetWidth: processedImage.offsetWidth,
                     offsetHeight: processedImage.offsetHeight
                 });
-                Utils.showNotification('圖片尚未完全載入，請稍後再試', 'warning');
+                Utils.showTopCenterNotification('图片尚未完全加载，请稍后再试', 'warning');
                 return;
             }
             
-            console.log('使用圖片容器進入繪製模式:', {
+            console.log('使用图片容器进入绘制模式:', {
                 imageClientWidth: processedImage.clientWidth,
                 imageClientHeight: processedImage.clientHeight,
                 imageNaturalWidth: processedImage.naturalWidth,
@@ -1014,102 +1073,114 @@ class UIController {
                 containerPosition: imageContainer.style.position
             });
             
-            // 創建或獲取繪製畫布
+            // 创建或获取绘制画布
             let drawingCanvas = document.getElementById('drawingCanvas');
             if (!drawingCanvas) {
-                // 如果畫布不存在，創建新的
+                // 如果画布不存在，创建新的
                 drawingCanvas = document.createElement('canvas');
                 drawingCanvas.id = 'drawingCanvas';
                 drawingCanvas.style.cssText = 'position: absolute; left: 0; top: 0; z-index: 10; pointer-events: auto; background-color: transparent;';
                 
-                // 將畫布插入到圖片容器中
+                // 将画布插入到图片容器中
                 imageContainer.appendChild(drawingCanvas);
-                console.log('創建並插入新的繪製畫布');
+                console.log('创建并插入新的绘制画布');
             } else {
-                // 如果畫布已存在，確保它在正確的容器中
+                // 如果画布已存在，确保它在正确的容器中
                 if (drawingCanvas.parentElement !== imageContainer) {
                     drawingCanvas.remove();
                     imageContainer.appendChild(drawingCanvas);
-                    console.log('將現有畫布移動到正確的容器中');
+                    console.log('将现有画布移动到正确的容器中');
                 }
             }
             
-            // 設置畫布尺寸與圖片顯示尺寸一致
+            // 设置画布尺寸与图片显示尺寸一致
             drawingCanvas.width = processedImage.clientWidth;
             drawingCanvas.height = processedImage.clientHeight;
             drawingCanvas.style.display = 'block';
             
-            console.log('畫布尺寸設置完成:', {
+            console.log('画布尺寸设置完成:', {
                 canvasWidth: drawingCanvas.width,
                 canvasHeight: drawingCanvas.height,
                 imageClientWidth: processedImage.clientWidth,
                 imageClientHeight: processedImage.clientHeight
             });
 
-            // 初始化繪製處理器
+            // 初始化绘制处理器
             if (!this.drawingProcessor) {
                 try {
-                    console.log('創建新的DrawingProcessor實例...');
+                    console.log('创建新的DrawingProcessor实例...');
                     this.drawingProcessor = new DrawingProcessor(drawingCanvas);
-                    // 設置繪製完成回調
+                    // 设置绘制完成回调
                     this.drawingProcessor.onDrawingComplete = (canvasData) => {
-                        console.log('繪製完成，保存結果');
+                        console.log('绘制完成，保存结果');
                         this.saveDrawingResult();
                     };
                     console.log('DrawingProcessor 初始化成功');
                 } catch (error) {
-                    console.error('DrawingProcessor 初始化失敗:', error);
-                    Utils.showNotification('繪製工具初始化失敗: ' + error.message, 'error');
+                    console.error('DrawingProcessor 初始化失败:', error);
+                    Utils.showTopCenterNotification('绘制工具初始化失败: ' + error.message, 'error');
                     return;
                 }
             } else {
-                // 如果處理器已存在，重新設置畫布
+                // 如果处理器已存在，重新设置画布
                 try {
-                    console.log('重新設置現有的DrawingProcessor...');
+                    console.log('重新设置现有的DrawingProcessor...');
                     this.drawingProcessor.resetCanvas(drawingCanvas);
-                    console.log('DrawingProcessor 重新設置畫布成功');
+                    console.log('DrawingProcessor 重新设置画布成功');
                 } catch (error) {
-                    console.error('DrawingProcessor 重新設置畫布失敗:', error);
-                    // 如果重新設置失敗，創建新的處理器
+                    console.error('DrawingProcessor 重新设置画布失败:', error);
+                    // 如果重新设置失败，创建新的处理器
                     try {
-                        console.log('嘗試重新創建DrawingProcessor...');
+                        console.log('尝试重新创建DrawingProcessor...');
                         this.drawingProcessor.destroy();
                         this.drawingProcessor = new DrawingProcessor(drawingCanvas);
                         this.drawingProcessor.onDrawingComplete = (canvasData) => {
-                            console.log('繪製完成，保存結果');
+                            console.log('绘制完成，保存结果');
                             this.saveDrawingResult();
                         };
-                        console.log('DrawingProcessor 重新創建成功');
+                        console.log('DrawingProcessor 重新创建成功');
                     } catch (recreateError) {
-                        console.error('DrawingProcessor 重新創建也失敗:', recreateError);
-                        Utils.showNotification('繪製工具重新創建失敗: ' + recreateError.message, 'error');
+                        console.error('DrawingProcessor 重新创建也失败:', recreateError);
+                        Utils.showTopCenterNotification('绘制工具重新创建失败: ' + recreateError.message, 'error');
                         return;
                     }
                 }
             }
 
             this.isDrawingMode = true;
-            console.log('已進入繪製模式，畫布信息:', {
+            console.log('已进入绘制模式，画布信息:', {
                 width: drawingCanvas.width,
                 height: drawingCanvas.height,
                 parentContainer: drawingCanvas.parentElement.className,
                 imageContainer: imageContainer.className
             });
             
-            Utils.showNotification('已進入繪製模式，塗鴉標註僅對"處理後效果圖"生效', 'success');
+            // 检查是否有保存的涂鸦批注状态需要恢复
+            if (this.drawingState.isActive && this.drawingState.canvasData) {
+                console.log('检测到保存的涂鸦批注状态，正在恢复...');
+                // 延迟恢复，确保画布完全初始化
+                setTimeout(() => {
+                    this.restoreDrawingState();
+                }, 100);
+            }
+            
+            Utils.showTopCenterNotification('已进入绘制模式，涂鸦标注仅对"处理后效果图"生效', 'success');
             
         } catch (error) {
-            console.error('進入繪製模式失敗:', error);
-            Utils.showNotification('進入繪製模式失敗: ' + error.message, 'error');
+            console.error('进入绘制模式失败:', error);
+            Utils.showTopCenterNotification('进入绘制模式失败: ' + error.message, 'error');
         }
     }
 
-    // 退出繪製模式
+    // 退出绘制模式
     exitDrawingMode() {
+        // 保存涂鸦批注状态
+        this.saveDrawingState();
+        
         const drawingCanvas = document.getElementById('drawingCanvas');
         if (drawingCanvas) {
             drawingCanvas.style.display = 'none';
-            // 從DOM中移除畫布，避免影響其他功能
+            // 从DOM中移除画布，避免影响其他功能
             drawingCanvas.remove();
         }
 
@@ -1119,25 +1190,25 @@ class UIController {
         }
 
         this.isDrawingMode = false;
-        console.log('已退出繪製模式');
+        console.log('已退出绘制模式');
     }
 
-    // 初始化塗鴉標註工具
+    // 初始化涂鸦标注工具
     initDrawingTools() {
         try {
-            // 繪製工具按鈕
+            // 绘制工具按钮
             const drawingBtns = document.querySelectorAll('.drawing-btn');
             drawingBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    // 移除其他按鈕的active狀態
+                    // 移除其他按钮的active状态
                     drawingBtns.forEach(b => b.classList.remove('active'));
-                    // 添加當前按鈕的active狀態
+                    // 添加当前按钮的active状态
                     btn.classList.add('active');
                     
                     const tool = btn.dataset.tool;
-                    console.log('選擇繪製工具:', tool);
+                    console.log('选择绘制工具:', tool);
                     
-                    // 進入繪製模式
+                    // 进入绘制模式
                     this.initDrawingMode(tool);
                     
                     if (this.drawingProcessor) {
@@ -1146,64 +1217,64 @@ class UIController {
                 });
             });
 
-            // 特效工具按鈕
+            // 特效工具按钮
             const effectBtns = document.querySelectorAll('.effect-btn');
             effectBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const effect = btn.dataset.effect;
-                    console.log('選擇特效工具:', effect);
+                    console.log('选择特效工具:', effect);
                     this.handleEffectTool(effect);
                 });
             });
 
-            // 標註工具按鈕
+            // 标注工具按钮
             const annotationBtns = document.querySelectorAll('.annotation-btn');
             annotationBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    // 移除其他按鈕的active狀態
+                    // 移除其他按钮的active状态
                     annotationBtns.forEach(b => b.classList.remove('active'));
-                    // 添加當前按鈕的active狀態
+                    // 添加当前按钮的active状态
                     btn.classList.add('active');
                     
                     const annotation = btn.dataset.annotation;
-                    console.log('選擇標註工具:', annotation);
+                    console.log('选择标注工具:', annotation);
                     this.handleAnnotationTool(annotation);
                 });
             });
 
-            // 畫筆樣式按鈕
+            // 画笔样式按钮
             const styleBtns = document.querySelectorAll('.style-btn');
             styleBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    // 移除其他按鈕的active狀態
+                    // 移除其他按钮的active状态
                     styleBtns.forEach(b => b.classList.remove('active'));
-                    // 添加當前按鈕的active狀態
+                    // 添加当前按钮的active状态
                     btn.classList.add('active');
                     
                     const style = btn.dataset.style;
-                    console.log('選擇畫筆樣式:', style);
+                    console.log('选择画笔样式:', style);
                     if (this.drawingProcessor) {
                         this.drawingProcessor.setBrushStyle(style);
                     }
                 });
             });
 
-            // 顏色按鈕
+            // 颜色按钮
             const colorBtns = document.querySelectorAll('.color-btn');
             colorBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    // 移除其他按鈕的active狀態
+                    // 移除其他按钮的active状态
                     colorBtns.forEach(b => b.classList.remove('active'));
-                    // 添加當前按鈕的active狀態
+                    // 添加当前按钮的active状态
                     btn.classList.add('active');
                     
                     const color = btn.dataset.color;
-                    console.log('選擇顏色:', color);
+                    console.log('选择颜色:', color);
                     if (this.drawingProcessor) {
                         this.drawingProcessor.setColor(color);
                     }
                     
-                    // 更新顏色選擇器
+                    // 更新颜色选择器
                     const colorInput = document.getElementById('drawingColor');
                     if (colorInput) {
                         colorInput.value = color;
@@ -1211,19 +1282,19 @@ class UIController {
                 });
             });
 
-            // 漸變色按鈕
+            // 渐变色按钮
             const gradientBtns = document.querySelectorAll('.gradient-btn');
             gradientBtns.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const gradient = btn.dataset.gradient;
-                    console.log('選擇漸變色:', gradient);
+                    console.log('选择渐变色:', gradient);
                     if (this.drawingProcessor) {
                         this.drawingProcessor.setGradient(gradient);
                     }
                 });
             });
 
-            // 畫筆大小控制
+            // 画笔大小控制
             const brushSizeInput = document.getElementById('brushSize');
             const brushSizeValue = document.getElementById('brushSizeValue');
             if (brushSizeInput && brushSizeValue) {
@@ -1236,7 +1307,7 @@ class UIController {
                 });
             }
 
-            // 顏色選擇器
+            // 颜色选择器
             const drawingColorInput = document.getElementById('drawingColor');
             if (drawingColorInput) {
                 drawingColorInput.addEventListener('change', (e) => {
@@ -1247,7 +1318,7 @@ class UIController {
                 });
             }
 
-            // 操作控制按鈕
+            // 操作控制按钮
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
             const clearBtn = document.getElementById('clearBtn');
@@ -1257,7 +1328,7 @@ class UIController {
                     if (this.drawingProcessor) {
                         const success = this.drawingProcessor.undo();
                         if (!success) {
-                            console.log('無法撤銷，已到歷史記錄開始');
+                            console.log('无法撤销，已到历史记录开始');
                         }
                     }
                 });
@@ -1268,7 +1339,7 @@ class UIController {
                     if (this.drawingProcessor) {
                         const success = this.drawingProcessor.redo();
                         if (!success) {
-                            console.log('無法重做，已到歷史記錄結束');
+                            console.log('无法重做，已到历史记录结束');
                         }
                     }
                 });
@@ -1282,9 +1353,9 @@ class UIController {
                 });
             }
 
-            console.log('涂鴉標註工具初始化完成');
+            console.log('涂鸦标注工具初始化完成');
         } catch (error) {
-            console.error('涂鴉標註工具初始化失敗:', error);
+            console.error('涂鸦标注工具初始化失败:', error);
         }
     }
 
@@ -1300,27 +1371,27 @@ class UIController {
         switch (effect) {
             case 'heart':
                 this.drawingProcessor.drawHeart(centerX, centerY, 30);
-                Utils.showNotification('已添加愛心特效', 'success');
+                Utils.showTopCenterNotification('已添加爱心特效', 'success');
                 break;
             case 'star':
                 this.drawingProcessor.drawStar(centerX, centerY, 25);
-                Utils.showNotification('已添加星星特效', 'success');
+                Utils.showTopCenterNotification('已添加星星特效', 'success');
                 break;
             case 'explosion':
                 this.drawingProcessor.drawExplosion(centerX, centerY, 40);
-                Utils.showNotification('已添加爆炸特效', 'success');
+                Utils.showTopCenterNotification('已添加爆炸特效', 'success');
                 break;
             case 'emoji':
                 this.drawingProcessor.drawEmoji(centerX, centerY);
-                Utils.showNotification('已添加表情符號', 'success');
+                Utils.showTopCenterNotification('已添加表情符号', 'success');
                 break;
             case 'bubble':
                 this.drawingProcessor.drawSpeechBubble(centerX, centerY, 'Wow!', 120, 80);
-                Utils.showNotification('已添加對話框', 'success');
+                Utils.showTopCenterNotification('已添加对话框', 'success');
                 break;
             case 'progress':
                 this.drawingProcessor.drawProgressBar(centerX, centerY, 0.8, 150, 25);
-                Utils.showNotification('已添加進度條', 'success');
+                Utils.showTopCenterNotification('已添加进度条', 'success');
                 break;
         }
         
@@ -1348,24 +1419,24 @@ class UIController {
                     const centerX = rect.width / 2;
                     const centerY = rect.height / 2;
                     this.drawingProcessor.drawArrow(centerX, centerY, x, y);
-                    Utils.showNotification('已添加箭頭標註', 'success');
+                    Utils.showTopCenterNotification('已添加箭头标注', 'success');
                     break;
                 case 'neon-arrow':
                     // 繪製霓虹箭頭
                     const neonCenterX = rect.width / 2;
                     const neonCenterY = rect.height / 2;
                     this.drawingProcessor.drawNeonArrow(neonCenterX, neonCenterY, x, y);
-                    Utils.showNotification('已添加霓虹箭頭標註', 'success');
+                    Utils.showTopCenterNotification('已添加霓虹箭头标注', 'success');
                     break;
                 case 'highlight':
                     // 繪製高亮區域
                     this.drawingProcessor.drawHighlight(x - 50, y - 30, 100, 60);
-                    Utils.showNotification('已添加高亮標註', 'success');
+                    Utils.showTopCenterNotification('已添加高亮标注', 'success');
                     break;
                 case 'stamp':
                     // 繪製印章
                     this.drawingProcessor.drawStamp(x, y, '✓');
-                    Utils.showNotification('已添加印章標註', 'success');
+                    Utils.showTopCenterNotification('已添加印章标注', 'success');
                     break;
                 case 'measure':
                     // 繪製測量線
@@ -1375,7 +1446,7 @@ class UIController {
                     // 添加測量文字
                     const distance = Math.sqrt((x - measureCenterX) ** 2 + (y - measureCenterY) ** 2);
                     this.drawingProcessor.addText(`${Math.round(distance)}px`, (x + measureCenterX) / 2, (y + measureCenterY) / 2 - 10);
-                    Utils.showNotification('已添加測量標註', 'success');
+                    Utils.showTopCenterNotification('已添加测量标注', 'success');
                     break;
             }
 
@@ -1389,7 +1460,7 @@ class UIController {
         };
 
         this.drawingProcessor.canvas.addEventListener('click', handleAnnotationClick);
-        Utils.showNotification(`請點擊畫布來放置${this.getAnnotationName(annotation)}`, 'info');
+                    Utils.showTopCenterNotification(`请点击画布来放置${this.getAnnotationName(annotation)}`, 'info');
     }
 
     // 獲取標註工具的中文名稱
@@ -1409,101 +1480,101 @@ class UIController {
         console.log('handleAIAction 被調用:', aiAction);
         
         if (this.images.length === 0) {
-            console.log('沒有圖片，顯示警告');
-            Utils.showNotification('請先上傳圖片', 'warning');
+            console.log('没有图片，显示警告');
+            Utils.showNotification('请先上传图片', 'warning');
             return;
         }
         
         if (this.isAIProcessing) {
-            console.log('正在AI處理中，顯示警告');
-            Utils.showNotification('AI正在處理中，請稍候', 'warning');
+            console.log('正在AI处理中，显示警告');
+            Utils.showTopCenterNotification('AI正在处理中，请稍候', 'warning');
             return;
         }
         
         this.isAIProcessing = true;
-        console.log('開始AI處理:', aiAction);
+        console.log('开始AI处理:', aiAction);
         
         try {
-            // 獲取當前圖片
+            // 获取当前图片
             const currentImage = this.images[this.currentImageIndex];
             
-            // 創建AI處理器
+            // 创建AI处理器
             if (!this.aiProcessor) {
                 this.aiProcessor = new AIImageProcessor();
             }
             
-            // 載入圖片到AI處理器
+            // 加载图片到AI处理器
             await this.aiProcessor.loadImage(currentImage.file);
             
-            // 更新AI狀態
-            this.updateAIStatus('處理中...', true);
+            // 更新AI状态
+            this.updateAIStatus('处理中...', true);
             
             let success = false;
             
             switch (aiAction) {
                 case 'repair-old-photo':
-                    console.log('執行老照片修復');
+                    console.log('执行老照片修复');
                     success = await this.aiProcessor.repairOldPhoto();
                     break;
                 case 'upscale-8k':
-                    console.log('執行8K超分辨率');
+                    console.log('执行8K超分辨率');
                     success = await this.aiProcessor.upscaleTo8K();
                     break;
                 case 'extract-portrait':
-                    console.log('執行人像摳圖');
+                    console.log('执行人像抠图');
                     success = await this.aiProcessor.extractPortrait();
                     break;
                 case 'extract-object':
-                    console.log('執行物體摳圖');
+                    console.log('执行物体抠图');
                     success = await this.aiProcessor.extractObject();
                     break;
                 case 'artistic-oil':
-                    console.log('執行油畫風格');
+                    console.log('执行油画风格');
                     success = await this.aiProcessor.applyArtisticStyle('oil-painting');
                     break;
                 case 'artistic-watercolor':
-                    console.log('執行水彩風格');
+                    console.log('执行水彩风格');
                     success = await this.aiProcessor.applyArtisticStyle('watercolor');
                     break;
                 case 'artistic-sketch':
-                    console.log('執行素描風格');
+                    console.log('执行素描风格');
                     success = await this.aiProcessor.applyArtisticStyle('sketch');
                     break;
                 case 'artistic-cartoon':
-                    console.log('執行卡通風格');
+                    console.log('执行卡通风格');
                     success = await this.aiProcessor.applyArtisticStyle('cartoon');
                     break;
                 case 'artistic-vintage':
-                    console.log('執行復古風格');
+                    console.log('执行复古风格');
                     success = await this.aiProcessor.applyArtisticStyle('vintage');
                     break;
                 case 'cartoonize':
-                    console.log('執行卡通化');
+                    console.log('执行卡通化');
                     success = await this.aiProcessor.cartoonize();
                     break;
                 case 'one-click-repair':
-                    console.log('執行一鍵修復');
+                    console.log('执行一键修复');
                     success = await this.aiProcessor.oneClickRepair(this.selectedRegion);
                     
-                    // 處理完成後保存結果
+                    // 处理完成后保存结果
                     if (success) {
                         const processedBase64 = this.aiProcessor.toBase64('image/png', 0.9);
                         if (processedBase64 && processedBase64.startsWith('data:')) {
-                            // 更新預覽圖片
+                            // 更新预览图片
                             const previewImg = document.querySelector('.preview-container img');
                             if (previewImg) {
                                 previewImg.src = processedBase64;
                             }
                             
-                            // 保存處理結果
-                            await this.autoSaveProcessedImage(currentImage, this.aiProcessor, '一鍵修復');
+                            // 保存处理结果
+                            await this.autoSaveProcessedImage(currentImage, this.aiProcessor, '一键修复');
                         } else {
-                            console.error('AI處理器返回的Base64無效:', processedBase64);
+                            console.error('AI处理器返回的Base64无效:', processedBase64);
                         }
                     }
                     break;
                 case 'select-region':
-                    console.log('開始區域選擇');
+                    console.log('开始区域选择');
                     this.startRegionSelection();
                     success = true;
                     break;
@@ -1533,27 +1604,27 @@ class UIController {
                         // 更新預覽
                         this.updatePreview();
                         
-                        Utils.showNotification('AI處理完成，可點擊下載按鈕保存', 'success');
+                        Utils.showTopCenterNotification('AI处理完成，可点击下载按钮保存', 'success');
                     } else {
                         console.warn('AI處理後數據無效:', processedBase64);
-                        Utils.showNotification('AI處理失敗：無效的結果數據', 'error');
+                        Utils.showTopCenterNotification('AI处理失败：无效的结果数据', 'error');
                     }
                 } catch (error) {
-                    console.error('更新AI處理後數據失敗:', error);
-                    Utils.showNotification('AI處理失敗', 'error');
+                    console.error('更新AI处理后数据失败:', error);
+                    Utils.showTopCenterNotification('AI处理失败', 'error');
                 }
             } else {
-                console.error('AI處理失敗');
-                Utils.showNotification('AI處理失敗', 'error');
+                console.error('AI处理失败');
+                Utils.showTopCenterNotification('AI处理失败', 'error');
             }
             
         } catch (error) {
-            console.error('AI處理過程出錯:', error);
-            Utils.showNotification('AI處理失敗', 'error');
+            console.error('AI处理过程出错:', error);
+            Utils.showTopCenterNotification('AI处理失败', 'error');
         } finally {
             this.isAIProcessing = false;
-            this.updateAIStatus('就緒', false);
-            console.log('AI處理完成，重置處理狀態');
+            this.updateAIStatus('就绪', false);
+            console.log('AI处理完成，重置处理状态');
         }
     }
 
@@ -1599,39 +1670,39 @@ class UIController {
         }
 
         try {
-            // 查找"處理後效果圖"區域的圖片
+            // 查找"处理后效果图"区域的图片
             const processedImageSection = previewContainer.querySelector('.processed-image-section');
             const processedImage = processedImageSection ? processedImageSection.querySelector('img') : null;
             
             if (!processedImage || !processedImage.complete || processedImage.naturalWidth === 0) {
-                console.warn('找不到"處理後效果圖"區域的圖片，跳過位置更新');
+                console.warn('找不到"处理后效果图"区域的图片，跳过位置更新');
                 return;
             }
             
-            // 檢查圖片顯示尺寸
+            // 检查图片显示尺寸
             if (processedImage.clientWidth === 0 || processedImage.clientHeight === 0) {
-                console.warn('圖片顯示尺寸為0，跳過位置更新');
+                console.warn('图片显示尺寸为0，跳过位置更新');
                 return;
             }
             
-            // 獲取圖片容器
+            // 获取图片容器
             const imageContainer = processedImage.parentElement;
             if (!imageContainer) {
-                console.warn('找不到圖片容器，跳過位置更新');
+                console.warn('找不到图片容器，跳过位置更新');
                 return;
             }
             
-            // 確保圖片容器為相對定位
+            // 确保图片容器为相对定位
             imageContainer.style.position = 'relative';
             
-            // 確保畫布在正確的容器中
+            // 确保画布在正确的容器中
             if (drawingCanvas.parentElement !== imageContainer) {
                 drawingCanvas.remove();
                 imageContainer.appendChild(drawingCanvas);
                 console.log('將畫布移動到正確的容器中');
             }
             
-            // 更新畫布尺寸與圖片顯示尺寸一致
+            // 更新画布尺寸与图片显示尺寸一致
             const newWidth = processedImage.clientWidth;
             const newHeight = processedImage.clientHeight;
             
@@ -1649,7 +1720,7 @@ class UIController {
                 });
             }
             
-            // 確保畫布樣式正確
+            // 确保画布样式正确
             drawingCanvas.style.position = 'absolute';
             drawingCanvas.style.left = '0px';
             drawingCanvas.style.top = '0px';
@@ -1674,7 +1745,7 @@ class UIController {
         }
     }
 
-    // 處理參數變化 - 只對選中的圖片進行處理
+            // 处理参数变化 - 只对选中的图片进行处理
     handleParameterChange(parameter, value) {
         if (this.images.length === 0) return;
         
@@ -1700,24 +1771,24 @@ class UIController {
             }
             
             if (success) {
-                // 更新圖片的處理後數據
+                // 更新图片的处理后数据
                 try {
                     const processedBase64 = processor.toBase64('image/jpeg', 0.9);
                     if (processedBase64 && processedBase64 !== '') {
-                        // 確保 processedData 對象存在
+                        // 确保 processedData 对象存在
                         if (!image.processedData) {
                             image.processedData = {};
                         }
                         image.processedData.base64 = processedBase64;
-                        console.log(`圖片 ${image.file.name} 參數調整完成，數據已保存`);
+                        console.log(`图片 ${image.file.name} 参数调整完成，数据已保存`);
                     } else {
-                        console.warn(`圖片 ${image.file.name} 參數調整後數據為空`);
+                        console.warn(`图片 ${image.file.name} 参数调整后数据为空`);
                     }
                 } catch (error) {
                     console.error('更新處理後數據失敗:', error);
                 }
             } else {
-                console.error(`圖片 ${image.file.name} 參數調整失敗`);
+                                      console.error(`图片 ${image.file.name} 参数调整失败`);
             }
         });
         
@@ -1725,7 +1796,7 @@ class UIController {
         this.updateImageList();
     }
 
-    // 顯示上一張圖片
+            // 显示上一张图片
     showPreviousImage() {
         if (this.currentImageIndex > 0) {
             this.currentImageIndex--;
@@ -1734,7 +1805,7 @@ class UIController {
         }
     }
 
-    // 顯示下一張圖片
+            // 显示下一张图片
     showNextImage() {
         if (this.currentImageIndex < this.images.length - 1) {
             this.currentImageIndex++;
@@ -1743,10 +1814,10 @@ class UIController {
         }
     }
 
-    // 下載當前圖片
+    // 下载当前图片
     async downloadCurrentImage() {
         if (this.images.length === 0) {
-            Utils.showNotification('沒有可下載的圖片', 'warning');
+            Utils.showTopCenterNotification('没有可下载的图片', 'warning');
             return;
         }
         
@@ -1755,13 +1826,13 @@ class UIController {
             const format = document.getElementById('outputFormat').value;
             const quality = document.getElementById('quality').value / 100;
             
-            // 檢查並修復圖片數據結構
+            // 检查并修复图片数据结构
             if (typeof currentImage.data === 'string') {
-                console.warn('downloadCurrentImage: 檢測到currentImage.data是字符串，正在修復數據結構');
+                console.warn('downloadCurrentImage: 检测到currentImage.data是字符串，正在修复数据结构');
                 currentImage.data = { base64: currentImage.data };
             }
             
-            console.log('開始下載處理後圖片:', {
+            console.log('开始下载处理后图片:', {
                 format: format,
                 quality: quality,
                 imageName: currentImage.file.name,
@@ -1775,78 +1846,78 @@ class UIController {
             let filename;
             let isProcessedImage = false;
             
-            // 特殊處理：塗鴉標註數據
+            // 特殊处理：涂鸦标注数据
             if (currentImage.isDrawingAnnotation && currentImage.processedData && currentImage.processedData.base64) {
                 try {
-                    console.log('檢測到塗鴉標註數據，使用合併後的圖片數據');
+                    console.log('检测到涂鸦标注数据，使用合并后的图片数据');
                     blob = await this.dataURLToBlob(currentImage.processedData.base64);
                     filename = this.generateFilename(currentImage.file.name, format);
                     isProcessedImage = true;
-                    console.log('成功使用塗鴉標註數據下載');
+                    console.log('成功使用涂鸦标注数据下载');
                 } catch (error) {
-                    console.error('塗鴉標註數據轉換失敗:', error);
-                    // 如果塗鴉標註數據轉換失敗，嘗試重新合併
+                    console.error('涂鸦标注数据转换失败:', error);
+                    // 如果涂鸦标注数据转换失败，尝试重新合并
                     if (this.drawingProcessor) {
-                        console.log('嘗試重新合併塗鴉標註數據');
+                        console.log('尝试重新合并涂鸦标注数据');
                         await this.mergeDrawingWithImage(this.drawingProcessor.getCanvasData());
                         if (currentImage.processedData && currentImage.processedData.base64) {
                             blob = await this.dataURLToBlob(currentImage.processedData.base64);
                             filename = this.generateFilename(currentImage.file.name, format);
                             isProcessedImage = true;
-                            console.log('重新合併塗鴉標註數據成功');
+                            console.log('重新合并涂鸦标注数据成功');
                         }
                     }
                 }
             }
             
-            // 優先使用處理器的最新處理後圖片數據
+            // 优先使用处理器的最新处理后图片数据
             if (!blob && currentImage.processor && currentImage.processor.isImageLoaded()) {
                 try {
-                    console.log('嘗試從處理器獲取最新處理後圖片數據');
+                    console.log('尝试从处理器获取最新处理后图片数据');
                     blob = await currentImage.processor.toBlob(`image/${format}`, quality);
                     filename = this.generateFilename(currentImage.file.name, format);
                     isProcessedImage = true;
-                    console.log('成功從處理器獲取處理後圖片數據');
+                    console.log('成功从处理器获取处理后图片数据');
                 } catch (error) {
-                    console.error('從處理器獲取數據失敗:', error);
+                    console.error('从处理器获取数据失败:', error);
                 }
             }
             
-            // 如果處理器沒有數據，嘗試使用緩存的處理後數據
+            // 如果处理器没有数据，尝试使用缓存的处理后数据
             if (!blob && currentImage.processedData && currentImage.processedData.base64) {
                 try {
-                    console.log('嘗試使用緩存的處理後圖片數據');
+                    console.log('尝试使用缓存的处理后图片数据');
                     blob = await this.dataURLToBlob(currentImage.processedData.base64);
                     filename = this.generateFilename(currentImage.file.name, format);
                     isProcessedImage = true;
-                    console.log('成功使用緩存的處理後圖片數據');
+                    console.log('成功使用缓存的处理后图片数据');
                 } catch (error) {
-                    console.error('緩存處理後數據轉換失敗:', error);
+                    console.error('缓存处理后数据转换失败:', error);
                 }
             }
             
-            // 如果沒有處理後的數據，使用原始圖片數據作為處理後效果
+            // 如果没有处理后的数据，使用原始图片数据作为处理后效果
             if (!blob && currentImage.data && currentImage.data.base64) {
                 try {
-                    console.log('使用原始圖片數據作為處理後效果下載');
+                    console.log('使用原始图片数据作为处理后效果下载');
                     blob = await this.dataURLToBlob(currentImage.data.base64);
                     filename = this.generateFilename(currentImage.file.name, format);
-                    isProcessedImage = true; // 標記為處理後圖片，因為這是"處理後效果圖"
-                    console.log('成功使用原始圖片數據作為處理後效果');
+                    isProcessedImage = true; // 标记为处理后图片，因为这是"处理后效果图"
+                    console.log('成功使用原始图片数据作为处理后效果');
                 } catch (error) {
-                    console.error('原始數據轉換失敗:', error);
-                    throw new Error('原始數據轉換失敗: ' + error.message);
+                    console.error('原始数据转换失败:', error);
+                    throw new Error('原始数据转换失败: ' + error.message);
                 }
             }
             
-            // 如果都沒有數據，拋出錯誤
+            // 如果都没有数据，抛出错误
             if (!blob) {
-                throw new Error('沒有可用的圖片數據');
+                throw new Error('没有可用的图片数据');
             }
             
-            // 驗證生成的 blob
+            // 验证生成的 blob
             if (blob.size === 0) {
-                throw new Error('生成的 Blob 為空');
+                throw new Error('生成的 Blob 为空');
             }
             
             console.log('Blob 生成成功:', {
@@ -1856,30 +1927,30 @@ class UIController {
                 isDrawingAnnotation: currentImage.isDrawingAnnotation
             });
             
-            // 顯示下載確認信息
+            // 显示下载确认信息
             const originalName = currentImage.file.name;
             const processedName = filename;
             
-            let confirmMessage = `將下載"處理後效果圖"區域的圖片。\n\n原圖片：${originalName}\n處理後：${processedName}`;
+            let confirmMessage = `将下载"处理后效果图"区域的图片。\n\n原图片：${originalName}\n处理后：${processedName}`;
             
-            // 如果是塗鴉標註，顯示特殊提示
+            // 如果是涂鸦标注，显示特殊提示
             if (currentImage.isDrawingAnnotation) {
-                confirmMessage = `將下載包含塗鴉標註效果的圖片。\n\n原圖片：${originalName}\n標註後：${processedName}`;
+                confirmMessage = `将下载包含涂鸦标注效果的图片。\n\n原图片：${originalName}\n标注后：${processedName}`;
             }
             
-            const confirmed = await Utils.showConfirm(confirmMessage, '確認下載處理後效果圖');
+            const confirmed = await Utils.showConfirm(confirmMessage, '确认下载处理后效果图');
             
             if (!confirmed) {
-                Utils.showTopCenterNotification('下載已取消', 'info');
+                Utils.showTopCenterNotification('下载已取消', 'info');
                 return;
             }
             
             Utils.downloadFile(blob, filename);
             
             if (currentImage.isDrawingAnnotation) {
-                Utils.showTopCenterNotification('塗鴉標註圖片下載成功', 'success');
+                Utils.showTopCenterNotification('涂鸦标注图片下载成功', 'success');
             } else {
-                Utils.showTopCenterNotification('處理後效果圖下載成功', 'success');
+                Utils.showTopCenterNotification('处理后效果图下载成功', 'success');
             }
             
         } catch (error) {
@@ -1949,10 +2020,10 @@ class UIController {
         });
     }
 
-    // 下載所有圖片
+            // 下载所有图片
     async downloadAllImages() {
         if (this.images.length === 0) {
-            Utils.showNotification('沒有可下載的圖片', 'warning');
+            Utils.showNotification('没有可下载的图片', 'warning');
             return;
         }
         
@@ -1962,7 +2033,7 @@ class UIController {
             const format = document.getElementById('outputFormat').value;
             const quality = document.getElementById('quality').value / 100;
             
-            // 無論單張還是多張圖片，都打包成ZIP格式
+            // 无论单张还是多张图片，都打包成ZIP格式
             await this.createAndDownloadZip(format, quality);
             
         } catch (error) {
@@ -1971,10 +2042,10 @@ class UIController {
         }
     }
 
-    // 創建並下載ZIP文件
+            // 创建并下载ZIP文件
     async createAndDownloadZip(format, quality) {
         try {
-            Utils.updateProgress(0, '正在準備壓縮文件...');
+            Utils.updateProgress(0, '正在准备压缩文件...');
             
             // 檢查JSZip是否可用
             if (typeof JSZip === 'undefined') {
@@ -1990,12 +2061,12 @@ class UIController {
             let processedCount = 0;
             let drawingAnnotationCount = 0;
             
-            // 添加所有圖片到壓縮包
+            // 添加所有图片到压缩包
             for (let i = 0; i < this.images.length; i++) {
                 const image = this.images[i];
                 const processor = image.processor;
                 const progress = (i / this.images.length) * 100;
-                Utils.updateProgress(progress, `處理圖片 ${i + 1}/${this.images.length}`);
+                Utils.updateProgress(progress, `处理图片 ${i + 1}/${this.images.length}`);
                 
                 try {
                     let blob;
@@ -2009,10 +2080,10 @@ class UIController {
                             blob = await this.dataURLToBlob(image.processedData.base64);
                             isProcessedImage = true;
                             isDrawingAnnotation = true;
-                            console.log(`使用塗鴉標註數據處理圖片 ${image.file.name}`);
+                            console.log(`使用涂鸦标注数据处理图片 ${image.file.name}`);
                         } catch (error) {
-                            console.error(`塗鴉標註數據轉換失敗 ${image.file.name}:`, error);
-                            // 如果塗鴉標註數據轉換失敗，嘗試重新合併
+                                                          console.error(`涂鸦标注数据转换失败 ${image.file.name}:`, error);
+                                                          // 如果涂鸦标注数据转换失败，尝试重新合并
                             if (this.drawingProcessor && image === this.images[this.currentImageIndex]) {
                                 console.log(`嘗試重新合併塗鴉標註數據 ${image.file.name}`);
                                 await this.mergeDrawingWithImage(this.drawingProcessor.getCanvasData());
@@ -2058,8 +2129,8 @@ class UIController {
                     if (!blob && image.data && image.data.base64) {
                         try {
                             blob = await this.dataURLToBlob(image.data.base64);
-                            isProcessedImage = true; // 標記為處理後圖片，因為這是"處理後效果圖"
-                            console.log(`使用原始數據作為處理後效果處理圖片 ${image.file.name}`);
+                            isProcessedImage = true; // 标记为处理后图片，因为这是"处理后效果图"
+                            console.log(`使用原始数据作为处理后效果处理图片 ${image.file.name}`);
                         } catch (error) {
                             console.error(`原始數據轉換失敗 ${image.file.name}:`, error);
                             errorCount++;
@@ -2093,7 +2164,7 @@ class UIController {
                         drawingAnnotationCount++;
                     }
                     
-                    console.log(`圖片 ${image.file.name} 添加成功，下載"處理後效果圖"${isDrawingAnnotation ? '，包含塗鴉標註' : ''}`);
+                    console.log(`图片 ${image.file.name} 添加成功，下载"处理后效果图"${isDrawingAnnotation ? '，包含涂鸦标注' : ''}`);
                     
                 } catch (error) {
                     console.error(`處理圖片 ${image.file.name} 時出錯:`, error);
@@ -2109,13 +2180,13 @@ class UIController {
             
             Utils.downloadFile(zipBlob, zipFilename);
             
-            // 顯示下載結果
-            let resultMessage = `批量下載完成！成功下載 ${successCount} 張"處理後效果圖"`;
+            // 显示下载结果
+            let resultMessage = `批量下载完成！成功下载 ${successCount} 张"处理后效果图"`;
             if (drawingAnnotationCount > 0) {
-                resultMessage += `，其中 ${drawingAnnotationCount} 張包含塗鴉標註`;
+                resultMessage += `，其中 ${drawingAnnotationCount} 张包含涂鸦标注`;
             }
             if (errorCount > 0) {
-                resultMessage += `，${errorCount} 張圖片處理失敗`;
+                resultMessage += `，${errorCount} 张图片处理失败`;
             }
             
             Utils.showTopCenterNotification(resultMessage, 'success');
@@ -2249,7 +2320,7 @@ class UIController {
             
             // 檢查圖片是否已處理
             const isProcessed = this.isImageProcessed(image);
-            const processedBadge = isProcessed ? '<div class="processed-badge" title="已處理"><i class="fas fa-magic"></i></div>' : '';
+            const processedBadge = isProcessed ? '<div class="processed-badge" title="已处理"><i class="fas fa-magic"></i></div>' : '';
             
                             imageItem.innerHTML = `
                 <div style="position: relative; width: 100%; height: 100%;">
@@ -2495,7 +2566,7 @@ class UIController {
             isProcessed: processedImageSrc !== originalImageSrc
         });
         
-        // 始終顯示兩個區域：原圖和處理後效果圖
+                    // 始终显示两个区域：原图和处理后效果图
         previewContainer.innerHTML = `
             <div class="dual-preview-container" style="display: flex; gap: 20px; height: 100%; align-items: center; justify-content: center;">
                 <div class="original-image-section" style="flex: 1; text-align: center; position: relative; height: 100%; display: flex; flex-direction: column;">
@@ -2508,9 +2579,9 @@ class UIController {
                     →
                 </div>
                 <div class="processed-image-section" style="flex: 1; text-align: center; position: relative; height: 100%; display: flex; flex-direction: column;">
-                    <h4 style="margin: 0 0 10px 0; color: #28a745; font-size: 16px; font-weight: bold;">處理後效果圖</h4>
+                    <h4 style="margin: 0 0 10px 0; color: #28a745; font-size: 16px; font-weight: bold;">处理后效果图</h4>
                     <div style="flex: 1; display: flex; align-items: center; justify-content: center; border: 2px solid #28a745; border-radius: 8px; background: #f8fff9; margin: 0 10px; position: relative;">
-                        <img src="${processedImageSrc}" alt="處理後效果圖" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px;">
+                        <img src="${processedImageSrc}" alt="处理后效果图" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px;">
                         ${processedImageSrc !== originalImageSrc ? 
                             '<div style="position: absolute; top: 5px; right: 5px; background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">✨ 已處理</div>' : 
                             '<div style="position: absolute; top: 5px; right: 5px; background: #6c757d; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold;">📷 原圖</div>'
@@ -2615,7 +2686,7 @@ class UIController {
                     // 添加已處理標籤
                     const processedLabel = document.createElement('div');
                     processedLabel.style.cssText = 'position: absolute; top: 5px; right: 5px; background: #28a745; color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold; z-index: 10;';
-                    processedLabel.textContent = '✨ 已處理';
+                    processedLabel.textContent = '✨ 已处理';
                     imageContainer.appendChild(processedLabel);
                 } else {
                     img.style.cssText = 'max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 2px solid #ddd;';
@@ -2639,7 +2710,7 @@ class UIController {
                 imageContainer.appendChild(fileName);
                 previewWrapper.appendChild(imageContainer);
                 
-                console.log(`成功添加圖片預覽: ${image.file.name}, 已處理: ${hasProcessingEffect}`);
+                console.log(`成功添加圖片預覽: ${image.file.name}, 已处理: ${hasProcessingEffect}`);
             } else {
                 console.error('無法獲取圖片數據:', image.file.name);
             }
@@ -3411,6 +3482,89 @@ class UIController {
                 }
             } catch (fallbackError) {
                 console.error('保存原圖也失敗:', fallbackError);
+            }
+        }
+    }
+
+    // 保存当前涂鸦批注状态
+    saveDrawingState() {
+        if (this.drawingProcessor && this.isDrawingMode) {
+            try {
+                this.drawingState.isActive = true;
+                this.drawingState.currentTool = this.drawingProcessor.currentTool || 'brush';
+                
+                // 保存画布数据
+                const canvasData = this.drawingProcessor.getCanvasData();
+                if (canvasData) {
+                    this.drawingState.canvasData = canvasData;
+                }
+                
+                // 保存历史记录
+                if (this.drawingProcessor.drawingHistory) {
+                    this.drawingState.history = [...this.drawingProcessor.drawingHistory];
+                    this.drawingState.historyIndex = this.drawingProcessor.historyIndex;
+                }
+                
+                console.log('涂鸦批注状态已保存:', {
+                    tool: this.drawingState.currentTool,
+                    hasCanvasData: !!this.drawingState.canvasData,
+                    historyLength: this.drawingState.history.length,
+                    historyIndex: this.drawingState.historyIndex
+                });
+            } catch (error) {
+                console.error('保存涂鸦批注状态失败:', error);
+            }
+        }
+    }
+
+    // 恢复涂鸦批注状态
+    restoreDrawingState() {
+        if (this.drawingProcessor && this.drawingState.isActive) {
+            try {
+                // 设置工具
+                if (this.drawingState.currentTool) {
+                    this.drawingProcessor.setTool(this.drawingState.currentTool);
+                }
+                
+                // 恢复画布数据
+                if (this.drawingState.canvasData) {
+                    this.restoreCanvasData(this.drawingState.canvasData);
+                }
+                
+                // 恢复历史记录
+                if (this.drawingState.history.length > 0) {
+                    this.drawingProcessor.drawingHistory = [...this.drawingState.history];
+                    this.drawingProcessor.historyIndex = this.drawingState.historyIndex;
+                }
+                
+                console.log('涂鸦批注状态已恢复:', {
+                    tool: this.drawingState.currentTool,
+                    hasCanvasData: !!this.drawingState.canvasData,
+                    historyLength: this.drawingState.history.length
+                });
+            } catch (error) {
+                console.error('恢复涂鸦批注状态失败:', error);
+            }
+        }
+    }
+    
+    // 恢复画布数据
+    restoreCanvasData(canvasData) {
+        if (this.drawingProcessor && canvasData) {
+            try {
+                const img = new Image();
+                img.onload = () => {
+                    const ctx = this.drawingProcessor.ctx;
+                    ctx.clearRect(0, 0, this.drawingProcessor.canvas.width, this.drawingProcessor.canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    console.log('画布数据已恢复');
+                };
+                img.onerror = (error) => {
+                    console.error('恢复画布数据失败:', error);
+                };
+                img.src = canvasData;
+            } catch (error) {
+                console.error('恢复画布数据时出错:', error);
             }
         }
     }

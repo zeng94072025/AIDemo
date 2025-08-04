@@ -1,31 +1,64 @@
+// 简体中文版本V5.0
+/*
+ * 文件名：main.js
+ * 作用：初始化和协调各模块，处理全局事件和主流程。
+ * 作者：AI进化论-花生
+ * 最后修改时间：2024-06-09
+ */
 /**
- * 主应用程序
+ * 主应用程序 - AI图片优化助手
  * 初始化所有模块并协调它们的工作
+ * 
+ * 主要功能：
+ * - 应用程序生命周期管理
+ * - 浏览器兼容性检查
+ * - 模块初始化和协调
+ * - 事件监听器设置
+ * - 用户界面控制
+ * - 设置管理
+ * - 错误处理和日志记录
+ * - 键盘快捷键支持
+ * - 响应式布局管理
  */
 
+/**
+ * AI图片优化器主类
+ * 负责整个应用程序的初始化和协调工作
+ */
 class AIImageOptimizer {
+    /**
+     * 构造函数
+     * 初始化应用程序并开始启动流程
+     */
     constructor() {
+        // UI控制器实例
         this.uiController = null;
+        
+        // 初始化状态标志
         this.isInitialized = false;
         
+        // 开始初始化流程
         this.init();
     }
 
-    // 初始化应用程序
+    /**
+     * 初始化应用程序
+     * 按顺序执行所有初始化步骤
+     */
     async init() {
         try {
             console.log('正在初始化AI图片优化器...');
             
-            // 检查浏览器支持
+            // 检查浏览器兼容性
             this.checkBrowserSupport();
             
-            // 初始化各个模块
+            // 初始化各个功能模块
             await this.initModules();
             
-            // 设置事件监听器
+            // 设置全局事件监听器
             this.setupEventListeners();
             
-            // 加载设置
+            // 加载用户设置
             this.loadSettings();
             
             // 显示欢迎信息
@@ -40,19 +73,25 @@ class AIImageOptimizer {
         }
     }
 
-    // 检查浏览器支持
+    /**
+     * 检查浏览器兼容性
+     * 验证应用程序所需的浏览器功能是否可用
+     */
     checkBrowserSupport() {
+        // 定义必需的浏览器功能
         const requirements = {
-            canvas: !!document.createElement('canvas').getContext,
-            fileAPI: !!window.File && !!window.FileReader,
-            dragAndDrop: 'draggable' in document.createElement('div'),
-            webWorkers: !!window.Worker
+            canvas: !!document.createElement('canvas').getContext,      // Canvas绘图支持
+            fileAPI: !!window.File && !!window.FileReader,            // 文件API支持
+            dragAndDrop: 'draggable' in document.createElement('div'), // 拖拽支持
+            webWorkers: !!window.Worker                               // Web Workers支持
         };
 
+        // 检查不支持的功能
         const unsupported = Object.entries(requirements)
             .filter(([feature, supported]) => !supported)
             .map(([feature]) => feature);
 
+        // 如果有不支持的功能，显示警告
         if (unsupported.length > 0) {
             console.warn('不支持的浏览器功能:', unsupported);
             this.showWarningMessage(`您的浏览器不支持以下功能: ${unsupported.join(', ')}。某些功能可能无法正常工作。`);
@@ -544,33 +583,33 @@ class AIImageOptimizer {
     }
 }
 
-// 當DOM加載完成後初始化應用程序（僅在沒有認證系統時執行）
+// 当DOM加载完成后初始化应用程序（仅在没有认证系统时执行）
 document.addEventListener('DOMContentLoaded', () => {
-    // 檢查是否已經有認證管理器
+    // 检查是否已经有认证管理器
     const userRole = localStorage.getItem('userRole');
     const userPhone = localStorage.getItem('userPhone');
     
-    // 如果沒有認證信息，直接初始化（用於開發測試）
+    // 如果没有认证信息，直接初始化（用于开发测试）
     if (!userRole || !userPhone) {
-        console.log('未檢測到認證信息，直接初始化應用程序...');
-        // 創建全局應用程序實例
+        console.log('未检测到认证信息，直接初始化应用程序...');
+        // 创建全局应用程序实例
         window.app = new AIImageOptimizer();
         
-        // 添加全局錯誤處理
+        // 添加全局错误处理
         window.addEventListener('error', (event) => {
-            console.error('全局錯誤:', event.error);
+            console.error('全局错误:', event.error);
         });
         
-        // 添加未處理的Promise拒絕處理
+        // 添加未处理的Promise拒绝处理
         window.addEventListener('unhandledrejection', (event) => {
-            console.error('未處理的Promise拒絕:', event.reason);
+            console.error('未处理的Promise拒绝:', event.reason);
         });
         
-        console.log('AI圖片優化器應用程序已啟動（無認證模式）');
+        console.log('AI图片优化器应用程序已启动（无认证模式）');
     } else {
-        console.log('檢測到認證信息，等待認證管理器初始化完成...');
+        console.log('检测到认证信息，等待认证管理器初始化完成...');
     }
 });
 
-// 導出應用程序類
+// 导出应用程序类
 window.AIImageOptimizer = AIImageOptimizer; 

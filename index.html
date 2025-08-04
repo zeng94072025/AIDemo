@@ -1,17 +1,22 @@
+<!-- 简体中文版本V5.0 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI图片优化助手</title>
+    <!-- 引入样式文件 -->
     <link rel="stylesheet" href="styles.css">
+    <!-- 引入Font Awesome图标库 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- 頂部導航欄 -->
+    <!-- 顶部导航栏 -->
     <header class="header">
         <div class="header-content">
+            <!-- 应用Logo和标题 -->
             <div class="logo">
+                <!-- SVG图标：AI智能处理标志 -->
                 <svg width="32" height="32" viewBox="0 0 32 32">
                     <circle cx="16" cy="16" r="14" fill="none" stroke="#007AFF" stroke-width="2"/>
                     <path d="M8 16 L14 22 L24 10" stroke="#007AFF" stroke-width="2" fill="none"/>
@@ -19,19 +24,24 @@
                 </svg>
                 <h1>AI图片优化助手</h1>
             </div>
+            <!-- 用户操作区域 -->
             <div class="header-actions">
+                <!-- 用户信息显示 -->
                 <div class="user-info" id="userInfo" style="display: none;">
                     <span id="userPhone"></span>
                     <span class="plan-badge" id="planBadge">免费版</span>
                 </div>
+                <!-- 帮助按钮 -->
                 <button class="btn btn-secondary" id="helpBtn">
                     <i class="fas fa-question-circle"></i>
                     帮助
                 </button>
+                <!-- 设置按钮 -->
                 <button class="btn btn-primary" id="settingsBtn">
                     <i class="fas fa-cog"></i>
                     设置
                 </button>
+                <!-- 登出按钮 -->
                 <button class="btn btn-danger" id="logoutBtn" style="display: none;">
                     <i class="fas fa-sign-out-alt"></i>
                     登出
@@ -40,24 +50,28 @@
         </div>
     </header>
 
-    <!-- 主要內容區域 -->
+    <!-- 主要内容区域 -->
     <main class="main-content">
-                    <!-- 左侧面板 - 图片上传和管理 -->
-            <div class="left-panel">
-                <!-- 图片上传区域 -->
-                <div class="upload-section">
-                    <h2>图片管理</h2>
-                    <div class="upload-hint-top">支持 JPG、PNG、GIF、WEBP、BMP 格式</div>
-                    <div class="upload-area" id="uploadArea">
-                        <div class="upload-content">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <p>拖拽或点击上传</p>
-                            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
-                            <button class="btn btn-primary" id="selectFileBtn">
-                                选择文件
-                            </button>
-                        </div>
+        <!-- 左侧面板 - 图片上传和管理 -->
+        <div class="left-panel">
+            <!-- 图片上传区域 -->
+            <div class="upload-section">
+                <h2>图片管理</h2>
+                <!-- 支持格式提示 -->
+                <div class="upload-hint-top">支持 JPG、PNG、GIF、WEBP、BMP 格式</div>
+                <!-- 拖拽上传区域 -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>拖拽或点击上传</p>
+                        <!-- 隐藏的文件输入框 -->
+                        <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+                        <!-- 选择文件按钮 -->
+                        <button class="btn btn-primary" id="selectFileBtn">
+                            选择文件
+                        </button>
                     </div>
+                </div>
                     
                     <!-- 已上传图片列表 -->
                     <div class="uploaded-images" id="uploadedImages">
@@ -525,13 +539,13 @@
         </div>
     </div>
 
-    <!-- 隱藏的Canvas元素 -->
+    <!-- 隐藏的Canvas元素 -->
     <canvas id="hiddenCanvas" style="display: none;"></canvas>
     
-    <!-- 塗鴉標註Canvas -->
+    <!-- 涂鸦标注Canvas -->
                     <!-- 涂鸦批注Canvas将在JavaScript中动态插入到processed-image-section内部 -->
     
-    <!-- 認證和權限控制腳本 -->
+    <!-- 认证和权限控制脚本 -->
     <script>
         class AuthManager {
             constructor() {

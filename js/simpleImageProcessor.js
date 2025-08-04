@@ -1,45 +1,67 @@
 /**
- * 簡單可靠的圖片處理器
- * 徹底解決圖片破損問題
+ * 简单可靠的图片处理器
+ * 彻底解决图片破损问题
+ * 
+ * 功能特性：
+ * - 支持多种图片格式加载和处理
+ * - 提供亮度、对比度调整功能
+ * - 支持黑白、复古、反转等滤镜效果
+ * - 安全的Canvas操作，避免内存泄漏
+ * - 完整的错误处理和状态管理
  */
 
 class SimpleImageProcessor {
+    /**
+     * 构造函数 - 初始化图片处理器
+     * 创建Canvas元素和2D绘图上下文
+     */
     constructor() {
+        // 创建Canvas元素用于图片处理
         this.canvas = document.createElement('canvas');
         this.ctx = this.canvas.getContext('2d');
+        
+        // 存储原始文件对象
         this.originalFile = null;
+        
+        // 存储原始图片对象
         this.originalImage = null;
         
         console.log('SimpleImageProcessor 初始化成功');
     }
 
-    // 載入圖片
+    /**
+     * 加载图片文件
+     * @param {File} file - 要加载的图片文件
+     * @returns {Promise<Object>} 返回图片信息对象
+     */
     async loadImage(file) {
         try {
-            console.log('開始載入圖片:', file.name);
+            console.log('开始加载图片:', file.name);
             
+            // 保存原始文件引用
             this.originalFile = file;
             
-            // 創建圖片元素
+            // 创建图片元素并等待加载完成
             const img = await this.createImageFromFile(file);
             
-            // 保存原始圖片
+            // 保存原始图片对象
             this.originalImage = img;
             
-            // 設置 Canvas 尺寸
+            // 设置Canvas尺寸与图片一致
             this.canvas.width = img.naturalWidth;
             this.canvas.height = img.naturalHeight;
             
-            // 清空並繪製圖片
+            // 清空Canvas并绘制原始图片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(img, 0, 0);
             
-            console.log('圖片載入成功:', {
+            console.log('图片加载成功:', {
                 width: img.naturalWidth,
                 height: img.naturalHeight,
                 type: file.type
             });
             
+            // 返回图片信息
             return {
                 file: file,
                 width: img.naturalWidth,
@@ -48,18 +70,24 @@ class SimpleImageProcessor {
             };
             
         } catch (error) {
-            console.error('載入圖片失敗:', error);
+            console.error('加载图片失败:', error);
             throw error;
         }
     }
 
-    // 從文件創建圖片元素
+    /**
+     * 从文件创建图片元素
+     * @param {File} file - 图片文件
+     * @returns {Promise<HTMLImageElement>} 返回加载完成的图片元素
+     */
     createImageFromFile(file) {
         return new Promise((resolve, reject) => {
+            // 创建新的图片对象
             const img = new Image();
             
+            // 图片加载成功回调
             img.onload = () => {
-                console.log('圖片加載完成:', {
+                console.log('图片加载完成:', {
                     naturalWidth: img.naturalWidth,
                     naturalHeight: img.naturalHeight,
                     complete: img.complete
@@ -67,16 +95,17 @@ class SimpleImageProcessor {
                 resolve(img);
             };
             
+            // 图片加载失败回调
             img.onerror = () => {
-                console.error('圖片加載失敗');
-                reject(new Error('圖片加載失敗'));
+                console.error('图片加载失败');
+                reject(new Error('图片加载失败'));
             };
             
-            // 創建 URL
+            // 创建文件URL
             const url = URL.createObjectURL(file);
             img.src = url;
             
-            // 圖片加載完成後釋放 URL
+            // 图片加载完成后释放URL，避免内存泄漏
             img.onload = () => {
                 URL.revokeObjectURL(url);
                 resolve(img);
@@ -84,27 +113,32 @@ class SimpleImageProcessor {
         });
     }
 
-    // 轉換為 Blob
+    /**
+     * 将Canvas内容转换为Blob对象
+     * @param {string} type - 图片格式，默认为'image/jpeg'
+     * @param {number} quality - 图片质量，范围0-1，默认为0.9
+     * @returns {Promise<Blob>} 返回Blob对象
+     */
     toBlob(type = 'image/jpeg', quality = 0.9) {
         return new Promise((resolve, reject) => {
             try {
-                // 檢查 Canvas
+                // 检查Canvas是否有效
                 if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                    reject(new Error('Canvas 無效'));
+                    reject(new Error('Canvas 无效'));
                     return;
                 }
                 
-                // 檢查是否有圖片內容
+                // 检查是否有加载的图片
                 if (!this.originalImage) {
-                    reject(new Error('沒有載入的圖片'));
+                    reject(new Error('没有加载的图片'));
                     return;
                 }
                 
-                // 重新繪製圖片確保內容正確
+                // 重新绘制图片确保内容正确
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
                 this.ctx.drawImage(this.originalImage, 0, 0);
                 
-                // 生成 Blob
+                // 生成Blob对象
                 this.canvas.toBlob((blob) => {
                     if (blob && blob.size > 0) {
                         console.log('Blob 生成成功:', {
@@ -113,34 +147,42 @@ class SimpleImageProcessor {
                         });
                         resolve(blob);
                     } else {
-                        reject(new Error('生成的 Blob 無效'));
+                        reject(new Error('生成的 Blob 无效'));
                     }
                 }, type, quality);
                 
             } catch (error) {
-                console.error('生成 Blob 失敗:', error);
+                console.error('生成 Blob 失败:', error);
                 reject(error);
             }
         });
     }
 
-    // 轉換為 Base64
+    /**
+     * 将Canvas内容转换为Base64字符串
+     * @param {string} type - 图片格式，默认为'image/jpeg'
+     * @param {number} quality - 图片质量，范围0-1，默认为0.9
+     * @returns {string} 返回Base64字符串
+     */
     toBase64(type = 'image/jpeg', quality = 0.9) {
         try {
+            // 检查Canvas是否有效
             if (!this.canvas || this.canvas.width === 0 || this.canvas.height === 0) {
-                console.error('Canvas 無效');
+                console.error('Canvas 无效');
                 return '';
             }
             
+            // 检查是否有加载的图片
             if (!this.originalImage) {
-                console.error('沒有載入的圖片');
+                console.error('没有加载的图片');
                 return '';
             }
             
-            // 重新繪製圖片確保內容正確
+            // 重新绘制图片确保内容正确
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(this.originalImage, 0, 0);
             
+            // 生成Base64字符串
             const dataUrl = this.canvas.toDataURL(type, quality);
             console.log('Base64 生成成功:', {
                 length: dataUrl.length,
@@ -149,97 +191,120 @@ class SimpleImageProcessor {
             
             return dataUrl;
         } catch (error) {
-            console.error('生成 Base64 失敗:', error);
+            console.error('生成 Base64 失败:', error);
             return '';
         }
     }
 
-    // 調整亮度
+    /**
+     * 调整图片亮度
+     * @param {number} value - 亮度调整值，正数增加亮度，负数减少亮度
+     */
     adjustBrightness(value) {
         try {
+            // 检查是否有加载的图片
             if (!this.originalImage) {
-                console.error('沒有載入的圖片');
+                console.error('没有加载的图片');
                 return;
             }
             
-            // 重新繪製原始圖片
+            // 重新绘制原始图片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(this.originalImage, 0, 0);
             
-            // 獲取圖片數據
+            // 获取图片像素数据
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             const data = imageData.data;
             
-            // 調整亮度
+            // 调整每个像素的RGB值来改变亮度
             for (let i = 0; i < data.length; i += 4) {
-                data[i] = Math.min(255, Math.max(0, data[i] + value));     // R
-                data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + value)); // G
-                data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + value)); // B
+                // 红色通道
+                data[i] = Math.min(255, Math.max(0, data[i] + value));
+                // 绿色通道
+                data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + value));
+                // 蓝色通道
+                data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + value));
+                // Alpha通道保持不变
             }
             
-            // 放回圖片數據
+            // 将修改后的像素数据放回Canvas
             this.ctx.putImageData(imageData, 0, 0);
             
-            console.log('亮度調整完成:', value);
+            console.log('亮度调整完成:', value);
             
         } catch (error) {
-            console.error('調整亮度失敗:', error);
+            console.error('调整亮度失败:', error);
         }
     }
 
-    // 調整對比度
+    /**
+     * 调整图片对比度
+     * @param {number} value - 对比度调整值，范围-255到255
+     */
     adjustContrast(value) {
         try {
+            // 检查是否有加载的图片
             if (!this.originalImage) {
-                console.error('沒有載入的圖片');
+                console.error('没有加载的图片');
                 return;
             }
             
-            // 重新繪製原始圖片
+            // 重新绘制原始图片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(this.originalImage, 0, 0);
             
-            // 獲取圖片數據
+            // 获取图片像素数据
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             const data = imageData.data;
+            
+            // 计算对比度因子
             const factor = (259 * (value + 255)) / (255 * (259 - value));
             
-            // 調整對比度
+            // 调整每个像素的RGB值来改变对比度
             for (let i = 0; i < data.length; i += 4) {
-                data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));     // R
-                data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128)); // G
-                data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128)); // B
+                // 红色通道
+                data[i] = Math.min(255, Math.max(0, factor * (data[i] - 128) + 128));
+                // 绿色通道
+                data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+                // 蓝色通道
+                data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
+                // Alpha通道保持不变
             }
             
-            // 放回圖片數據
+            // 将修改后的像素数据放回Canvas
             this.ctx.putImageData(imageData, 0, 0);
             
-            console.log('對比度調整完成:', value);
+            console.log('对比度调整完成:', value);
             
         } catch (error) {
-            console.error('調整對比度失敗:', error);
+            console.error('调整对比度失败:', error);
         }
     }
 
-    // 應用濾鏡
+    /**
+     * 应用滤镜效果
+     * @param {string} filterType - 滤镜类型：'grayscale'|'sepia'|'invert'
+     */
     applyFilter(filterType) {
         try {
+            // 检查是否有加载的图片
             if (!this.originalImage) {
-                console.error('沒有載入的圖片');
+                console.error('没有加载的图片');
                 return;
             }
             
-            // 重新繪製原始圖片
+            // 重新绘制原始图片
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
             this.ctx.drawImage(this.originalImage, 0, 0);
             
-            // 獲取圖片數據
+            // 获取图片像素数据
             const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
             const data = imageData.data;
             
-            // 應用濾鏡
+            // 根据滤镜类型处理像素
             switch (filterType) {
                 case 'grayscale':
+                    // 黑白滤镜：将RGB值转换为灰度值
                     for (let i = 0; i < data.length; i += 4) {
                         const gray = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
                         data[i] = gray;     // R
@@ -249,6 +314,7 @@ class SimpleImageProcessor {
                     break;
                     
                 case 'sepia':
+                    // 复古滤镜：应用棕褐色调
                     for (let i = 0; i < data.length; i += 4) {
                         const r = data[i];
                         const g = data[i + 1];
@@ -261,6 +327,7 @@ class SimpleImageProcessor {
                     break;
                     
                 case 'invert':
+                    // 反转滤镜：将颜色值反转
                     for (let i = 0; i < data.length; i += 4) {
                         data[i] = 255 - data[i];     // R
                         data[i + 1] = 255 - data[i + 1]; // G
@@ -269,40 +336,51 @@ class SimpleImageProcessor {
                     break;
                     
                 default:
-                    console.warn('不支持的濾鏡類型:', filterType);
+                    console.warn('不支持的滤镜类型:', filterType);
                     return;
             }
             
-            // 放回圖片數據
+            // 将修改后的像素数据放回Canvas
             this.ctx.putImageData(imageData, 0, 0);
             
-            console.log('濾鏡應用完成:', filterType);
+            console.log('滤镜应用完成:', filterType);
             
         } catch (error) {
-            console.error('應用濾鏡失敗:', error);
+            console.error('应用滤镜失败:', error);
         }
     }
 
-    // 重置到原始圖片
+    /**
+     * 重置到原始图片状态
+     * 清除所有处理效果，恢复到原始图片
+     */
     resetToOriginal() {
         if (this.originalImage) {
+            // 清空Canvas
             this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            // 重新绘制原始图片
             this.ctx.drawImage(this.originalImage, 0, 0);
-            console.log('圖片已重置到原始狀態');
+            console.log('图片已重置到原始状态');
         }
     }
 
-    // 銷毀處理器
+    /**
+     * 销毁处理器
+     * 清理资源，避免内存泄漏
+     */
     destroy() {
+        // 移除Canvas元素
         if (this.canvas) {
             this.canvas.remove();
             this.canvas = null;
             this.ctx = null;
         }
+        
+        // 清理引用
         this.originalFile = null;
         this.originalImage = null;
     }
 }
 
-// 導出簡單圖片處理器
+// 导出简单图片处理器到全局作用域
 window.SimpleImageProcessor = SimpleImageProcessor; 

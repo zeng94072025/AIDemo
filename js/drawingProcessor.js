@@ -1,6 +1,6 @@
 /**
- * 塗鴉標註處理器
- * 實現畫筆、橡皮擦、形狀繪製等功能
+ * 涂鸦标注处理器
+ * 实现画笔、橡皮擦、形状绘制等功能
  */
 
 class DrawingProcessor {
@@ -11,13 +11,13 @@ class DrawingProcessor {
         this.currentTool = 'brush';
         this.brushColor = '#ff0000';
         this.brushSize = 5;
-        this.brushStyle = 'solid'; // 新增：畫筆樣式
+        this.brushStyle = 'solid'; // 新增：画笔样式
         this.drawingHistory = [];
         this.historyIndex = -1;
-        this.gradientColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']; // 新增：漸變色彩
-        this.emojiList = ['😀', '😍', '👍', '🎉', '💯', '🔥', '⭐', '💖', '🎯', '🏆']; // 新增：表情符號
+        this.gradientColors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57']; // 新增：渐变色
+        this.emojiList = ['😀', '😍', '👍', '🎉', '💯', '🔥', '⭐', '💖', '🎯', '🏆']; // 新增：表情符号
         
-        // 綁定事件處理函數，確保可以正確移除
+        // 绑定事件处理函数，确保可以正确移除
         this.boundHandleMouseDown = this.handleMouseDown.bind(this);
         this.boundHandleMouseMove = this.handleMouseMove.bind(this);
         this.boundHandleMouseUp = this.handleMouseUp.bind(this);
@@ -32,13 +32,13 @@ class DrawingProcessor {
         console.log('DrawingProcessor 初始化成功');
     }
 
-    // 初始化畫布
+    // 初始化画布
     initCanvas() {
-        // 設置畫布樣式
+        // 设置画布样式
         this.canvas.style.cursor = 'crosshair';
         this.canvas.style.border = '1px solid #ccc';
         
-        // 設置繪製上下文
+        // 设置绘制上下文
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
         this.ctx.strokeStyle = this.brushColor;
@@ -54,13 +54,13 @@ class DrawingProcessor {
         });
     }
 
-    // 重新設置Canvas（新增方法）
+    // 重新设置Canvas（新增方法）
     resetCanvas(newCanvas) {
         try {
-            // 保存舊的Canvas引用
+            // 保存旧的Canvas引用
             const oldCanvas = this.canvas;
             
-            // 先移除舊Canvas的事件監聽器
+            // 先移除旧Canvas的事件监听器
             if (oldCanvas) {
                 this.removeEventListeners();
             }
@@ -69,10 +69,10 @@ class DrawingProcessor {
             this.canvas = newCanvas;
             this.ctx = newCanvas.getContext('2d');
             
-            // 重新初始化畫布
+            // 重新初始化画布
             this.initCanvas();
             
-            // 重新初始化事件監聽器
+            // 重新初始化事件监听器
             this.initEventListeners();
             
             console.log('Canvas重新設置成功:', {
@@ -87,18 +87,18 @@ class DrawingProcessor {
         }
     }
 
-    // 初始化事件監聽器
+    // 初始化事件监听器
     initEventListeners() {
-        // 先移除舊的事件監聽器（如果存在）
+        // 先移除旧的事件监听器（如果存在）
         this.removeEventListeners();
         
-        // 滑鼠事件
+        // 鼠标事件
         this.canvas.addEventListener('mousedown', this.boundHandleMouseDown);
         this.canvas.addEventListener('mousemove', this.boundHandleMouseMove);
         this.canvas.addEventListener('mouseup', this.boundHandleMouseUp);
         this.canvas.addEventListener('mouseleave', this.boundHandleMouseLeave);
         
-        // 觸控事件（移動端支持）
+        // 触控事件（移动端支持）
         this.canvas.addEventListener('touchstart', this.boundHandleTouchStart);
         this.canvas.addEventListener('touchmove', this.boundHandleTouchMove);
         this.canvas.addEventListener('touchend', this.boundHandleTouchEnd);
@@ -106,7 +106,7 @@ class DrawingProcessor {
         console.log('DrawingProcessor 事件監聽器初始化完成');
     }
 
-    // 移除事件監聽器
+    // 移除事件监听器
     removeEventListeners() {
         try {
             if (this.canvas) {
@@ -119,11 +119,11 @@ class DrawingProcessor {
                 this.canvas.removeEventListener('touchend', this.boundHandleTouchEnd);
             }
         } catch (error) {
-            console.warn('移除事件監聽器時出現錯誤:', error);
+            console.warn('移除事件监听器时出现错误:', error);
         }
     }
 
-    // 處理滑鼠按下事件
+    // 处理鼠标按下事件
     handleMouseDown(e) {
         try {
             this.isDrawing = true;
@@ -131,16 +131,16 @@ class DrawingProcessor {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
-            // 檢查座標是否在畫布範圍內
+            // 检查坐标是否在画布范围内
             if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
                 this.startDrawing(x, y);
             }
         } catch (error) {
-            console.error('滑鼠按下事件處理錯誤:', error);
+            console.error('鼠标按下事件处理错误:', error);
         }
     }
 
-    // 處理滑鼠移動事件
+    // 处理鼠标移动事件
     handleMouseMove(e) {
         try {
             if (!this.isDrawing) return;
@@ -149,36 +149,36 @@ class DrawingProcessor {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             
-            // 檢查座標是否在畫布範圍內
+            // 检查坐标是否在画布范围内
             if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
                 this.continueDrawing(x, y);
             }
         } catch (error) {
-            console.error('滑鼠移動事件處理錯誤:', error);
+            console.error('鼠标移动事件处理错误:', error);
         }
     }
 
-    // 處理滑鼠釋放事件
+    // 处理鼠标释放事件
     handleMouseUp(e) {
         try {
             this.isDrawing = false;
             this.endDrawing();
         } catch (error) {
-            console.error('滑鼠釋放事件處理錯誤:', error);
+            console.error('鼠标释放事件处理错误:', error);
         }
     }
 
-    // 處理滑鼠離開事件
+    // 处理鼠标离开事件
     handleMouseLeave(e) {
         try {
             this.isDrawing = false;
             this.endDrawing();
         } catch (error) {
-            console.error('滑鼠離開事件處理錯誤:', error);
+            console.error('鼠标离开事件处理错误:', error);
         }
     }
 
-    // 處理觸控開始事件
+    // 处理触控开始事件
     handleTouchStart(e) {
         try {
             e.preventDefault();
@@ -188,18 +188,18 @@ class DrawingProcessor {
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
                 
-                // 檢查座標是否在畫布範圍內
+                // 检查坐标是否在画布范围内
                 if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
                     this.isDrawing = true;
                     this.startDrawing(x, y);
                 }
             }
         } catch (error) {
-            console.error('觸控開始事件處理錯誤:', error);
+            console.error('触控开始事件处理错误:', error);
         }
     }
 
-    // 處理觸控移動事件
+    // 处理触控移动事件
     handleTouchMove(e) {
         try {
             e.preventDefault();
@@ -210,27 +210,27 @@ class DrawingProcessor {
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
             
-            // 檢查座標是否在畫布範圍內
+            // 检查坐标是否在画布范围内
             if (x >= 0 && x <= this.canvas.width && y >= 0 && y <= this.canvas.height) {
                 this.continueDrawing(x, y);
             }
         } catch (error) {
-            console.error('觸控移動事件處理錯誤:', error);
+            console.error('触控移动事件处理错误:', error);
         }
     }
 
-    // 處理觸控結束事件
+    // 处理触控结束事件
     handleTouchEnd(e) {
         try {
             e.preventDefault();
             this.isDrawing = false;
             this.endDrawing();
         } catch (error) {
-            console.error('觸控結束事件處理錯誤:', error);
+            console.error('触控结束事件处理错误:', error);
         }
     }
 
-    // 開始繪製
+    // 开始绘制
     startDrawing(x, y) {
         try {
             this.ctx.beginPath();
@@ -238,11 +238,11 @@ class DrawingProcessor {
             this.lastX = x;
             this.lastY = y;
         } catch (error) {
-            console.error('開始繪製錯誤:', error);
+            console.error('开始绘制错误:', error);
         }
     }
 
-    // 繼續繪製
+    // 继续绘制
     continueDrawing(x, y) {
         try {
             if (this.currentTool === 'brush') {
@@ -264,28 +264,28 @@ class DrawingProcessor {
             this.lastX = x;
             this.lastY = y;
         } catch (error) {
-            console.error('繼續繪製錯誤:', error);
+            console.error('继续绘制错误:', error);
         }
     }
 
-    // 結束繪製
+    // 结束绘制
     endDrawing() {
         try {
             this.ctx.closePath();
             this.saveToHistory();
             
-            // 通知UIController保存繪製結果
+            // 通知UIController保存绘制结果
             if (this.onDrawingComplete) {
                 this.onDrawingComplete(this.getCanvasData());
             }
         } catch (error) {
-            console.error('結束繪製錯誤:', error);
+            console.error('结束绘制错误:', error);
         }
     }
 
-    // 應用畫筆樣式
+    // 应用画笔样式
     applyBrushStyle(x, y) {
-        // 如果有選擇的漸變色，優先使用漸變色
+        // 如果有选择的渐变色，优先使用渐变色
         if (this.currentGradient) {
             this.applyGradient(x, y);
             return;
@@ -317,7 +317,7 @@ class DrawingProcessor {
         }
     }
 
-    // 設置繪製工具
+    // 设置绘制工具
     setTool(tool) {
         this.currentTool = tool;
         
@@ -348,24 +348,24 @@ class DrawingProcessor {
                 break;
         }
         
-        console.log('繪製工具已切換為:', tool);
+        console.log('绘制工具已切换为:', tool);
     }
 
-    // 設置畫筆顏色
+    // 设置画笔颜色
     setColor(color) {
         this.brushColor = color;
         this.ctx.strokeStyle = color;
         this.ctx.fillStyle = color;
-        console.log('畫筆顏色已設置為:', color);
+        console.log('画笔颜色已设置为:', color);
     }
 
-    // 設置漸變色
+    // 设置渐变色
     setGradient(gradientType) {
         this.currentGradient = gradientType;
-        console.log('漸變色已設置為:', gradientType);
+        console.log('渐变色已设置为:', gradientType);
     }
 
-    // 獲取漸變色
+    // 获取渐变色
     getGradient(gradientType) {
         const gradients = {
             'sunset': ['#ff6b6b', '#feca57'],
@@ -379,7 +379,7 @@ class DrawingProcessor {
         return gradients[gradientType] || ['#ff0000', '#00ff00'];
     }
 
-    // 應用漸變色到繪製
+    // 应用渐变色到绘制
     applyGradient(x, y) {
         if (!this.currentGradient) return;
         
@@ -390,7 +390,7 @@ class DrawingProcessor {
             gradient.addColorStop(0, colors[0]);
             gradient.addColorStop(1, colors[1]);
         } else {
-            // 彩虹漸變
+            // 彩虹渐变
             colors.forEach((color, index) => {
                 gradient.addColorStop(index / (colors.length - 1), color);
             });
@@ -402,17 +402,17 @@ class DrawingProcessor {
         this.ctx.strokeStyle = this.brushColor;
     }
 
-    // 設置畫筆大小
+    // 设置画笔大小
     setBrushSize(size) {
         this.brushSize = size;
         this.ctx.lineWidth = size;
-        console.log('畫筆大小已設置為:', size);
+        console.log('画笔大小已设置为:', size);
     }
 
-    // 設置畫筆樣式
+    // 设置画笔样式
     setBrushStyle(style) {
         this.brushStyle = style;
-        console.log('畫筆樣式已設置為:', style);
+        console.log('画笔样式已设置为:', style);
     }
 
     // 繪製漸變線條
@@ -588,7 +588,7 @@ class DrawingProcessor {
         return this.gradientColors[Math.floor(Math.random() * this.gradientColors.length)];
     }
 
-    // 繪製直線
+    // 绘制直线
     drawLine(startX, startY, endX, endY) {
         this.ctx.beginPath();
         this.ctx.moveTo(startX, startY);
@@ -597,7 +597,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製矩形
+    // 绘制矩形
     drawRectangle(x, y, width, height, fill = false) {
         if (fill) {
             this.ctx.fillRect(x, y, width, height);
@@ -607,7 +607,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製圓形
+    // 绘制圆形
     drawCircle(x, y, radius, fill = false) {
         this.ctx.beginPath();
         this.ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -626,18 +626,18 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製箭頭
+    // 绘制箭头
     drawArrow(startX, startY, endX, endY) {
         const headLength = 15;
         const angle = Math.atan2(endY - startY, endX - startX);
         
-        // 繪製箭頭主體
+        // 绘制箭头主体
         this.ctx.beginPath();
         this.ctx.moveTo(startX, startY);
         this.ctx.lineTo(endX, endY);
         this.ctx.stroke();
         
-        // 繪製箭頭頭部
+        // 绘制箭头头部
         this.ctx.beginPath();
         this.ctx.moveTo(endX, endY);
         this.ctx.lineTo(endX - headLength * Math.cos(angle - Math.PI / 6), 
@@ -650,12 +650,12 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製霓虹箭頭
+    // 绘制霓虹箭头
     drawNeonArrow(startX, startY, endX, endY) {
         const headLength = 15;
         const angle = Math.atan2(endY - startY, endX - startX);
         
-        // 外層發光
+        // 外层发光
         this.ctx.save();
         this.ctx.shadowColor = this.brushColor;
         this.ctx.shadowBlur = 15;
@@ -676,7 +676,7 @@ class DrawingProcessor {
         this.ctx.stroke();
         this.ctx.restore();
         
-        // 內層實線
+        // 内层实线
         this.ctx.lineWidth = this.brushSize;
         this.ctx.beginPath();
         this.ctx.moveTo(startX, startY);
@@ -695,7 +695,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製愛心
+    // 绘制爱心
     drawHeart(x, y, size = 20) {
         this.ctx.save();
         this.ctx.fillStyle = this.brushColor;
@@ -704,28 +704,28 @@ class DrawingProcessor {
         const topCurveHeight = size * 0.3;
         this.ctx.moveTo(x, y + topCurveHeight);
         
-        // 左邊曲線
+        // 左边曲线
         this.ctx.bezierCurveTo(
             x, y, 
             x - size, y, 
             x - size, y + size
         );
         
-        // 底部曲線
+        // 底部曲线
         this.ctx.bezierCurveTo(
             x - size, y + size * 1.3, 
             x, y + size * 1.3, 
             x, y + size
         );
         
-        // 右邊曲線
+        // 右边曲线
         this.ctx.bezierCurveTo(
             x, y + size * 1.3, 
             x + size, y + size * 1.3, 
             x + size, y + size
         );
         
-        // 頂部曲線
+        // 顶部曲线
         this.ctx.bezierCurveTo(
             x + size, y, 
             x, y, 
@@ -737,7 +737,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製星星
+    // 绘制星星
     drawStar(x, y, size = 20) {
         this.ctx.save();
         this.ctx.fillStyle = this.brushColor;
@@ -766,17 +766,17 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製爆炸效果
+    // 绘制爆炸效果
     drawExplosion(x, y, size = 30) {
         this.ctx.save();
         
-        // 中心圓
+        // 中心圆
         this.ctx.fillStyle = '#ff6b6b';
         this.ctx.beginPath();
         this.ctx.arc(x, y, size * 0.3, 0, Math.PI * 2);
         this.ctx.fill();
         
-        // 爆炸線條
+        // 爆炸线条
         for (let i = 0; i < 8; i++) {
             const angle = (i / 8) * Math.PI * 2;
             const endX = x + Math.cos(angle) * size;
@@ -794,7 +794,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製表情符號
+    // 绘制表情符号
     drawEmoji(x, y, emoji = null) {
         const selectedEmoji = emoji || this.emojiList[Math.floor(Math.random() * this.emojiList.length)];
         
@@ -807,16 +807,16 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製對話框
+    // 绘制对话框
     drawSpeechBubble(x, y, text = 'Wow!', width = 100, height = 60) {
         this.ctx.save();
         
-        // 對話框背景
+        // 对话框背景
         this.ctx.fillStyle = '#ffffff';
         this.ctx.strokeStyle = this.brushColor;
         this.ctx.lineWidth = 2;
         
-        // 圓角矩形
+        // 圆角矩形
         this.ctx.beginPath();
         this.ctx.roundRect(x - width/2, y - height/2, width, height, 10);
         this.ctx.fill();
@@ -841,7 +841,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製進度條
+    // 绘制进度条
     drawProgressBar(x, y, progress = 0.7, width = 100, height = 20) {
         this.ctx.save();
         
@@ -849,11 +849,11 @@ class DrawingProcessor {
         this.ctx.fillStyle = '#e0e0e0';
         this.ctx.fillRect(x - width/2, y - height/2, width, height);
         
-        // 進度
+        // 进度
         this.ctx.fillStyle = this.brushColor;
         this.ctx.fillRect(x - width/2, y - height/2, width * progress, height);
         
-        // 邊框
+        // 边框
         this.ctx.strokeStyle = '#000000';
         this.ctx.lineWidth = 1;
         this.ctx.strokeRect(x - width/2, y - height/2, width, height);
@@ -869,7 +869,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製高亮區域
+    // 绘制高亮区域
     drawHighlight(x, y, width, height) {
         this.ctx.save();
         this.ctx.globalAlpha = 0.3;
@@ -879,7 +879,7 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 繪製印章
+    // 绘制印章
     drawStamp(x, y, text = '✓') {
         this.ctx.save();
         this.ctx.fillStyle = '#ff0000';
@@ -891,23 +891,23 @@ class DrawingProcessor {
         this.saveToHistory();
     }
 
-    // 保存到歷史記錄
+    // 保存到历史记录
     saveToHistory() {
-        // 移除當前位置之後的歷史記錄
+        // 移除当前位置之后的历史记录
         this.drawingHistory = this.drawingHistory.slice(0, this.historyIndex + 1);
         
-        // 添加新的狀態
+        // 添加新的状态
         this.drawingHistory.push(this.canvas.toDataURL());
         this.historyIndex++;
         
-        // 限制歷史記錄數量
+        // 限制历史记录数量
         if (this.drawingHistory.length > 50) {
             this.drawingHistory.shift();
             this.historyIndex--;
         }
     }
 
-    // 撤銷
+    // 撤销
     undo() {
         if (this.historyIndex > 0) {
             this.historyIndex--;
@@ -927,7 +927,7 @@ class DrawingProcessor {
         return false;
     }
 
-    // 從歷史記錄加載
+    // 从历史记录加载
     loadFromHistory() {
         const img = new Image();
         img.onload = () => {
@@ -937,27 +937,56 @@ class DrawingProcessor {
         img.src = this.drawingHistory[this.historyIndex];
     }
 
-    // 清空畫布
+    // 清空画布
     clear() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.saveToHistory();
     }
 
-    // 獲取畫布數據
+    // 获取画布数据
     getCanvasData() {
         return this.canvas.toDataURL();
     }
 
-    // 銷毀處理器
+    // 获取当前工具
+    getTool() {
+        return this.currentTool;
+    }
+
+    // 获取历史记录
+    getHistory() {
+        return [...this.drawingHistory];
+    }
+
+    // 获取历史记录索引
+    getHistoryIndex() {
+        return this.historyIndex;
+    }
+
+    // 设置历史记录
+    setHistory(history) {
+        if (Array.isArray(history)) {
+            this.drawingHistory = [...history];
+        }
+    }
+
+    // 设置历史记录索引
+    setHistoryIndex(index) {
+        if (typeof index === 'number' && index >= -1 && index < this.drawingHistory.length) {
+            this.historyIndex = index;
+        }
+    }
+
+    // 销毁处理器
     destroy() {
-        // 移除事件監聽器
+        // 移除事件监听器
         this.removeEventListeners();
         
-        // 清空數據
+        // 清空数据
         this.drawingHistory = [];
         this.historyIndex = -1;
     }
 }
 
-// 導出塗鴉標註處理器
+// 导出涂鸦标注处理器
 window.DrawingProcessor = DrawingProcessor; 
