@@ -3378,7 +3378,7 @@ class UIController {
                 isDrawingAnnotation: currentImage.isDrawingAnnotation
             });
             
-            Utils.showNotification('塗鴉標註已保存，下載時包含標註效果', 'success');
+
             
         } catch (error) {
             console.error('合併塗鴉標註結果失敗:', error);
