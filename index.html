@@ -31,6 +31,11 @@
                     <span id="userPhone"></span>
                     <span class="plan-badge" id="planBadge">免费版</span>
                 </div>
+                <!-- 套餐按钮 -->
+                <button class="btn btn-secondary" id="plansBtn">
+                    <i class="fas fa-crown"></i>
+                    套餐
+                </button>
                 <!-- 帮助按钮 -->
                 <button class="btn btn-secondary" id="helpBtn">
                     <i class="fas fa-question-circle"></i>
@@ -571,10 +576,11 @@
                 
                 this.userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
                 
-                // 檢查是否需要選擇套餐（測試用戶和已付費用戶跳過）
-                if (!this.userInfo.isPaid && !this.userInfo.isTestUser) {
-                    window.location.href = 'payment.html';
-                    return;
+                // 設置默認套餐為免費版（如果沒有設置）
+                if (!this.userInfo.planType) {
+                    this.userInfo.planType = 'free';
+                    this.userInfo.isPaid = false;
+                    localStorage.setItem('userInfo', JSON.stringify(this.userInfo));
                 }
                 
                 // 認證通過，允許繼續使用
@@ -586,7 +592,7 @@
                 this.userPhoneSpan = document.getElementById('userPhone');
                 this.planBadge = document.getElementById('planBadge');
                 this.logoutBtn = document.getElementById('logoutBtn');
-                this.upgradeBtn = document.getElementById('upgradeBtn');
+                this.plansBtn = document.getElementById('plansBtn');
                 
                 this.aiLockedMessage = document.getElementById('aiLockedMessage');
                 this.aiTools = document.getElementById('aiTools');
@@ -598,7 +604,7 @@
             
             bindEvents() {
                 this.logoutBtn.addEventListener('click', () => this.logout());
-                this.upgradeBtn.addEventListener('click', () => this.upgrade());
+                this.plansBtn.addEventListener('click', () => this.openPlans());
                 
                 // 顯示用戶信息
                 this.showUserInfo();
@@ -632,13 +638,31 @@
                     this.aiTools4.style.display = 'block';
                     this.aiStatus.style.display = 'block';
                 } else {
-                    // 免費用戶只能看到升級提示
+                    // 免費用戶可以訪問基礎功能，但AI功能需要升級
                     this.aiLockedMessage.style.display = 'block';
                     this.aiTools.style.display = 'none';
                     this.aiTools2.style.display = 'none';
                     this.aiTools3.style.display = 'none';
                     this.aiTools4.style.display = 'none';
                     this.aiStatus.style.display = 'none';
+                    
+                    // 更新升級提示信息
+                    const upgradeMessage = this.aiLockedMessage.querySelector('.upgrade-message');
+                    if (upgradeMessage) {
+                        const today = new Date().toDateString();
+                        const usageKey = `usage_${today}`;
+                        const todayUsage = parseInt(localStorage.getItem(usageKey) || '0');
+                        const remainingUsage = Math.max(0, 3 - todayUsage);
+                        
+                        upgradeMessage.innerHTML = `
+                            <h3>升級到專業版</h3>
+                            <p>今日已使用 ${todayUsage} 次，還剩 ${remainingUsage} 次免費額度</p>
+                            <p>升級專業版享受無限制AI處理功能</p>
+                            <button class="btn btn-primary" onclick="window.location.href='plans.html'">
+                                立即升級
+                            </button>
+                        `;
+                    }
                 }
             }
             
@@ -651,8 +675,8 @@
                 }
             }
             
-            upgrade() {
-                window.location.href = 'payment.html';
+            openPlans() {
+                window.location.href = 'plans.html';
             }
         }
         
@@ -763,6 +787,7 @@
     <script src="js/aiImageProcessor.js"></script>
     <script src="js/drawingProcessor.js"></script>
     <script src="js/uiController.js"></script>
+    <script src="js/usageManager.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html> 

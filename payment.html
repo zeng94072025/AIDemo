@@ -491,6 +491,7 @@
         </div>
     </div>
 
+    <script src="js/paymentService.js"></script>
     <script>
         class PaymentManager {
             constructor() {
@@ -500,19 +501,22 @@
                 this.paymentStatus = 'pending';
                 this.retryCount = 0;
                 this.maxRetries = 3;
-                this.paymentTimeout = 300000; // 5分钟超时
-                this.statusCheckInterval = null;
+                this.paymentService = null;
                 
                 this.init();
             }
             
-            init() {
+            async init() {
+                // 初始化支付服務
+                this.paymentService = new PaymentService();
+                
                 this.initPlanSelection();
                 this.initPaymentMethodSelection();
                 this.initPayButton();
                 this.initQrModal();
                 this.checkUserStatus();
                 this.generateOrderId();
+                this.initPaymentEvents();
             }
             
             initPlanSelection() {
@@ -584,6 +588,25 @@
                 this.orderId = `ORDER${timestamp}${random}`;
             }
             
+            initPaymentEvents() {
+                // 監聽支付狀態變化事件
+                document.addEventListener('paymentStatusChanged', (event) => {
+                    const { type, data } = event.detail;
+                    
+                    switch (type) {
+                        case 'success':
+                            this.handlePaymentSuccess(data);
+                            break;
+                        case 'failed':
+                            this.handlePaymentFailure(data.message);
+                            break;
+                        case 'timeout':
+                            this.handlePaymentTimeout();
+                            break;
+                    }
+                });
+            }
+            
             updateOrderSummary() {
                 const totalElement = document.querySelector('.order-item:last-child span:last-child');
                 const payButton = document.getElementById('payButton');
@@ -617,22 +640,28 @@
                 this.setLoading(payButton, true);
                 
                 try {
-                    // 创建支付订单
-                    const orderResult = await this.createPaymentOrder();
+                    // 使用支付服務創建訂單
+                    const orderData = {
+                        userId: localStorage.getItem('userPhone'),
+                        amount: 2.00,
+                        paymentMethod: this.selectedMethod,
+                        planType: this.selectedPlan
+                    };
+                    
+                    const orderResult = await this.paymentService.createPaymentOrder(orderData);
                     
                     if (orderResult.success) {
-                        // 显示支付二维码
-                        this.showQrModal();
+                        this.orderId = orderResult.orderId;
                         
-                        // 开始轮询支付状态
-                        this.startPaymentStatusCheck();
+                        // 根據支付方式處理
+                        if (this.selectedMethod === 'wechat') {
+                            this.showWechatQrModal(orderResult.paymentData);
+                        } else if (this.selectedMethod === 'alipay') {
+                            this.showAlipayPayment(orderResult.paymentData);
+                        }
                         
-                        // 设置支付超时
-                        setTimeout(() => {
-                            if (this.paymentStatus === 'processing') {
-                                this.handlePaymentTimeout();
-                            }
-                        }, this.paymentTimeout);
+                        // 開始支付狀態檢查
+                        this.paymentService.startPaymentStatusCheck(this.orderId);
                         
                     } else {
                         this.showPaymentStatus('error', orderResult.message);
@@ -685,6 +714,36 @@
                 return btoa(data).substring(0, 32);
             }
             
+            showWechatQrModal(paymentData) {
+                const qrModal = document.getElementById('qrModal');
+                const qrCode = document.getElementById('qrCode');
+                
+                // 生成微信支付二維碼
+                qrCode.innerHTML = `
+                    <div style="text-align: center;">
+                        <i class="fab fa-weixin" style="font-size: 60px; color: #07c160;"></i>
+                        <br>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                            訂單號: ${this.orderId}<br>
+                            金額: ¥${paymentData.amount}<br>
+                            請使用微信掃碼支付
+                        </div>
+                    </div>
+                `;
+                
+                qrModal.classList.add('show');
+            }
+            
+            showAlipayPayment(paymentData) {
+                // 創建支付寶支付表單並自動提交
+                const paymentForm = document.createElement('div');
+                paymentForm.innerHTML = paymentData.formHtml;
+                document.body.appendChild(paymentForm);
+                
+                // 顯示提示信息
+                this.showPaymentStatus('processing', '正在跳轉到支付寶支付頁面...');
+            }
+            
             showQrModal() {
                 const qrModal = document.getElementById('qrModal');
                 const qrCode = document.getElementById('qrCode');
@@ -692,7 +751,7 @@
                 // 生成模拟二维码
                 qrCode.innerHTML = `
                     <div style="text-align: center;">
-                        <i class="fas fa-qrcode" style="font-size: 60px; color: #07c160;"></i>
+                        <i class="fas fa-qrcode" style="font-size: 60px; color: #ccc;"></i>
                         <br>
                         <div style="margin-top: 10px; font-size: 12px; color: #666;">
                             订单号: ${this.orderId}<br>
@@ -708,9 +767,9 @@
                 const qrModal = document.getElementById('qrModal');
                 qrModal.classList.remove('show');
                 
-                // 停止支付状态检查
-                if (this.statusCheckInterval) {
-                    clearInterval(this.statusCheckInterval);
+                // 停止支付狀態檢查
+                if (this.paymentService) {
+                    this.paymentService.stopPaymentStatusCheck();
                 }
             }
             
@@ -752,25 +811,13 @@
                 }
             }
             
-            handlePaymentSuccess(result) {
+            handlePaymentSuccess(data) {
                 this.paymentStatus = 'success';
                 
-                // 停止状态检查
-                if (this.statusCheckInterval) {
-                    clearInterval(this.statusCheckInterval);
+                // 停止狀態檢查
+                if (this.paymentService) {
+                    this.paymentService.stopPaymentStatusCheck();
                 }
-                
-                // 更新用户信息
-                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-                userInfo.isPaid = true;
-                userInfo.planType = 'paid';
-                userInfo.paymentTime = new Date().toISOString();
-                userInfo.orderId = this.orderId;
-                
-                localStorage.setItem('userInfo', JSON.stringify(userInfo));
-                
-                // 記錄支付歷史
-                this.recordPaymentHistory();
                 
                 // 顯示成功信息
                 this.showPaymentStatus('success', '支付成功！正在跳轉...');
@@ -788,8 +835,8 @@
                 this.paymentStatus = 'failed';
                 
                 // 停止狀態檢查
-                if (this.statusCheckInterval) {
-                    clearInterval(this.statusCheckInterval);
+                if (this.paymentService) {
+                    this.paymentService.stopPaymentStatusCheck();
                 }
                 
                 this.showPaymentStatus('error', `支付失敗: ${message}`, true);
@@ -800,8 +847,8 @@
                 this.paymentStatus = 'timeout';
                 
                 // 停止狀態檢查
-                if (this.statusCheckInterval) {
-                    clearInterval(this.statusCheckInterval);
+                if (this.paymentService) {
+                    this.paymentService.stopPaymentStatusCheck();
                 }
                 
                 this.showPaymentStatus('error', '支付超時，請重新嘗試', true);
@@ -893,7 +940,7 @@
         
         // 初始化支付管理器
         let paymentManager;
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             paymentManager = new PaymentManager();
         });
     </script>

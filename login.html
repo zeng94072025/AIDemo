@@ -485,6 +485,8 @@
         </div>
     </div>
 
+    <!-- 引入短信服務 -->
+    <script src="js/smsService.js"></script>
     <script>
         class LoginManager {
             constructor() {
@@ -494,11 +496,20 @@
                 this.lockoutTime = 15 * 60 * 1000; // 15分鐘
                 this.captchaCode = '';
                 this.smsCountdown = 0;
+                this.smsService = null;
                 
                 this.init();
             }
             
-            init() {
+            async init() {
+                // 初始化短信服務
+                try {
+                    this.smsService = new SMSService();
+                    await this.smsService.init();
+                } catch (error) {
+                    console.error('短信服務初始化失敗:', error);
+                }
+                
                 this.initTabs();
                 this.initFormValidation();
                 this.initPasswordStrength();
@@ -804,25 +815,33 @@
                 sendSmsBtn.textContent = '發送中...';
                 
                 try {
-                    // 模擬發送短信
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // 使用真實的短信服務發送驗證碼
+                    if (!this.smsService) {
+                        throw new Error('短信服務未初始化');
+                    }
                     
-                    this.smsCountdown = 60;
-                    const updateCountdown = () => {
-                        if (this.smsCountdown > 0) {
-                            sendSmsBtn.textContent = `${this.smsCountdown}s`;
-                            this.smsCountdown--;
-                            setTimeout(updateCountdown, 1000);
-                        } else {
-                            sendSmsBtn.textContent = '發送';
-                            sendSmsBtn.disabled = false;
-                        }
-                    };
-                    updateCountdown();
+                    const result = await this.smsService.sendVerificationCode(phone, 'login');
                     
-                    this.showSuccess('smsCodeError', '驗證碼已發送');
+                    if (result.success) {
+                        this.smsCountdown = 60;
+                        const updateCountdown = () => {
+                            if (this.smsCountdown > 0) {
+                                sendSmsBtn.textContent = `${this.smsCountdown}s`;
+                                this.smsCountdown--;
+                                setTimeout(updateCountdown, 1000);
+                            } else {
+                                sendSmsBtn.textContent = '發送';
+                                sendSmsBtn.disabled = false;
+                            }
+                        };
+                        updateCountdown();
+                        
+                        this.showSuccess('smsCodeError', '驗證碼已發送，請查收短信');
+                    } else {
+                        throw new Error(result.message);
+                    }
                 } catch (error) {
-                    this.showError('smsCodeError', '發送失敗，請重試');
+                    this.showError('smsCodeError', error.message || '發送失敗，請重試');
                     sendSmsBtn.textContent = '發送';
                     sendSmsBtn.disabled = false;
                 }
@@ -921,58 +940,66 @@
             }
             
             async loginWithSms(phone, code) {
-                // 模擬API調用
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // 檢查管理員
-                if (phone === '18551689698' && code === '123456') {
-                    // 設置管理員信息到localStorage
-                    localStorage.setItem('userRole', 'admin');
-                    localStorage.setItem('userPhone', phone);
-                    localStorage.setItem('userInfo', JSON.stringify({
-                        phone: phone,
-                        role: 'admin',
-                        registerTime: new Date().toISOString(),
-                        isPaid: true,
-                        planType: 'admin'
-                    }));
-                    return { success: true, role: 'admin' };
-                }
-                
-                // 檢查測試用戶
-                if (phone === '18606198505' && code === '123456') {
-                    const testUser = {
-                        phone: '18606198505',
-                        password: 'admin123',
-                        registerTime: new Date().toISOString(),
-                        isPaid: true,
-                        planType: 'paid',
-                        isTestUser: true
-                    };
+                try {
+                    // 使用真實的短信服務驗證驗證碼
+                    if (!this.smsService) {
+                        throw new Error('短信服務未初始化');
+                    }
                     
-                    localStorage.setItem('userRole', 'user');
-                    localStorage.setItem('userPhone', phone);
-                    localStorage.setItem('userInfo', JSON.stringify(testUser));
-                    return { success: true, role: 'user' };
-                }
-                
-                // 檢查驗證碼
-                if (code === '123456') {
-                    // 創建新用戶或更新現有用戶
-                    const userInfo = {
-                        phone: phone,
-                        registerTime: new Date().toISOString(),
-                        isPaid: false,
-                        planType: 'free'
-                    };
+                    const result = await this.smsService.verifyCode(phone, code, 'login');
                     
-                    localStorage.setItem('userRole', 'user');
-                    localStorage.setItem('userPhone', phone);
-                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
-                    return { success: true, role: 'user' };
+                    if (result.success) {
+                        // 檢查管理員
+                        if (phone === '18551689698') {
+                            // 設置管理員信息到localStorage
+                            localStorage.setItem('userRole', 'admin');
+                            localStorage.setItem('userPhone', phone);
+                            localStorage.setItem('userInfo', JSON.stringify({
+                                phone: phone,
+                                role: 'admin',
+                                registerTime: new Date().toISOString(),
+                                isPaid: true,
+                                planType: 'admin'
+                            }));
+                            return { success: true, role: 'admin' };
+                        }
+                        
+                        // 檢查測試用戶
+                        if (phone === '18606198505') {
+                            const testUser = {
+                                phone: '18606198505',
+                                password: 'admin123',
+                                registerTime: new Date().toISOString(),
+                                isPaid: true,
+                                planType: 'paid',
+                                isTestUser: true
+                            };
+                            
+                            localStorage.setItem('userRole', 'user');
+                            localStorage.setItem('userPhone', phone);
+                            localStorage.setItem('userInfo', JSON.stringify(testUser));
+                            return { success: true, role: 'user' };
+                        }
+                        
+                        // 普通用戶登錄
+                        // 創建新用戶或更新現有用戶
+                        const userInfo = {
+                            phone: phone,
+                            registerTime: new Date().toISOString(),
+                            isPaid: false,
+                            planType: 'free'
+                        };
+                        
+                        localStorage.setItem('userRole', 'user');
+                        localStorage.setItem('userPhone', phone);
+                        localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                        return { success: true, role: 'user' };
+                    } else {
+                        return { success: false, message: result.message };
+                    }
+                } catch (error) {
+                    return { success: false, message: error.message || '驗證失敗' };
                 }
-                
-                return { success: false, message: '驗證碼錯誤' };
             }
             
             redirectUser(role) {

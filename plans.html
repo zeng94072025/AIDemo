@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>選擇套餐 - AI圖片優化助手</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .plans-container {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .plans-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 800px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .plans-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .plans-logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .plans-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .plans-subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .plans-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .plan-card {
+            border: 2px solid #e1e5e9;
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+        }
+        
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        .plan-card.free {
+            border-color: #ffa502;
+        }
+        
+        .plan-card.pro {
+            border-color: #2ed573;
+            background: linear-gradient(135deg, rgba(46, 213, 115, 0.05), rgba(46, 213, 115, 0.02));
+        }
+        
+        .plan-card.current {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+        }
+        
+        .plan-card.current::before {
+            content: '當前套餐';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .plan-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+        
+        .plan-card.free .plan-icon {
+            background: linear-gradient(135deg, #ffa502, #ff6348);
+        }
+        
+        .plan-card.pro .plan-icon {
+            background: linear-gradient(135deg, #2ed573, #1e90ff);
+        }
+        
+        .plan-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .plan-price {
+            font-size: 36px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .plan-card.free .plan-price {
+            color: #ffa502;
+        }
+        
+        .plan-card.pro .plan-price {
+            color: #2ed573;
+        }
+        
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 30px 0;
+        }
+        
+        .plan-features li {
+            padding: 8px 0;
+            color: #666;
+            position: relative;
+            padding-left: 25px;
+        }
+        
+        .plan-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #2ed573;
+            font-weight: bold;
+        }
+        
+        .plan-features li.disabled {
+            color: #ccc;
+        }
+        
+        .plan-features li.disabled::before {
+            content: '✗';
+            color: #ff4757;
+        }
+        
+        .plan-button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .plan-button.free {
+            background: #ffa502;
+            color: white;
+        }
+        
+        .plan-button.free:hover {
+            background: #ff6348;
+        }
+        
+        .plan-button.pro {
+            background: #2ed573;
+            color: white;
+        }
+        
+        .plan-button.pro:hover {
+            background: #1e90ff;
+        }
+        
+        .plan-button.current {
+            background: #667eea;
+            color: white;
+        }
+        
+        .plan-button.current:hover {
+            background: #5a67d8;
+        }
+        
+        .plan-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .usage-info {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .usage-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .usage-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .usage-stat {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e1e5e9;
+        }
+        
+        .usage-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .usage-stat-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #667eea;
+            font-size: 18px;
+        }
+        
+        .back-button:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+        
+        @media (max-width: 768px) {
+            .plans-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .plans-card {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .usage-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="plans-container">
+        <div class="plans-card">
+            <!-- 返回按鈕 -->
+            <button class="back-button" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            
+            <!-- 頁面標題 -->
+            <div class="plans-header">
+                <div class="plans-logo">
+                    <i class="fas fa-crown"></i>
+                </div>
+                <h1 class="plans-title">選擇您的套餐</h1>
+                <p class="plans-subtitle">選擇最適合您需求的套餐，享受AI圖片處理的樂趣</p>
+            </div>
+            
+            <!-- 當前使用情況 -->
+            <div class="usage-info" id="usageInfo">
+                <h3 class="usage-title">今日使用情況</h3>
+                <div class="usage-stats">
+                    <div class="usage-stat">
+                        <div class="usage-stat-value" id="todayUsage">0</div>
+                        <div class="usage-stat-label">已使用次數</div>
+                    </div>
+                    <div class="usage-stat">
+                        <div class="usage-stat-value" id="remainingUsage">3</div>
+                        <div class="usage-stat-label">剩餘次數</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 套餐選擇 -->
+            <div class="plans-grid">
+                <!-- 免費版 -->
+                <div class="plan-card free" id="freePlan">
+                    <div class="plan-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="plan-name">免費版</h3>
+                    <div class="plan-price">¥0</div>
+                    <ul class="plan-features">
+                        <li>基礎圖片處理功能</li>
+                        <li>每日3次處理限制</li>
+                        <li>標準客服支持</li>
+                        <li>基礎濾鏡和特效</li>
+                        <li>塗鴉標註工具</li>
+                        <li class="disabled">AI智能處理</li>
+                        <li class="disabled">老照片修復</li>
+                        <li class="disabled">8K超分辨率</li>
+                        <li class="disabled">智能摳圖</li>
+                        <li class="disabled">批量處理</li>
+                    </ul>
+                    <button class="plan-button free" id="freeButton" onclick="selectFreePlan()">
+                        繼續使用免費版
+                    </button>
+                </div>
+                
+                <!-- 專業版 -->
+                <div class="plan-card pro" id="proPlan">
+                    <div class="plan-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h3 class="plan-name">專業版</h3>
+                    <div class="plan-price">¥2</div>
+                    <ul class="plan-features">
+                        <li>包含免費版所有功能</li>
+                        <li>無限制處理次數</li>
+                        <li>AI智能處理</li>
+                        <li>老照片修復</li>
+                        <li>8K超分辨率</li>
+                        <li>智能摳圖</li>
+                        <li>批量處理功能</li>
+                        <li>高級濾鏡和特效</li>
+                        <li>優先客服支持</li>
+                        <li>終身使用權限</li>
+                    </ul>
+                    <button class="plan-button pro" id="proButton" onclick="selectProPlan()">
+                        升級到專業版
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PlansManager {
+            constructor() {
+                this.userInfo = this.getUserInfo();
+                this.init();
+            }
+            
+            getUserInfo() {
+                const userInfo = localStorage.getItem('userInfo');
+                return userInfo ? JSON.parse(userInfo) : {};
+            }
+            
+            init() {
+                this.updateUsageInfo();
+                this.updatePlanStatus();
+                this.bindEvents();
+            }
+            
+            updateUsageInfo() {
+                const today = new Date().toDateString();
+                const usageKey = `usage_${today}`;
+                const todayUsage = parseInt(localStorage.getItem(usageKey) || '0');
+                const maxUsage = this.userInfo.isPaid ? 999999 : 3;
+                const remainingUsage = Math.max(0, maxUsage - todayUsage);
+                
+                document.getElementById('todayUsage').textContent = todayUsage;
+                document.getElementById('remainingUsage').textContent = remainingUsage;
+                
+                // 如果今日使用次數已達上限，顯示提示
+                if (todayUsage >= 3 && !this.userInfo.isPaid) {
+                    document.getElementById('usageInfo').style.background = '#fff3cd';
+                    document.getElementById('usageInfo').style.border = '1px solid #ffeaa7';
+                }
+            }
+            
+            updatePlanStatus() {
+                const freePlan = document.getElementById('freePlan');
+                const proPlan = document.getElementById('proPlan');
+                const freeButton = document.getElementById('freeButton');
+                const proButton = document.getElementById('proButton');
+                
+                if (this.userInfo.isPaid) {
+                    // 已付費用戶
+                    proPlan.classList.add('current');
+                    proButton.textContent = '當前套餐';
+                    proButton.disabled = true;
+                    freeButton.textContent = '切換到免費版';
+                } else {
+                    // 免費用戶
+                    freePlan.classList.add('current');
+                    freeButton.textContent = '當前套餐';
+                    freeButton.disabled = true;
+                    proButton.textContent = '升級到專業版';
+                }
+            }
+            
+            bindEvents() {
+                // 綁定按鈕事件
+                document.getElementById('freeButton').addEventListener('click', () => {
+                    this.selectFreePlan();
+                });
+                
+                document.getElementById('proButton').addEventListener('click', () => {
+                    this.selectProPlan();
+                });
+            }
+            
+            selectFreePlan() {
+                if (this.userInfo.isPaid) {
+                    // 從專業版降級到免費版
+                    if (confirm('確定要從專業版降級到免費版嗎？您將失去所有付費功能。')) {
+                        this.userInfo.isPaid = false;
+                        this.userInfo.planType = 'free';
+                        localStorage.setItem('userInfo', JSON.stringify(this.userInfo));
+                        alert('已切換到免費版');
+                        this.updatePlanStatus();
+                    }
+                } else {
+                    // 已經是免費版
+                    alert('您當前正在使用免費版');
+                }
+            }
+            
+            selectProPlan() {
+                if (this.userInfo.isPaid) {
+                    alert('您已經是專業版用戶');
+                } else {
+                    // 跳轉到支付頁面
+                    window.location.href = 'payment.html';
+                }
+            }
+        }
+        
+        // 返回上一頁
+        function goBack() {
+            if (document.referrer && document.referrer.includes('index.html')) {
+                window.history.back();
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            new PlansManager();
+        });
+    </script>
+</body>
+</html> 
